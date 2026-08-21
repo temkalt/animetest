@@ -18,11 +18,7 @@ import {
   Minimize2,
   Keyboard,
   Info,
-  Check,
-  ChevronDown,
-  Volume2,
   X,
-  Search,
 } from 'lucide-react';
 
 interface VideoPlayerProps {
@@ -69,16 +65,12 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const artInstanceRef = useRef<Artplayer | null>(null);
   const playerIframeRef = useRef<HTMLIFrameElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [selectedEngine, setSelectedEngine] = useState<string>('auto');
   const [selectedMirror, setSelectedMirror] = useState<number>(0);
   const [iframeKey, setIframeKey] = useState<number>(0);
   const [isTheaterMode, setIsTheaterMode] = useState<boolean>(false);
   const [showHotkeys, setShowHotkeys] = useState<boolean>(false);
-  const [showVoiceoverDropdown, setShowVoiceoverDropdown] = useState<boolean>(false);
-  const [voiceoverSearch, setVoiceoverSearch] = useState<string>('');
-  const [filterType, setFilterType] = useState<'all' | 'dub' | 'sub'>('all');
 
   const effectiveShikimoriId = shikimoriId || malId || animeId;
 
@@ -90,7 +82,6 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     activeBalancer,
     activeTranslation,
     setActiveBalancer,
-    setActiveTranslation,
     refresh,
   } = useBalancerProbe({
     animeId,
@@ -108,36 +99,6 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   // Effective Engine determination
   const effectiveEngine = selectedEngine === 'auto' ? activeBalancer || 'kodik' : selectedEngine;
 
-  // Active Translations list for the current balancer
-  const currentTranslations = useMemo(() => {
-    if (!probeData) return [];
-    return probeData.results[effectiveEngine as BalancerId]?.translations || [];
-  }, [probeData, effectiveEngine]);
-
-  // Filtered translations by type and search query
-  const filteredTranslations = useMemo(() => {
-    return currentTranslations.filter((t) => {
-      const matchesType = filterType === 'all' ? true : filterType === 'sub' ? t.type === 'sub' : t.type !== 'sub';
-      const matchesSearch = voiceoverSearch.trim() === '' || t.teamName.toLowerCase().includes(voiceoverSearch.toLowerCase());
-      return matchesType && matchesSearch;
-    });
-  }, [currentTranslations, filterType, voiceoverSearch]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowVoiceoverDropdown(false);
-      }
-    };
-    if (showVoiceoverDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showVoiceoverDropdown]);
-
   // Decide direct HLS vs Iframe stream
   const isDirectHls =
     effectiveEngine === 'anilibria' &&
@@ -151,23 +112,22 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       return `https://vidsrc.me/embed/anime?id=${effectiveShikimoriId}&ep=${episodeNumber}`;
     }
 
-    // 2. Active translation stream or iframe
-    if (activeTranslation && activeTranslation.balancerId === effectiveEngine) {
-      if (activeTranslation.streamUrl) return activeTranslation.streamUrl;
-      if (activeTranslation.iframeUrl) return activeTranslation.iframeUrl;
+    // 2. AniLibria Direct HLS
+    if (effectiveEngine === 'anilibria' && activeTranslation?.streamUrl) {
+      return activeTranslation.streamUrl;
     }
 
-    // 3. Kodik Engine (with mirrors)
+    // 3. Kodik Engine (loads full multi-voiceover player with in-player selector)
     if (effectiveEngine === 'kodik') {
       const mirrorDomain = selectedMirror === 1 ? 'kodik.biz' : 'kodikplayer.com';
       return `https://${mirrorDomain}/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}&min_quality=720`;
     }
 
-    // 4. Alloha Engine fallback
+    // 4. Alloha Engine (loads full multi-voiceover player with in-player selector)
     if (effectiveEngine === 'alloha') {
       const allohaTr = probeData?.results?.alloha?.translations?.[0];
       if (allohaTr?.iframeUrl) return allohaTr.iframeUrl;
-      return `https://theatre.stravers.live/?token_movie=9ceb642cd6ce5e013fe7a9922430a9&token=5009a7a2d05cb714cc53c8408471e3&episode=${episodeNumber}`;
+      return `https://theatre.stravers.live/?token_movie=9ceb642cd6ce5e013fe7a9922430a9&token=5009a7a2d05cb714cc53c8408471e3`;
     }
 
     // 5. Collaps Engine fallback
@@ -187,11 +147,10 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     probeData,
   ]);
 
-  // Handle balancer switch with auto-selection of its first voiceover
+  // Handle balancer switch
   const handleEngineSelect = (engineKey: string) => {
     setSelectedEngine(engineKey);
     setActiveBalancer(engineKey as BalancerId);
-    setShowVoiceoverDropdown(false);
     setIframeKey((k) => k + 1);
   };
 
@@ -205,7 +164,6 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       }
       if (e.key === 'Escape') {
         setIsTheaterMode(false);
-        setShowVoiceoverDropdown(false);
         setShowHotkeys(false);
       }
     };
@@ -306,207 +264,93 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
   return (
     <div className={`space-y-4 ${isTheaterMode ? 'fixed inset-0 z-50 bg-[#07080B] p-4 sm:p-8 flex flex-col justify-between overflow-y-auto' : ''}`}>
-      {/* 1. Integrated Header Bar */}
+      {/* 1. Header Segmented Bar */}
       <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0F1117] border border-white/[0.07] shadow-xl backdrop-blur-md space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Left: Engine Switcher & Voiceover Quick Selector */}
-          <div className="flex flex-wrap items-center gap-2 max-w-full">
-            {/* Engine Tabs */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#090A0E] border border-white/[0.05] overflow-x-auto scrollbar-none">
-              {/* AniLibria Tab */}
-              {probeData?.results?.anilibria?.available && (
-                <button
-                  type="button"
-                  onClick={() => handleEngineSelect('anilibria')}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-                    effectiveEngine === 'anilibria'
-                      ? 'bg-indigo-600 text-white shadow-md font-semibold'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
-                  }`}
-                >
-                  <Zap className="w-3.5 h-3.5 text-cyan-300" />
-                  <span>AniLibria</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-cyan-200 font-mono">
-                    1080p FHD
-                  </span>
-                </button>
-              )}
-
-              {/* Kodik Tab */}
+          {/* Left: Balancer Switcher */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#090A0E] border border-white/[0.05] overflow-x-auto scrollbar-none max-w-full">
+            {/* AniLibria Tab */}
+            {probeData?.results?.anilibria?.available && (
               <button
                 type="button"
-                onClick={() => handleEngineSelect('kodik')}
+                onClick={() => handleEngineSelect('anilibria')}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-                  effectiveEngine === 'kodik'
+                  effectiveEngine === 'anilibria'
                     ? 'bg-indigo-600 text-white shadow-md font-semibold'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
                 }`}
               >
-                <Play className="w-3.5 h-3.5 text-indigo-300 fill-indigo-300/30" />
-                <span>Kodik</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-zinc-300 font-mono">
-                  720p / 1080p
+                <Zap className="w-3.5 h-3.5 text-cyan-300" />
+                <span>AniLibria</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-cyan-200 font-mono">
+                  1080p FHD
                 </span>
               </button>
-
-              {/* Alloha Tab */}
-              <button
-                type="button"
-                onClick={() => handleEngineSelect('alloha')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-                  effectiveEngine === 'alloha'
-                    ? 'bg-indigo-600 text-white shadow-md font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Alloha</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-amber-200 font-mono">
-                  1080p HD
-                </span>
-              </button>
-
-              {/* Collaps Tab */}
-              {probeData?.results?.collaps?.available && (
-                <button
-                  type="button"
-                  onClick={() => handleEngineSelect('collaps')}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-                    effectiveEngine === 'collaps'
-                      ? 'bg-indigo-600 text-white shadow-md font-semibold'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>Collaps</span>
-                </button>
-              )}
-
-              {/* Multi-Dub Tab */}
-              <button
-                type="button"
-                onClick={() => handleEngineSelect('multidub')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-                  effectiveEngine === 'multidub'
-                    ? 'bg-indigo-600 text-white shadow-md font-semibold'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
-                }`}
-              >
-                <Globe className="w-3.5 h-3.5 text-slate-300" />
-                <span>Multi-Dub</span>
-              </button>
-            </div>
-
-            {/* Compact Voiceover Dropdown Selector (Unified Inside Player Bar) */}
-            {currentTranslations.length > 0 && effectiveEngine !== 'multidub' && (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowVoiceoverDropdown((prev) => !prev)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#090A0E] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-zinc-200 transition-all shadow-sm cursor-pointer"
-                >
-                  <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="text-zinc-400 hidden sm:inline">Озвучка:</span>
-                  <span className="max-w-[140px] sm:max-w-[180px] truncate text-white font-semibold">
-                    {activeTranslation?.teamName || 'По умолчанию'}
-                  </span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${showVoiceoverDropdown ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Floating Studio Selection Popover */}
-                {showVoiceoverDropdown && (
-                  <div className="absolute top-full left-0 mt-2 w-72 sm:w-80 p-3 rounded-2xl bg-[#12141C] border border-white/10 shadow-2xl z-50 space-y-2.5 backdrop-blur-xl animate-in fade-in zoom-in-95">
-                    <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2">
-                      <span className="text-xs font-semibold text-white">Выбор студии озвучки</span>
-                      <div className="flex items-center gap-1 bg-[#090A0E] p-0.5 rounded-lg border border-white/[0.05] text-[10px]">
-                        <button
-                          type="button"
-                          onClick={() => setFilterType('all')}
-                          className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                            filterType === 'all' ? 'bg-white/15 text-white font-medium' : 'text-zinc-400'
-                          }`}
-                        >
-                          Все ({currentTranslations.length})
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFilterType('dub')}
-                          className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                            filterType === 'dub' ? 'bg-white/15 text-white font-medium' : 'text-zinc-400'
-                          }`}
-                        >
-                          Дубляж
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFilterType('sub')}
-                          className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                            filterType === 'sub' ? 'bg-white/15 text-white font-medium' : 'text-zinc-400'
-                          }`}
-                        >
-                          Субтитры
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Search Field if many translations */}
-                    {currentTranslations.length > 6 && (
-                      <div className="relative">
-                        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-                        <input
-                          type="text"
-                          placeholder="Поиск студии..."
-                          value={voiceoverSearch}
-                          onChange={(e) => setVoiceoverSearch(e.target.value)}
-                          className="w-full bg-[#090A0E] border border-white/[0.08] rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500/60"
-                        />
-                      </div>
-                    )}
-
-                    {/* Studio Items List */}
-                    <div className="max-h-56 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
-                      {filteredTranslations.length === 0 ? (
-                        <p className="text-center text-xs text-zinc-500 py-3">Студии не найдены</p>
-                      ) : (
-                        filteredTranslations.map((tr) => {
-                          const isSelected = tr.id === activeTranslation?.id;
-                          return (
-                            <button
-                              key={tr.id}
-                              type="button"
-                              onClick={() => {
-                                setActiveTranslation(tr);
-                                setShowVoiceoverDropdown(false);
-                                setIframeKey((k) => k + 1);
-                              }}
-                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-indigo-600/20 text-white font-semibold border border-indigo-500/40'
-                                  : 'text-zinc-300 hover:bg-white/[0.06] hover:text-white'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                {isSelected ? (
-                                  <Check className="w-3.5 h-3.5 text-indigo-400" />
-                                ) : (
-                                  <div className="w-3.5 h-3.5 rounded-full border border-zinc-700" />
-                                )}
-                                <span className="truncate max-w-[180px]">{tr.teamName}</span>
-                              </div>
-                              {tr.type === 'sub' && (
-                                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300">
-                                  SUB
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
             )}
+
+            {/* Kodik Tab */}
+            <button
+              type="button"
+              onClick={() => handleEngineSelect('kodik')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                effectiveEngine === 'kodik'
+                  ? 'bg-indigo-600 text-white shadow-md font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+              }`}
+            >
+              <Play className="w-3.5 h-3.5 text-indigo-300 fill-indigo-300/30" />
+              <span>Kodik</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-zinc-300 font-mono">
+                720p / 1080p
+              </span>
+            </button>
+
+            {/* Alloha Tab */}
+            <button
+              type="button"
+              onClick={() => handleEngineSelect('alloha')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                effectiveEngine === 'alloha'
+                  ? 'bg-indigo-600 text-white shadow-md font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Alloha</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-amber-200 font-mono">
+                1080p HD
+              </span>
+            </button>
+
+            {/* Collaps Tab */}
+            {probeData?.results?.collaps?.available && (
+              <button
+                type="button"
+                onClick={() => handleEngineSelect('collaps')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                  effectiveEngine === 'collaps'
+                    ? 'bg-indigo-600 text-white shadow-md font-semibold'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5 text-emerald-300" />
+                <span>Collaps</span>
+              </button>
+            )}
+
+            {/* Multi-Dub Tab */}
+            <button
+              type="button"
+              onClick={() => handleEngineSelect('multidub')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                effectiveEngine === 'multidub'
+                  ? 'bg-indigo-600 text-white shadow-md font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5 text-slate-300" />
+              <span>Multi-Dub</span>
+            </button>
           </div>
 
           {/* Right: Quick Action Controls */}
@@ -615,24 +459,19 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         )}
       </div>
 
-      {/* 3. Bottom Info & Shortcuts Helper */}
+      {/* 3. Bottom Info Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#0F1117] border border-white/[0.05] text-xs">
         <div className="flex items-center gap-2.5">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-zinc-300 font-medium">
             Плеер: <strong className="text-white">{BALANCER_CONFIG[effectiveEngine]?.label || 'Full HD Stream'}</strong> • Серия #{episodeNumber}
           </span>
-          {activeTranslation && (
-            <span className="hidden md:inline-block text-zinc-400 font-medium">
-              • Озвучка: <span className="text-indigo-300">{activeTranslation.teamName}</span>
-            </span>
-          )}
         </div>
 
         <div className="flex items-center gap-4 text-zinc-400 text-[11px]">
           <div className="flex items-center gap-1.5 text-zinc-400">
             <Info className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Озвучку и сезон можно менять как в меню выше, так и внутри самого плеера</span>
+            <span>Выбор сезонов, серий и студий озвучки доступен в левом верхнем углу плеера</span>
           </div>
 
           <div className="hidden lg:flex items-center gap-2 text-zinc-500 font-mono text-[10px]">
