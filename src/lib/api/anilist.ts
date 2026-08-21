@@ -1,20 +1,34 @@
 const ANILIST_ENDPOINT = 'https://graphql.anilist.co';
 
 export const POPULAR_ANIME_QUERY = `
-query GetPopularAnime($page: Int, $perPage: Int, $season: MediaSeason, $seasonYear: Int, $search: String, $genre: String) {
+query GetPopularAnime(
+  $page: Int,
+  $perPage: Int,
+  $season: MediaSeason,
+  $seasonYear: Int,
+  $search: String,
+  $genre: String,
+  $status: MediaStatus,
+  $format: MediaFormat,
+  $sort: [MediaSort]
+) {
   Page(page: $page, perPage: $perPage) {
     pageInfo {
       total
       currentPage
+      lastPage
       hasNextPage
+      perPage
     }
     media(
       type: ANIME,
-      sort: [TRENDING_DESC, POPULARITY_DESC],
+      sort: $sort,
       season: $season,
       seasonYear: $seasonYear,
       search: $search,
       genre: $genre,
+      status: $status,
+      format: $format,
       isAdult: false
     ) {
       id

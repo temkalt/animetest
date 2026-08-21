@@ -30,28 +30,52 @@ export class AnimeResolver {
     perPage?: number;
     genre?: string;
     status?: string;
+    format?: string;
     season?: string;
     seasonYear?: number;
     search?: string;
-  }): Promise<UnifiedAnime[]> {
+    sort?: string[];
+  }): Promise<{
+    items: UnifiedAnime[];
+    pageInfo: {
+      total: number;
+      currentPage: number;
+      lastPage: number;
+      hasNextPage: boolean;
+    };
+  }> {
     try {
       const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
         page: params.page || 1,
-        perPage: params.perPage || 24,
+        perPage: params.perPage || 36,
         genre: params.genre,
+        status: params.status,
+        format: params.format,
         season: params.season,
         seasonYear: params.seasonYear,
         search: params.search,
+        sort: params.sort || ['POPULARITY_DESC', 'TRENDING_DESC'],
       });
 
       const list = data?.Page?.media || [];
+      const pageInfo = data?.Page?.pageInfo || {
+        total: list.length,
+        currentPage: params.page || 1,
+        lastPage: 1,
+        hasNextPage: false,
+      };
+
       const malIds = list.map((m: any) => m.idMal).filter(Boolean);
       const ruMap = await fetchBatchShikimoriTitles(malIds);
 
-      return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+      const items = list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+      return { items, pageInfo };
     } catch (err) {
       console.error('[AnimeResolver] searchCatalog error:', err);
-      return [];
+      return {
+        items: [],
+        pageInfo: { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false },
+      };
     }
   }
 
