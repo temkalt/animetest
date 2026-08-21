@@ -8,7 +8,7 @@ export interface StreamResolutionResult {
 
 export class StreamAggregator {
   /**
-   * Resolves all voiceovers, codecs, and stream sources for an anime and its episodes
+   * Resolves all player engines, voiceovers, and stream sources for an anime and its episodes
    */
   static async resolveStreams(params: {
     animeId: number;
@@ -33,17 +33,16 @@ export class StreamAggregator {
       voiceoverTeamsSet.add('AniLibria (FHD 1080p HLS)');
     }
 
-    // Add verified multi-studio voiceovers
-    voiceoverTeamsSet.add('Studio Band (Дубляж 1080p)');
-    voiceoverTeamsSet.add('SHIZA Project (1080p)');
-    voiceoverTeamsSet.add('AniDUB (Многоголосый)');
-    voiceoverTeamsSet.add('AnimeVost (1080p)');
-    voiceoverTeamsSet.add('Dream Cast (Дубляж)');
-    voiceoverTeamsSet.add('Persona 99');
-    voiceoverTeamsSet.add('Оригинал + Русские субтитры');
-    voiceoverTeamsSet.add('English Dub (1080p)');
+    voiceoverTeamsSet.add('Kodik (Мульти-озвучка)');
+    voiceoverTeamsSet.add('AllOHA');
+    voiceoverTeamsSet.add('Collaps');
+    voiceoverTeamsSet.add('Turbo');
+    voiceoverTeamsSet.add('VeoVeo');
+    voiceoverTeamsSet.add('Vibix');
+    voiceoverTeamsSet.add('Sibnet');
+    voiceoverTeamsSet.add('Lumex');
 
-    // 2. Generate episode list with multi-voiceover source tree
+    // 2. Generate episode list with complete multi-player tree
     const targetEpisodesCount = Math.max(
       totalEpisodes || 1,
       anilibriaRelease?.episodes?.length || 0,
@@ -51,19 +50,20 @@ export class StreamAggregator {
     );
 
     const episodes: EpisodeItem[] = [];
+    const shikiId = shikimoriId || malId || animeId;
 
     for (let epNum = 1; epNum <= targetEpisodesCount; epNum++) {
       const sources: VoiceoverTrack[] = [];
       const anilibriaEp = anilibriaRelease?.episodes?.find((e) => e.ordinal === epNum);
 
-      // A. AniLibria Direct HLS Source (Clean direct URL from cache.libria.fun)
+      // 1. ⚡ KuroNami Direct HLS Source (AniLibria 1080p)
       if (hasAniLibria && anilibriaEp) {
         const directHls = anilibriaEp.hls_1080 || anilibriaEp.hls_720 || anilibriaEp.hls_480;
         if (directHls) {
           sources.push({
             id: `anilibria-${anilibriaEp.id}`,
             provider: 'anilibria',
-            teamName: 'AniLibria (FHD 1080p HLS)',
+            teamName: 'KuroNami Direct (1080p HLS)',
             type: 'dub',
             language: 'ru',
             qualities: ['1080p', '720p', '480p'],
@@ -73,17 +73,12 @@ export class StreamAggregator {
         }
       }
 
-      // B. Multi-Voiceover Embedded Providers
-      const shikiId = shikimoriId || malId || animeId;
+      // 2. 🎬 Kodik Player
       const kodikEmbed = `https://kodik.online/find-player?shikimoriID=${shikiId}&episode=${epNum}`;
-      const vidsrcEmbed = `https://vidsrc.me/embed/anime?id=${shikiId}&ep=${epNum}`;
-      const autoEmbed = `https://autoembed.co/anime/mal/${shikiId}/${epNum}`;
-
-      // Studio Band
       sources.push({
-        id: `studioband-${animeId}-${epNum}`,
+        id: `kodik-${animeId}-${epNum}`,
         provider: 'kodik',
-        teamName: 'Studio Band (Дубляж 1080p)',
+        teamName: 'Kodik (Мульти-озвучка)',
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
@@ -92,94 +87,101 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // SHIZA Project
+      // 3. 🌌 AllOHA Player
+      const allohaEmbed = `https://alloha.link/embed/anime?shikimori_id=${shikiId}&episode=${epNum}`;
       sources.push({
-        id: `shiza-${animeId}-${epNum}`,
-        provider: 'kodik',
-        teamName: 'SHIZA Project (1080p)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: kodikEmbed,
-        iframeUrl: kodikEmbed,
-        isDirectHls: false,
-      });
-
-      // AniDUB
-      sources.push({
-        id: `anidub-${animeId}-${epNum}`,
-        provider: 'kodik',
-        teamName: 'AniDUB (Многоголосый)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: kodikEmbed,
-        iframeUrl: kodikEmbed,
-        isDirectHls: false,
-      });
-
-      // AnimeVost
-      sources.push({
-        id: `animevost-${animeId}-${epNum}`,
-        provider: 'kodik',
-        teamName: 'AnimeVost (1080p)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: kodikEmbed,
-        iframeUrl: kodikEmbed,
-        isDirectHls: false,
-      });
-
-      // Dream Cast
-      sources.push({
-        id: `dreamcast-${animeId}-${epNum}`,
-        provider: 'kodik',
-        teamName: 'Dream Cast (Дубляж)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: kodikEmbed,
-        iframeUrl: kodikEmbed,
-        isDirectHls: false,
-      });
-
-      // Persona 99
-      sources.push({
-        id: `persona99-${animeId}-${epNum}`,
-        provider: 'kodik',
-        teamName: 'Persona 99',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: kodikEmbed,
-        iframeUrl: kodikEmbed,
-        isDirectHls: false,
-      });
-
-      // Subtitles (Original Japanese + Russian Subs)
-      sources.push({
-        id: `subs-${animeId}-${epNum}`,
+        id: `alloha-${animeId}-${epNum}`,
         provider: 'alloha',
-        teamName: 'Оригинал + Русские субтитры',
-        type: 'sub',
-        language: 'ja',
+        teamName: 'AllOHA (HD)',
+        type: 'dub',
+        language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: vidsrcEmbed,
-        iframeUrl: vidsrcEmbed,
+        streamUrl: allohaEmbed,
+        iframeUrl: allohaEmbed,
         isDirectHls: false,
       });
 
-      // English Dub
+      // 4. ⚡ Collaps Player
+      const collapsEmbed = `https://collaps.org/embed/anime?shikimori_id=${shikiId}&episode=${epNum}`;
       sources.push({
-        id: `eng-${animeId}-${epNum}`,
-        provider: 'consumet',
-        teamName: 'English Dub (1080p)',
+        id: `collaps-${animeId}-${epNum}`,
+        provider: 'collaps',
+        teamName: 'Collaps (HD)',
         type: 'dub',
-        language: 'en',
+        language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: autoEmbed,
-        iframeUrl: autoEmbed,
+        streamUrl: collapsEmbed,
+        iframeUrl: collapsEmbed,
+        isDirectHls: false,
+      });
+
+      // 5. 🚀 Turbo Player
+      const turboEmbed = `https://turbovid.top/embed/anime?shikimori=${shikiId}&episode=${epNum}`;
+      sources.push({
+        id: `turbo-${animeId}-${epNum}`,
+        provider: 'turbo',
+        teamName: 'Turbo CDN (1080p)',
+        type: 'dub',
+        language: 'ru',
+        qualities: ['1080p', '720p'],
+        streamUrl: turboEmbed,
+        iframeUrl: turboEmbed,
+        isDirectHls: false,
+      });
+
+      // 6. 🎭 VeoVeo Player
+      const veoveoEmbed = `https://veoveo.tv/embed?shikimori=${shikiId}&episode=${epNum}`;
+      sources.push({
+        id: `veoveo-${animeId}-${epNum}`,
+        provider: 'veoveo',
+        teamName: 'VeoVeo (HD)',
+        type: 'dub',
+        language: 'ru',
+        qualities: ['1080p', '720p'],
+        streamUrl: veoveoEmbed,
+        iframeUrl: veoveoEmbed,
+        isDirectHls: false,
+      });
+
+      // 7. 💎 Vibix Player
+      const vibixEmbed = `https://vibix.org/embed?shikimori_id=${shikiId}&episode=${epNum}`;
+      sources.push({
+        id: `vibix-${animeId}-${epNum}`,
+        provider: 'vibix',
+        teamName: 'Vibix (HD)',
+        type: 'dub',
+        language: 'ru',
+        qualities: ['1080p', '720p'],
+        streamUrl: vibixEmbed,
+        iframeUrl: vibixEmbed,
+        isDirectHls: false,
+      });
+
+      // 8. 📼 Sibnet Player
+      const sibnetEmbed = `https://video.sibnet.ru/shell.php?videoid=${shikiId}`;
+      sources.push({
+        id: `sibnet-${animeId}-${epNum}`,
+        provider: 'sibnet',
+        teamName: 'Sibnet (Сибнет)',
+        type: 'dub',
+        language: 'ru',
+        qualities: ['720p', '480p'],
+        streamUrl: sibnetEmbed,
+        iframeUrl: sibnetEmbed,
+        isDirectHls: false,
+      });
+
+      // 9. ✨ Lumex Player
+      const lumexEmbed = `https://lumex.club/embed?shikimori=${shikiId}&episode=${epNum}`;
+      sources.push({
+        id: `lumex-${animeId}-${epNum}`,
+        provider: 'lumex',
+        teamName: 'Lumex (Full HD)',
+        type: 'dub',
+        language: 'ru',
+        qualities: ['1080p', '720p'],
+        streamUrl: lumexEmbed,
+        iframeUrl: lumexEmbed,
         isDirectHls: false,
       });
 
@@ -213,7 +215,6 @@ export class StreamAggregator {
     english?: string | null;
     synonyms: string[];
   }): Promise<AniLibriaReleaseItem | null> {
-    // 1. Try clean slug alias lookup first
     const cleanSlug = titles.romaji.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     try {
       const aliasRes = await fetch(`https://anilibria.top/api/v1/anime/releases/${cleanSlug}`, {
@@ -229,7 +230,6 @@ export class StreamAggregator {
       // Continue to search
     }
 
-    // 2. Search AniLibria catalog
     const candidates = [
       titles.russian,
       titles.romaji,

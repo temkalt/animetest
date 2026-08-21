@@ -28,7 +28,7 @@ export interface EpisodeTimecodes {
 
 export interface VoiceoverTrack {
   id: string;
-  provider: 'anilibria' | 'kodik' | 'alloha' | 'consumet';
+  provider: 'anilibria' | 'kodik' | 'alloha' | 'collaps' | 'turbo' | 'veoveo' | 'vibix' | 'sibnet' | 'lumex' | 'consumet';
   teamName: string;
   type: 'dub' | 'sub' | 'raw';
   language: 'ru' | 'ja' | 'en';
