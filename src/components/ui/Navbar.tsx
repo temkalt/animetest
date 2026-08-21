@@ -4,16 +4,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Search, Film, Calendar, Bookmark, User, Play, X, Sparkles, Flame } from 'lucide-react';
+import { Search, Film, Calendar, Bookmark, User, Play, X, Sparkles, Flame, LogOut, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { authStore, UserProfile } from '@/lib/auth/user-store';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 export const Navbar: React.FC = () => {
   const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return authStore.subscribe((u) => setCurrentUser(u));
+  }, []);
 
   // Keyboard shortcut Ctrl+K / Cmd+K
   useEffect(() => {
@@ -60,13 +68,15 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#07080B]/80 border-b border-white/5 transition-all">
+      <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-[#07080B]/80 backdrop-blur-xl transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Logo & Main Nav */}
+          {/* Logo & Navigation */}
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 via-cyan-500 to-rose-500 flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.5)] group-hover:scale-105 transition-transform">
-                <Play className="w-4 h-4 fill-white text-white translate-x-0.5" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-violet-600 to-cyan-400 p-0.5 shadow-[0_0_20px_rgba(139,92,246,0.4)] group-hover:scale-105 transition-transform">
+                <div className="w-full h-full bg-[#07080B] rounded-[10px] flex items-center justify-center">
+                  <Play className="w-4 h-4 text-violet-400 fill-violet-400 ml-0.5" />
+                </div>
               </div>
               <div className="flex flex-col">
                 <span className="text-lg font-bold tracking-wider font-display bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-violet-400">
@@ -107,17 +117,50 @@ export const Navbar: React.FC = () => {
               </kbd>
             </button>
 
-            <Link
-              href="/profile"
-              className="flex items-center gap-2 p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-            >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold font-mono">
-                KN
+            {currentUser ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 p-1 pl-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors group"
+                >
+                  <span className="text-xs font-bold font-mono text-white hidden sm:inline">
+                    {currentUser.name}
+                  </span>
+                  <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-violet-500/50">
+                    <Image
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </Link>
+                <button
+                  onClick={() => authStore.logout()}
+                  title="Выйти"
+                  className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
-            </Link>
+            ) : (
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-display font-semibold text-xs shadow-[0_0_15px_rgba(139,92,246,0.4)] transition-all"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Войти / Регистрация</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
 
       {/* Global Quick Search Modal */}
       <AnimatePresence>
