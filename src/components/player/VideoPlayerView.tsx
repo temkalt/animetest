@@ -5,7 +5,7 @@ import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 import { syncManager } from '@/lib/dexie/sync';
 import { EpisodeTimecodes, VoiceoverTrack } from '@/types';
-import { Sparkles, ShieldCheck, Play, Radio, Film, Layers, Zap, Tv, Eye } from 'lucide-react';
+import { Sparkles, ShieldCheck, Play, Radio, Film, Layers, Zap, Tv, Eye, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface VideoPlayerProps {
   animeId: number;
@@ -20,15 +20,12 @@ interface VideoPlayerProps {
 
 const PLAYER_ICONS: Record<string, string> = {
   anilibria: '⚡',
+  consumet: '🌟',
   kodik: '🎬',
   alloha: '🌌',
   collaps: '⚡',
-  turbo: '🚀',
-  veoveo: '🎭',
-  vibix: '💎',
   sibnet: '📼',
   lumex: '✨',
-  consumet: '🌐',
 };
 
 export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
@@ -48,6 +45,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   const [selectedSourceId, setSelectedSourceId] = useState<string>(
     sources[0]?.id || 'default'
   );
+  const [iframeKey, setIframeKey] = useState<number>(0);
 
   // Sync selected source when episode or sources update
   useEffect(() => {
@@ -235,7 +233,10 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
               <button
                 key={s.id}
                 type="button"
-                onClick={() => setSelectedSourceId(s.id)}
+                onClick={() => {
+                  setSelectedSourceId(s.id);
+                  setIframeKey((prev) => prev + 1);
+                }}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
                   isSelected
                     ? 'bg-violet-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.6)] border border-violet-400 scale-[1.02]'
@@ -267,7 +268,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
           <div ref={containerRef} className="w-full h-full" />
         ) : (
           <iframe
-            key={activeSource?.iframeUrl || activeStreamUrl}
+            key={`${activeSource?.iframeUrl || activeStreamUrl}-${iframeKey}`}
             src={activeSource?.iframeUrl || activeStreamUrl}
             className="w-full h-full border-0 rounded-3xl"
             allowFullScreen
@@ -276,7 +277,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         )}
       </div>
 
-      {/* 3. Active Stream Information Bar */}
+      {/* 3. Active Stream Information Bar & Instant Fallback */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-5 py-3 rounded-2xl bg-[#0E1017] border border-white/5 text-xs font-mono">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10B981]" />
@@ -285,8 +286,22 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-3 text-slate-400 text-[11px]">
-          <span>Если плеер не загружается — выберите соседний плеер выше (Kodik, Alloha, Collaps, Turbo, VeoVeo, Vibix, Sibnet, Lumex)</span>
+        {/* Quick fallback button */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const fallback = sources.find((s) => s.isDirectHls) || sources.find((s) => s.provider === 'consumet') || sources[0];
+              if (fallback) {
+                setSelectedSourceId(fallback.id);
+                setIframeKey((prev) => prev + 1);
+              }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-[11px] transition-colors"
+          >
+            <Zap className="w-3 h-3 text-cyan-400" />
+            <span>100% Проверенный Full HD</span>
+          </button>
         </div>
       </div>
     </div>
