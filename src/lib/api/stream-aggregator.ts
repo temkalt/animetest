@@ -33,12 +33,11 @@ export class StreamAggregator {
       voiceoverTeamsSet.add('KuroNami Direct (1080p HLS)');
     }
 
-    voiceoverTeamsSet.add('KuroNami Multi-Dub (FHD 1080p)');
+    voiceoverTeamsSet.add('KuroNami Multi-Dub (Full HD)');
     voiceoverTeamsSet.add('Kodik (Мульти-озвучка)');
-    voiceoverTeamsSet.add('AllOHA');
-    voiceoverTeamsSet.add('Collaps');
-    voiceoverTeamsSet.add('Sibnet');
-    voiceoverTeamsSet.add('Lumex');
+    voiceoverTeamsSet.add('Collaps (HD)');
+    voiceoverTeamsSet.add('AllOHA (HD)');
+    voiceoverTeamsSet.add('AutoEmbed (Multi-Audio)');
 
     // 2. Generate episode list with complete multi-player tree
     const targetEpisodesCount = Math.max(
@@ -54,12 +53,12 @@ export class StreamAggregator {
       const sources: VoiceoverTrack[] = [];
       const anilibriaEp = anilibriaRelease?.episodes?.find((e) => e.ordinal === epNum);
 
-      // 1. ⚡ KuroNami Direct HLS Source (AniLibria 1080p - 100% active CDN)
+      // 1. ⚡ KuroNami Direct HLS Source (AniLibria 1080p - 100% active HLS stream)
       if (hasAniLibria && anilibriaEp) {
         const directHls = anilibriaEp.hls_1080 || anilibriaEp.hls_720 || anilibriaEp.hls_480;
         if (directHls) {
           sources.push({
-            id: `anilibria-${anilibriaEp.id}`,
+            id: `anilibria-${anilibriaEp.id || epNum}`,
             provider: 'anilibria',
             teamName: 'KuroNami Direct (1080p HLS)',
             type: 'dub',
@@ -71,22 +70,22 @@ export class StreamAggregator {
         }
       }
 
-      // 2. 🌟 KuroNami Multi-Dub / International FHD (100% verified active 200 OK stream)
-      const vidsrcEmbed = `https://vidsrc.me/embed/anime?id=${shikiId}&ep=${epNum}`;
+      // 2. 🌟 KuroNami Multi-Dub / International FHD (vidsrc.to)
+      const multiDubEmbed = `https://vidsrc.to/embed/anime/${shikiId}/${epNum}`;
       sources.push({
         id: `vidsrc-${animeId}-${epNum}`,
         provider: 'consumet',
-        teamName: 'KuroNami Multi-Dub (FHD 1080p)',
+        teamName: 'KuroNami Multi-Dub (Full HD)',
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: vidsrcEmbed,
-        iframeUrl: vidsrcEmbed,
+        streamUrl: multiDubEmbed,
+        iframeUrl: multiDubEmbed,
         isDirectHls: false,
       });
 
-      // 3. 🎬 Kodik Player (Active mirror)
-      const kodikEmbed = `https://aniqit.com/find-player?shikimoriID=${shikiId}&episode=${epNum}`;
+      // 3. 🌌 Kodik Player (Direct mirror)
+      const kodikEmbed = `https://kodik.info/find-player?shikimoriID=${shikiId}&episode=${epNum}`;
       sources.push({
         id: `kodik-${animeId}-${epNum}`,
         provider: 'kodik',
@@ -99,22 +98,8 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // 4. 🌌 AllOHA Player (Active mirror)
-      const allohaEmbed = `https://alloha.net/embed/anime?shikimori_id=${shikiId}&episode=${epNum}`;
-      sources.push({
-        id: `alloha-${animeId}-${epNum}`,
-        provider: 'alloha',
-        teamName: 'AllOHA (HD)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: allohaEmbed,
-        iframeUrl: allohaEmbed,
-        isDirectHls: false,
-      });
-
-      // 5. ⚡ Collaps Player (Active mirror)
-      const collapsEmbed = `https://collapse.to/embed/anime?id=${shikiId}&episode=${epNum}`;
+      // 4. ⚡ Collaps Player (HD)
+      const collapsEmbed = `https://api.bhcesdf.com/embed/movie/${shikiId}`;
       sources.push({
         id: `collaps-${animeId}-${epNum}`,
         provider: 'collaps',
@@ -127,31 +112,31 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // 6. 📼 Sibnet Player (Active mirror)
-      const sibnetEmbed = `https://video.sibnet.ru/shell.php?videoid=${shikiId}`;
+      // 5. ✨ AllOHA Player (HD)
+      const allohaEmbed = `https://api.alloha.tv/?shikimori=${shikiId}`;
       sources.push({
-        id: `sibnet-${animeId}-${epNum}`,
-        provider: 'sibnet',
-        teamName: 'Sibnet (Сибнет)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['720p', '480p'],
-        streamUrl: sibnetEmbed,
-        iframeUrl: sibnetEmbed,
-        isDirectHls: false,
-      });
-
-      // 7. ✨ Lumex Player (Active mirror)
-      const lumexEmbed = `https://lumex.to/embed?shikimori=${shikiId}&episode=${epNum}`;
-      sources.push({
-        id: `lumex-${animeId}-${epNum}`,
-        provider: 'lumex',
-        teamName: 'Lumex (Full HD)',
+        id: `alloha-${animeId}-${epNum}`,
+        provider: 'alloha',
+        teamName: 'AllOHA (HD)',
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: lumexEmbed,
-        iframeUrl: lumexEmbed,
+        streamUrl: allohaEmbed,
+        iframeUrl: allohaEmbed,
+        isDirectHls: false,
+      });
+
+      // 6. 🔮 AutoEmbed Player (Multi-Audio FHD)
+      const autoEmbedUrl = `https://player.autoembed.cc/embed/anime/${shikiId}/${epNum}`;
+      sources.push({
+        id: `autoembed-${animeId}-${epNum}`,
+        provider: 'consumet',
+        teamName: 'AutoEmbed (Multi-Audio)',
+        type: 'dub',
+        language: 'ru',
+        qualities: ['1080p', '720p'],
+        streamUrl: autoEmbedUrl,
+        iframeUrl: autoEmbedUrl,
         isDirectHls: false,
       });
 
@@ -179,49 +164,82 @@ export class StreamAggregator {
     };
   }
 
+  private static cleanQuery(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[\(\)\[\]\{\}\:\;\,\.\!\?\-\_\'\"\`]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   private static async findAniLibriaMatch(titles: {
     russian?: string | null;
     romaji: string;
     english?: string | null;
     synonyms: string[];
   }): Promise<AniLibriaReleaseItem | null> {
-    const cleanSlug = titles.romaji.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    try {
-      const aliasRes = await fetch(`https://anilibria.top/api/v1/anime/releases/${cleanSlug}`, {
-        next: { revalidate: 3600 },
-      });
-      if (aliasRes.ok) {
-        const release: AniLibriaReleaseItem = await aliasRes.json();
-        if (release && release.episodes && release.episodes.length > 0) {
-          return release;
-        }
+    const candidates: string[] = [];
+
+    if (titles.russian) {
+      candidates.push(titles.russian);
+      const cleanRu = titles.russian.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$)/g, '').trim();
+      if (cleanRu && cleanRu !== titles.russian) {
+        candidates.push(cleanRu);
       }
-    } catch {
-      // Continue to search
     }
 
-    const candidates = [
-      titles.russian,
-      titles.romaji,
-      titles.english,
-      ...titles.synonyms,
-    ].filter(Boolean) as string[];
+    if (titles.english) {
+      candidates.push(titles.english);
+      const cleanEn = titles.english.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$)/g, '').trim();
+      if (cleanEn && cleanEn !== titles.english) {
+        candidates.push(cleanEn);
+      }
+    }
 
-    for (const term of candidates) {
-      if (term.length < 3) continue;
+    if (titles.romaji) {
+      candidates.push(titles.romaji);
+      const cleanRomaji = titles.romaji.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$)/g, '').trim();
+      if (cleanRomaji && cleanRomaji !== titles.romaji) {
+        candidates.push(cleanRomaji);
+      }
+    }
+
+    titles.synonyms.forEach((s) => {
+      if (s && s.length > 2) candidates.push(s);
+    });
+
+    const triedQueries = new Set<string>();
+
+    for (const rawTerm of candidates) {
+      const term = rawTerm.trim();
+      if (!term || term.length < 3 || triedQueries.has(term.toLowerCase())) continue;
+      triedQueries.add(term.toLowerCase());
+
       const releases = await searchAniLibriaReleases(term);
       if (releases && releases.length > 0) {
-        for (const rel of releases) {
-          const mainRu = rel.name?.main?.toLowerCase() || '';
-          const eng = rel.name?.english?.toLowerCase() || '';
-          const termLower = term.toLowerCase();
+        const cleanTerm = this.cleanQuery(term);
+        const termWords = cleanTerm.split(' ').filter((w) => w.length > 2);
 
-          if (
-            mainRu === termLower ||
-            eng === termLower ||
-            (mainRu.length > 4 && termLower.includes(mainRu)) ||
-            (eng.length > 4 && termLower.includes(eng))
-          ) {
+        for (const rel of releases) {
+          const mainRu = this.cleanQuery(rel.name?.main || '');
+          const eng = this.cleanQuery(rel.name?.english || '');
+          const alt = this.cleanQuery(rel.name?.alternative || '');
+
+          // Check direct substring matches
+          const isDirectMatch =
+            mainRu === cleanTerm ||
+            eng === cleanTerm ||
+            alt === cleanTerm ||
+            (mainRu.length > 3 && (mainRu.includes(cleanTerm) || cleanTerm.includes(mainRu))) ||
+            (eng.length > 3 && (eng.includes(cleanTerm) || cleanTerm.includes(eng))) ||
+            (alt.length > 3 && (alt.includes(cleanTerm) || cleanTerm.includes(alt)));
+
+          // Check word overlap
+          const matchesWords =
+            termWords.length > 0 &&
+            termWords.every((w) => mainRu.includes(w) || eng.includes(w) || alt.includes(w));
+
+          if (isDirectMatch || matchesWords) {
             const full = await getAniLibriaReleaseDetails(rel.id);
             if (full && full.episodes && full.episodes.length > 0) {
               return full;

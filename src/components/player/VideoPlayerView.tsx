@@ -5,14 +5,20 @@ import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 import { syncManager } from '@/lib/dexie/sync';
 import { EpisodeTimecodes, VoiceoverTrack } from '@/types';
-import { Sparkles, ShieldCheck, Play, Radio, Film, Layers, Zap, Tv, Eye, AlertCircle, RefreshCw } from 'lucide-react';
+import { KinoboxPlayer } from './KinoboxPlayer';
+import { Sparkles, ShieldCheck, Play, Radio, Film, Layers, Zap, Tv, Eye, AlertCircle, RefreshCw, Volume2 } from 'lucide-react';
 
 interface VideoPlayerProps {
   animeId: number;
+  shikimoriId?: number | null;
+  malId?: number | null;
   episodeNumber: number;
   url: string;
   poster?: string;
   title: string;
+  russianTitle?: string | null;
+  englishTitle?: string | null;
+  romajiTitle?: string;
   timecodes?: EpisodeTimecodes;
   sources?: VoiceoverTrack[];
   onEnded?: () => void;
@@ -20,20 +26,26 @@ interface VideoPlayerProps {
 
 const PLAYER_ICONS: Record<string, string> = {
   anilibria: '⚡',
+  kinobox: '🎬',
+  kodik: '🌌',
   consumet: '🌟',
-  kodik: '🎬',
-  alloha: '🌌',
+  alloha: '✨',
   collaps: '⚡',
   sibnet: '📼',
-  lumex: '✨',
+  lumex: '🔮',
 };
 
 export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   animeId,
+  shikimoriId,
+  malId,
   episodeNumber,
   url,
   poster,
   title,
+  russianTitle,
+  englishTitle,
+  romajiTitle,
   timecodes,
   sources = [],
   onEnded,
@@ -42,9 +54,15 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   const artInstanceRef = useRef<Artplayer | null>(null);
   const glowRef = useRef<HTMLDivElement>(null);
 
-  const [selectedSourceId, setSelectedSourceId] = useState<string>(
-    sources[0]?.id || 'default'
-  );
+  // Pick initial source: prefer HLS if present, else Kinobox, else first available
+  const [selectedSourceId, setSelectedSourceId] = useState<string>(() => {
+    const hlsSource = sources.find((s) => s.isDirectHls);
+    if (hlsSource) return hlsSource.id;
+    const kinoboxSource = sources.find((s) => s.isKinobox);
+    if (kinoboxSource) return kinoboxSource.id;
+    return sources[0]?.id || 'default';
+  });
+
   const [iframeKey, setIframeKey] = useState<number>(0);
 
   // Sync selected source when episode or sources update
@@ -52,17 +70,21 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     if (sources.length > 0) {
       const match = sources.find((s) => s.id === selectedSourceId);
       if (!match) {
-        setSelectedSourceId(sources[0].id);
+        const hls = sources.find((s) => s.isDirectHls);
+        const kino = sources.find((s) => s.isKinobox);
+        setSelectedSourceId(hls?.id || kino?.id || sources[0].id);
       }
     }
   }, [sources, episodeNumber]);
 
   const activeSource = sources.find((s) => s.id === selectedSourceId) || sources[0];
   const isDirectHls = activeSource?.isDirectHls;
+  const isKinobox = activeSource?.isKinobox || activeSource?.provider === 'kinobox';
   const activeStreamUrl = activeSource?.streamUrl || url;
 
+  // Initialize ArtPlayer for direct HLS (AniLibria)
   useEffect(() => {
-    if (!isDirectHls || !containerRef.current || !activeStreamUrl) return;
+    if (!isDirectHls || isKinobox || !containerRef.current || !activeStreamUrl) return;
 
     const art = new Artplayer({
       container: containerRef.current,
@@ -206,7 +228,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         art.destroy(false);
       }
     };
-  }, [activeStreamUrl, isDirectHls, animeId, episodeNumber]);
+  }, [activeStreamUrl, isDirectHls, isKinobox, animeId, episodeNumber]);
 
   return (
     <div className="space-y-4">
@@ -217,9 +239,19 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             <Layers className="w-3.5 h-3.5 text-violet-400" />
             <span>Выберите видеоплеер ({sources.length}):</span>
           </span>
-          <div className="flex items-center gap-1 text-emerald-400 text-[11px] font-mono">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Ad-Shield ON</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-emerald-400 text-[11px] font-mono">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Ad-Shield ON</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIframeKey((prev) => prev + 1)}
+              title="Перезагрузить плеер"
+              className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -250,6 +282,11 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
                     FHD 1080p
                   </span>
                 )}
+                {s.isKinobox && (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-violet-400/20 text-violet-300 font-sans font-bold">
+                    Kodik / Alloha
+                  </span>
+                )}
               </button>
             );
           })}
@@ -257,7 +294,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       </div>
 
       {/* 2. Main Video Player Canvas */}
-      <div className="relative w-full aspect-video rounded-3xl overflow-hidden bg-[#07080B] border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.95)] group">
+      <div className="relative w-full aspect-video min-h-[380px] rounded-3xl overflow-hidden bg-[#07080B] border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.95)] group">
         {/* Ambient Glow */}
         <div
           ref={glowRef}
@@ -266,13 +303,27 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
         {isDirectHls ? (
           <div ref={containerRef} className="w-full h-full" />
+        ) : isKinobox ? (
+          <KinoboxPlayer
+            key={`kinobox-${animeId}-${episodeNumber}-${iframeKey}`}
+            animeId={animeId}
+            shikimoriId={shikimoriId}
+            malId={malId}
+            episodeNumber={episodeNumber}
+            title={title}
+            russianTitle={russianTitle}
+            englishTitle={englishTitle}
+            romajiTitle={romajiTitle}
+            onEnded={onEnded}
+          />
         ) : (
           <iframe
             key={`${activeSource?.iframeUrl || activeStreamUrl}-${iframeKey}`}
             src={activeSource?.iframeUrl || activeStreamUrl}
             className="w-full h-full border-0 rounded-3xl"
+            referrerPolicy="no-referrer"
             allowFullScreen
-            allow="autoplay; fullscreen; picture-in-picture; encrypted-media; accelerometer; gyroscope"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
           />
         )}
       </div>
@@ -286,21 +337,25 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
           </span>
         </div>
 
-        {/* Quick fallback button */}
+        {/* Quick fallback buttons */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => {
-              const fallback = sources.find((s) => s.isDirectHls) || sources.find((s) => s.provider === 'consumet') || sources[0];
+              const fallback =
+                sources.find((s) => s.isKinobox) ||
+                sources.find((s) => s.isDirectHls) ||
+                sources.find((s) => s.provider === 'kodik') ||
+                sources[0];
               if (fallback) {
                 setSelectedSourceId(fallback.id);
                 setIframeKey((prev) => prev + 1);
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-[11px] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-[11px] transition-colors"
           >
-            <Zap className="w-3 h-3 text-cyan-400" />
-            <span>100% Проверенный Full HD</span>
+            <Zap className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Переключить на проверенный плеер</span>
           </button>
         </div>
       </div>

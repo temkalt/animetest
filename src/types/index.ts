@@ -28,13 +28,14 @@ export interface EpisodeTimecodes {
 
 export interface VoiceoverTrack {
   id: string;
-  provider: 'anilibria' | 'kodik' | 'alloha' | 'collaps' | 'turbo' | 'veoveo' | 'vibix' | 'sibnet' | 'lumex' | 'consumet';
+  provider: 'anilibria' | 'kinobox' | 'kodik' | 'alloha' | 'collaps' | 'turbo' | 'veoveo' | 'vibix' | 'sibnet' | 'lumex' | 'consumet';
   teamName: string;
   type: 'dub' | 'sub' | 'raw';
   language: 'ru' | 'ja' | 'en';
   qualities: ('1080p' | '720p' | '480p')[];
   streamUrl: string;
   isDirectHls: boolean;
+  isKinobox?: boolean;
   iframeUrl?: string;
 }
 

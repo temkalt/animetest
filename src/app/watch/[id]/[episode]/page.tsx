@@ -62,9 +62,14 @@ export default async function WatchPage({ params }: WatchProps) {
       <div className="relative">
         <VideoPlayerView
           animeId={anime.id}
+          shikimoriId={anime.shikimoriId}
+          malId={anime.malId}
           episodeNumber={epNumber}
           url={streamUrl}
           title={`${title} — Серия ${epNumber}`}
+          russianTitle={anime.title.russian}
+          englishTitle={anime.title.english}
+          romajiTitle={anime.title.romaji}
           poster={anime.bannerImage || anime.coverImage.original}
           timecodes={currentEpItem?.timecodes}
           sources={currentEpItem?.sources || []}
