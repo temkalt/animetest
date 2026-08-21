@@ -33,11 +33,11 @@ export class StreamAggregator {
       voiceoverTeamsSet.add('KuroNami Direct (1080p HLS)');
     }
 
-    voiceoverTeamsSet.add('KuroNami Multi-Dub (Full HD)');
     voiceoverTeamsSet.add('Kodik (Мульти-озвучка)');
+    voiceoverTeamsSet.add('KuroNami Multi-Dub (Full HD)');
+    voiceoverTeamsSet.add('AutoEmbed (Multi-Audio)');
     voiceoverTeamsSet.add('Collaps (HD)');
     voiceoverTeamsSet.add('AllOHA (HD)');
-    voiceoverTeamsSet.add('AutoEmbed (Multi-Audio)');
 
     // 2. Generate episode list with complete multi-player tree
     const targetEpisodesCount = Math.max(
@@ -48,6 +48,7 @@ export class StreamAggregator {
 
     const episodes: EpisodeItem[] = [];
     const shikiId = shikimoriId || malId || animeId;
+    const searchTitle = titles.russian || titles.romaji || titles.english || '';
 
     for (let epNum = 1; epNum <= targetEpisodesCount; epNum++) {
       const sources: VoiceoverTrack[] = [];
@@ -70,7 +71,21 @@ export class StreamAggregator {
         }
       }
 
-      // 2. 🌟 KuroNami Multi-Dub / International FHD (vidsrc.to)
+      // 2. 🌌 Kodik Player (Direct mirror with search title fallback)
+      const kodikEmbed = `https://kodik.info/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(searchTitle)}&episode=${epNum}`;
+      sources.push({
+        id: `kodik-${animeId}-${epNum}`,
+        provider: 'kodik',
+        teamName: 'Kodik (Мульти-озвучка)',
+        type: 'dub',
+        language: 'ru',
+        qualities: ['1080p', '720p'],
+        streamUrl: kodikEmbed,
+        iframeUrl: kodikEmbed,
+        isDirectHls: false,
+      });
+
+      // 3. 🌟 KuroNami Multi-Dub / International FHD (vidsrc.to)
       const multiDubEmbed = `https://vidsrc.to/embed/anime/${shikiId}/${epNum}`;
       sources.push({
         id: `vidsrc-${animeId}-${epNum}`,
@@ -84,21 +99,21 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // 3. 🌌 Kodik Player (Direct mirror)
-      const kodikEmbed = `https://kodik.info/find-player?shikimoriID=${shikiId}&episode=${epNum}`;
+      // 4. 🔮 AutoEmbed Player (Multi-Audio FHD)
+      const autoEmbedUrl = `https://player.autoembed.cc/embed/anime/${shikiId}/${epNum}`;
       sources.push({
-        id: `kodik-${animeId}-${epNum}`,
-        provider: 'kodik',
-        teamName: 'Kodik (Мульти-озвучка)',
+        id: `autoembed-${animeId}-${epNum}`,
+        provider: 'consumet',
+        teamName: 'AutoEmbed (Multi-Audio)',
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: kodikEmbed,
-        iframeUrl: kodikEmbed,
+        streamUrl: autoEmbedUrl,
+        iframeUrl: autoEmbedUrl,
         isDirectHls: false,
       });
 
-      // 4. ⚡ Collaps Player (HD)
+      // 5. ⚡ Collaps Player (HD)
       const collapsEmbed = `https://api.bhcesdf.com/embed/movie/${shikiId}`;
       sources.push({
         id: `collaps-${animeId}-${epNum}`,
@@ -112,7 +127,7 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // 5. ✨ AllOHA Player (HD)
+      // 6. ✨ AllOHA Player (HD)
       const allohaEmbed = `https://api.alloha.tv/?shikimori=${shikiId}`;
       sources.push({
         id: `alloha-${animeId}-${epNum}`,
@@ -123,20 +138,6 @@ export class StreamAggregator {
         qualities: ['1080p', '720p'],
         streamUrl: allohaEmbed,
         iframeUrl: allohaEmbed,
-        isDirectHls: false,
-      });
-
-      // 6. 🔮 AutoEmbed Player (Multi-Audio FHD)
-      const autoEmbedUrl = `https://player.autoembed.cc/embed/anime/${shikiId}/${epNum}`;
-      sources.push({
-        id: `autoembed-${animeId}-${epNum}`,
-        provider: 'consumet',
-        teamName: 'AutoEmbed (Multi-Audio)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: autoEmbedUrl,
-        iframeUrl: autoEmbedUrl,
         isDirectHls: false,
       });
 
@@ -182,7 +183,7 @@ export class StreamAggregator {
 
     if (titles.russian) {
       candidates.push(titles.russian);
-      const cleanRu = titles.russian.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$)/g, '').trim();
+      const cleanRu = titles.russian.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\bсезон\s*\d+\b|\b\d+\s*сезон\b)/gi, '').trim();
       if (cleanRu && cleanRu !== titles.russian) {
         candidates.push(cleanRu);
       }
@@ -190,7 +191,7 @@ export class StreamAggregator {
 
     if (titles.english) {
       candidates.push(titles.english);
-      const cleanEn = titles.english.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$)/g, '').trim();
+      const cleanEn = titles.english.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\bseason\s*\d+\b|\b\d+(st|nd|rd|th)\s*season\b)/gi, '').trim();
       if (cleanEn && cleanEn !== titles.english) {
         candidates.push(cleanEn);
       }
@@ -198,7 +199,7 @@ export class StreamAggregator {
 
     if (titles.romaji) {
       candidates.push(titles.romaji);
-      const cleanRomaji = titles.romaji.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$)/g, '').trim();
+      const cleanRomaji = titles.romaji.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\b\d+(st|nd|rd|th)?\s*season\b)/gi, '').trim();
       if (cleanRomaji && cleanRomaji !== titles.romaji) {
         candidates.push(cleanRomaji);
       }

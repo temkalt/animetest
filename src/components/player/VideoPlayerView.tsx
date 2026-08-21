@@ -54,12 +54,12 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   const artInstanceRef = useRef<Artplayer | null>(null);
   const glowRef = useRef<HTMLDivElement>(null);
 
-  // Pick initial source: prefer HLS if present, else Kinobox, else first available
+  // Pick initial source: prefer HLS if present, else Kodik, else first available
   const [selectedSourceId, setSelectedSourceId] = useState<string>(() => {
     const hlsSource = sources.find((s) => s.isDirectHls);
     if (hlsSource) return hlsSource.id;
-    const kinoboxSource = sources.find((s) => s.isKinobox);
-    if (kinoboxSource) return kinoboxSource.id;
+    const kodikSource = sources.find((s) => s.provider === 'kodik');
+    if (kodikSource) return kodikSource.id;
     return sources[0]?.id || 'default';
   });
 
@@ -71,8 +71,8 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       const match = sources.find((s) => s.id === selectedSourceId);
       if (!match) {
         const hls = sources.find((s) => s.isDirectHls);
-        const kino = sources.find((s) => s.isKinobox);
-        setSelectedSourceId(hls?.id || kino?.id || sources[0].id);
+        const kodik = sources.find((s) => s.provider === 'kodik');
+        setSelectedSourceId(hls?.id || kodik?.id || sources[0].id);
       }
     }
   }, [sources, episodeNumber]);
@@ -343,9 +343,9 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             type="button"
             onClick={() => {
               const fallback =
-                sources.find((s) => s.isKinobox) ||
                 sources.find((s) => s.isDirectHls) ||
                 sources.find((s) => s.provider === 'kodik') ||
+                sources.find((s) => s.provider === 'consumet') ||
                 sources[0];
               if (fallback) {
                 setSelectedSourceId(fallback.id);

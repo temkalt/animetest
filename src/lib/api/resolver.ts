@@ -314,9 +314,10 @@ export class AnimeResolver {
       (media.idMal ? getKnownRussianTitle(media.idMal) : null) ||
       getKnownRussianTitle(slug);
 
+    const isUnreleased = media.status === 'NOT_YET_RELEASED';
     const knownEps = getKnownEpisodeCount(media.id) || (media.idMal ? getKnownEpisodeCount(media.idMal) : null);
     const totalEps = knownEps || media.episodes || (media.nextAiringEpisode?.episode ? media.nextAiringEpisode.episode : null);
-    const airedEps = knownEps || (media.nextAiringEpisode?.episode ? media.nextAiringEpisode.episode - 1 : (media.episodes || 12));
+    const airedEps = knownEps || (media.nextAiringEpisode?.episode ? media.nextAiringEpisode.episode - 1 : (media.episodes || (isUnreleased ? 0 : 12)));
 
     const relations = (media.relations?.edges || []).map((edge: any) => {
       const relRu = getKnownRussianTitle(edge.node.id) || (edge.node.idMal ? getKnownRussianTitle(edge.node.idMal) : null);

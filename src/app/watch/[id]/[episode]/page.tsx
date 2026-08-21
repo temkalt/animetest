@@ -5,7 +5,7 @@ import { AnimeResolver } from '@/lib/api/resolver';
 import { VideoPlayerView } from '@/components/player/VideoPlayerView';
 import { EpisodeGrid } from '@/components/anime/EpisodeGrid';
 import { TimecodeComments } from '@/components/player/TimecodeComments';
-import { ChevronLeft, ChevronRight, List, Volume2, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, List, Volume2, ShieldCheck, ArrowLeft, AlertCircle } from 'lucide-react';
 
 interface WatchProps {
   params: Promise<{
@@ -34,8 +34,9 @@ export default async function WatchPage({ params }: WatchProps) {
   const totalEpisodes = anime.episodes?.length || anime.episodesTotal || 12;
 
   // Resolve active stream and sources
-  const currentEpItem = anime.episodes?.find((e) => e.episodeNumber === epNumber);
-  const streamUrl = currentEpItem?.sources?.[0]?.streamUrl || '';
+  const currentEpItem = anime.episodes?.find((e) => e.episodeNumber === epNumber) || anime.episodes?.[0];
+  const sources = currentEpItem?.sources || [];
+  const streamUrl = sources[0]?.streamUrl || '';
 
   const prevEp = epNumber > 1 ? epNumber - 1 : null;
   const nextEp = epNumber < totalEpisodes ? epNumber + 1 : null;
@@ -58,6 +59,19 @@ export default async function WatchPage({ params }: WatchProps) {
         </div>
       </div>
 
+      {/* Unreleased Anime Notice */}
+      {anime.status === 'NOT_YET_RELEASED' && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-mono flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-400" />
+          <div>
+            <strong>Этот сезон находится в статусе «Анонс» (ещё не вышел в эфир).</strong>
+            <span className="block text-slate-300 mt-0.5">
+              Серии станут доступны после официальной премьеры. Вы можете посмотреть предыдущие сезоны франшизы ниже.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Main Video Theater Canvas */}
       <div className="relative">
         <VideoPlayerView
@@ -72,7 +86,7 @@ export default async function WatchPage({ params }: WatchProps) {
           romajiTitle={anime.title.romaji}
           poster={anime.bannerImage || anime.coverImage.original}
           timecodes={currentEpItem?.timecodes}
-          sources={currentEpItem?.sources || []}
+          sources={sources}
         />
       </div>
 
