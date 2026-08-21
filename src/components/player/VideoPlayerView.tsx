@@ -12,7 +12,6 @@ import {
   Play,
   Sparkles,
   Layers,
-  Globe,
   RefreshCw,
   Maximize2,
   Minimize2,
@@ -46,7 +45,6 @@ const BALANCER_CONFIG: Record<
   kodik: { label: 'Kodik', badge: '720p / 1080p', icon: Play },
   alloha: { label: 'Alloha', badge: '1080p HD', icon: Sparkles },
   collaps: { label: 'Collaps', badge: 'Full HD', icon: Layers },
-  multidub: { label: 'Multi-Dub', badge: 'Eng / Sub', icon: Globe },
 };
 
 export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
@@ -107,12 +105,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
   // Compute the current active stream URL
   const activeStreamUrl = useMemo(() => {
-    // 1. Multi-Dub engine
-    if (effectiveEngine === 'multidub') {
-      return `https://vidsrc.me/embed/anime?id=${effectiveShikimoriId}&ep=${episodeNumber}`;
-    }
-
-    // 2. AniLibria Direct HLS
+    // 1. AniLibria Direct HLS
     if (effectiveEngine === 'anilibria' && activeTranslation?.streamUrl) {
       return activeTranslation.streamUrl;
     }
@@ -337,20 +330,6 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
                 <span>Collaps</span>
               </button>
             )}
-
-            {/* Multi-Dub Tab */}
-            <button
-              type="button"
-              onClick={() => handleEngineSelect('multidub')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-                effectiveEngine === 'multidub'
-                  ? 'bg-indigo-600 text-white shadow-md font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5 text-slate-300" />
-              <span>Multi-Dub</span>
-            </button>
           </div>
 
           {/* Right: Quick Action Controls */}
