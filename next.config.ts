@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'no-referrer',
+            value: 'no-referrer-when-downgrade',
           },
           {
             key: 'X-Frame-Options',

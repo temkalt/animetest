@@ -1,11 +1,13 @@
 import { SingleBalancerProbeResult, BalancerTranslation } from '@/types/balancer';
 
-const KODIK_API_BASE = 'https://kodikapi.com';
-const KODIK_TOKENS = [
+const KODIK_API_BASE = 'https://kodik-api.com';
+const DEFAULT_KODIK_TOKENS = [
+  process.env.KODIK_TOKEN || '',
+  process.env.NEXT_PUBLIC_KODIK_TOKEN || '',
   'd4eec67656cc60cedd091081519079a4',
   'q8df784b2c129e924b1dfc2826a79854',
-  'qwe',
-];
+  '18029671cd24d868ad93dcfef5638c4b',
+].filter(Boolean);
 
 export class KodikProber {
   static async probe(params: {
@@ -31,7 +33,7 @@ export class KodikProber {
     try {
       let foundItems: any[] = [];
 
-      for (const token of KODIK_TOKENS) {
+      for (const token of DEFAULT_KODIK_TOKENS) {
         try {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 2500);
@@ -54,7 +56,7 @@ export class KodikProber {
           const res = await fetch(`${KODIK_API_BASE}/search?${searchParams.toString()}`, {
             signal: controller.signal,
             headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
               'Accept': 'application/json',
             },
           }).catch(() => null);
@@ -76,16 +78,20 @@ export class KodikProber {
       result.latencyMs = Date.now() - startTime;
 
       if (foundItems.length === 0) {
-        // Fallback: if we have shikimoriId, Kodik embed finder works unconditionally
-        if (shikiId) {
+        // Fallback: if we have shikimoriId or title, Kodik embed finder works reliably
+        if (shikiId || params.title) {
           result.available = true;
+          const embedUrl = shikiId
+            ? `https://kodikplayer.com/find-player?shikimoriID=${shikiId}&episode=${params.episodeNumber}`
+            : `https://kodikplayer.com/find-player?title=${encodeURIComponent(params.title)}&episode=${params.episodeNumber}`;
+
           result.translations.push({
-            id: `kodik-auto-${shikiId}-${params.episodeNumber}`,
+            id: `kodik-auto-${shikiId || 'title'}-${params.episodeNumber}`,
             balancerId: 'kodik',
             teamName: 'Kodik (Все доступные озвучки)',
             type: 'dub',
             quality: ['1080p', '720p', '480p'],
-            iframeUrl: `https://aniqit.com/find-player?shikimoriID=${shikiId}&episode=${params.episodeNumber}`,
+            iframeUrl: embedUrl,
             isDirectHls: false,
             episodeNumber: params.episodeNumber,
           });
@@ -109,8 +115,8 @@ export class KodikProber {
           iframeLink = `https:${iframeLink}`;
         }
         if (iframeLink) {
-          // Replace kodik domain with active aniqit mirror to guarantee 0 DNS/CSP issues
-          iframeLink = iframeLink.replace(/kodik\.info|kodik\.biz|kodik\.cc/gi, 'aniqit.com');
+          // Replace inactive domains with active mirror
+          iframeLink = iframeLink.replace(/kodik\.info|kodik\.cc|aniqit\.com/gi, 'kodikplayer.com');
           if (!iframeLink.includes('episode=')) {
             const delim = iframeLink.includes('?') ? '&' : '?';
             iframeLink = `${iframeLink}${delim}episode=${params.episodeNumber}`;

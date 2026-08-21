@@ -61,7 +61,7 @@ export class StreamResolver {
     }
 
     // 2. 🌌 Kodik Main (Все русские озвучки: Студийная Банда, Dream Cast, SHIZA, AniDUB, Jam Club, Субтитры)
-    const kodikMain = `https://kodik.info/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(cleanSearchTitle)}&episode=${episodeNumber}`;
+    const kodikMain = `https://kodikplayer.com/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(cleanSearchTitle)}&episode=${episodeNumber}`;
     sources.push({
       id: `kodik-main-${animeId}-${episodeNumber}`,
       provider: 'kodik',
@@ -74,17 +74,17 @@ export class StreamResolver {
       isDirectHls: false,
     });
 
-    // 3. 🎬 Kodik Mirror (Aniqit)
-    const kodikAniqit = `https://aniqit.com/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(cleanSearchTitle)}&episode=${episodeNumber}`;
+    // 3. 🎬 Kodik Mirror (kodik.biz)
+    const kodikMirror = `https://kodik.biz/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(cleanSearchTitle)}&episode=${episodeNumber}`;
     sources.push({
-      id: `kodik-aniqit-${animeId}-${episodeNumber}`,
+      id: `kodik-mirror-${animeId}-${episodeNumber}`,
       provider: 'kodik',
-      teamName: 'Kodik Зеркало (Aniqit)',
+      teamName: 'Kodik Зеркало',
       type: 'dub',
       language: 'ru',
       qualities: ['1080p', '720p'],
-      streamUrl: kodikAniqit,
-      iframeUrl: kodikAniqit,
+      streamUrl: kodikMirror,
+      iframeUrl: kodikMirror,
       isDirectHls: false,
     });
 

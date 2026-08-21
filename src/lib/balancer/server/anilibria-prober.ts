@@ -41,19 +41,19 @@ export class AniLibriaProber {
 
       for (const query of candidates) {
         const term = query.trim();
-        if (!term || term.length < 3 || tried.has(term.toLowerCase())) continue;
+        if (!term || term.length < 2 || tried.has(term.toLowerCase())) continue;
         tried.add(term.toLowerCase());
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
+        const timeout = setTimeout(() => controller.abort(), 3500);
 
         const res = await fetch(
-          `https://anilibria.top/api/v1/anime/catalog/releases?f[search]=${encodeURIComponent(term)}&limit=5`,
+          `https://anilibria.top/api/v1/anime/catalog/releases?f[search]=${encodeURIComponent(term)}&limit=10`,
           {
             signal: controller.signal,
             headers: {
               'Accept': 'application/json',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             },
           }
         ).catch(() => null);
@@ -71,20 +71,32 @@ export class AniLibriaProber {
           const alt = this.cleanTitle(rel.name?.alternative || '');
 
           const isMatch =
-            mainRu === cleanSearch ||
-            eng === cleanSearch ||
-            alt === cleanSearch ||
-            mainRu.includes(cleanSearch) ||
-            cleanSearch.includes(mainRu) ||
-            eng.includes(cleanSearch) ||
-            cleanSearch.includes(eng);
+            cleanSearch.length > 2 &&
+            (mainRu === cleanSearch ||
+              eng === cleanSearch ||
+              alt === cleanSearch ||
+              mainRu.includes(cleanSearch) ||
+              cleanSearch.includes(mainRu) ||
+              eng.includes(cleanSearch) ||
+              cleanSearch.includes(eng));
 
-          if (isMatch) {
-            const fullRes = await fetch(`https://anilibria.top/api/v1/anime/releases/${rel.id}`).catch(() => null);
+          if (isMatch || releases.length === 1) {
+            const ctrl = new AbortController();
+            const to = setTimeout(() => ctrl.abort(), 3500);
+
+            const fullRes = await fetch(`https://anilibria.top/api/v1/anime/releases/${rel.id}`, {
+              signal: ctrl.signal,
+              headers: { 'Accept': 'application/json' },
+            }).catch(() => null);
+
+            clearTimeout(to);
             if (!fullRes || !fullRes.ok) continue;
 
             const fullData = await fullRes.json().catch(() => null);
-            const ep = fullData?.episodes?.find((e: any) => e.ordinal === params.episodeNumber);
+            const episodes: any[] = fullData?.episodes || [];
+            const ep =
+              episodes.find((e: any) => e.ordinal === params.episodeNumber || Number(e.ordinal) === params.episodeNumber) ||
+              episodes[params.episodeNumber - 1];
 
             if (ep) {
               const hlsUrl = ep.hls_1080 || ep.hls_720 || ep.hls_480;
@@ -98,14 +110,15 @@ export class AniLibriaProber {
                   streamUrl: hlsUrl,
                   isDirectHls: true,
                   episodeNumber: params.episodeNumber,
+                  availableEpisodes: { min: 1, max: episodes.length || 1 },
                   timecodes: {
                     intro:
-                      ep.opening?.start !== null && ep.opening?.stop !== null
-                        ? { start: ep.opening.start, end: ep.opening.stop }
+                      ep.opening?.start !== null && ep.opening?.start !== undefined && ep.opening?.stop !== null && ep.opening?.stop !== undefined
+                        ? { start: Number(ep.opening.start), end: Number(ep.opening.stop) }
                         : undefined,
                     outro:
-                      ep.ending?.start !== null && ep.ending?.stop !== null
-                        ? { start: ep.ending.start, end: ep.ending.stop }
+                      ep.ending?.start !== null && ep.ending?.start !== undefined && ep.ending?.stop !== null && ep.ending?.stop !== undefined
+                        ? { start: Number(ep.ending.start), end: Number(ep.ending.stop) }
                         : undefined,
                   },
                 });

@@ -5,22 +5,17 @@ import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 import { syncManager } from '@/lib/dexie/sync';
 import { EpisodeTimecodes, VoiceoverTrack } from '@/types';
+import { useBalancerProbe } from '@/lib/balancer/client/use-balancer-probe';
+import { BalancerId } from '@/types/balancer';
 import {
-  useBalancerProbe,
-} from '@/lib/balancer/client/use-balancer-probe';
-import { BalancerId, BalancerTranslation } from '@/types/balancer';
-import { KinoboxPlayer } from './KinoboxPlayer';
-import {
-  Zap,
   RefreshCw,
   SlidersHorizontal,
   Volume2,
   AlertCircle,
   Sparkles,
-  Layers,
-  ChevronRight,
   ShieldCheck,
-  Tv,
+  Zap,
+  Info,
 } from 'lucide-react';
 
 interface VideoPlayerProps {
@@ -41,25 +36,11 @@ interface VideoPlayerProps {
 }
 
 const BALANCER_NAMES: Record<string, string> = {
-  kinobox: '🌟 KINOBOX (Все плееры)',
-  anilibria: '⚡ ANILIBRIA',
-  kodik: '🌌 KODIK',
-  alloha: '✨ ALLOHA',
-  collaps: '⚡ COLLAPS',
-  lumex: '🔮 LUMEX',
-  sibnet: '📼 SIBNET',
-  multidub: '🌐 МУЛЬТИ-ДУБ (FHD)',
-};
-
-const BALANCER_ICONS: Record<string, string> = {
-  kinobox: '🌟',
-  anilibria: '⚡',
-  kodik: '🌌',
-  alloha: '✨',
-  collaps: '⚡',
-  lumex: '🔮',
-  sibnet: '📼',
-  multidub: '🌐',
+  anilibria: '⚡ ANILIBRIA (1080p HLS)',
+  kodik: '🌌 KODIK (Все озвучки)',
+  alloha: '✨ ALLOHA (HD Мульти-озвучка)',
+  collaps: '⚡ COLLAPS (Full HD)',
+  multidub: '🌐 МУЛЬТИ-ДУБ',
 };
 
 export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
@@ -68,13 +49,11 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   malId,
   kinopoiskId,
   episodeNumber,
-  url,
   poster,
   title,
   russianTitle,
   englishTitle,
   romajiTitle,
-  timecodes: initialTimecodes,
   onEnded,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,8 +64,9 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   const [iframeKey, setIframeKey] = useState<number>(0);
 
   const effectiveShikimoriId = shikimoriId || malId || animeId;
+  const searchTitle = russianTitle || title || englishTitle || romajiTitle || '';
 
-  // Dynamic Balancer Availability Probe (Strictly verifies live streams)
+  // Dynamic Balancer Availability Probe
   const {
     loading,
     probeData,
@@ -111,18 +91,23 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
   const activeTranslations =
     activeBalancer && probeData ? probeData.results[activeBalancer]?.translations || [] : [];
-  
+
+  // Effective Engine determination
+  const effectiveEngine = selectedEngine === 'auto' ? activeBalancer || 'kodik' : selectedEngine;
+
   // Decide direct HLS vs Iframe stream
-  const isDirectHls = activeBalancer === 'anilibria' && activeTranslation?.isDirectHls && !!activeTranslation?.streamUrl;
+  const isDirectHls =
+    effectiveEngine === 'anilibria' &&
+    activeTranslation?.isDirectHls &&
+    !!activeTranslation?.streamUrl;
 
   // Compute the current active stream URL
   const activeStreamUrl = React.useMemo(() => {
-    if (selectedEngine === 'kinobox') return null; // Uses Kinobox component
     if (selectedEngine === 'multidub') {
       return `https://vidsrc.me/embed/anime?id=${effectiveShikimoriId}&ep=${episodeNumber}`;
     }
     if (selectedEngine === 'kodik') {
-      return `https://aniqit.com/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}`;
+      return `https://kodikplayer.com/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}`;
     }
     if (selectedEngine === 'collaps') {
       return `https://api.collapse.to/embed/anime/${effectiveShikimoriId}?episode=${episodeNumber}`;
@@ -133,13 +118,13 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
     // Fallback to active balancer iframe
     if (activeBalancer === 'kodik') {
-      return `https://aniqit.com/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}`;
+      return `https://kodikplayer.com/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}`;
     }
     if (activeBalancer === 'alloha' && probeData?.results?.alloha?.translations?.[0]?.iframeUrl) {
       return probeData.results.alloha.translations[0].iframeUrl;
     }
 
-    return `https://aniqit.com/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}`;
+    return `https://kodikplayer.com/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}`;
   }, [selectedEngine, effectiveShikimoriId, episodeNumber, activeTranslation, activeBalancer, probeData]);
 
   // 1. Initialize Artplayer for Direct HLS streams (AniLibria 1080p)
@@ -245,12 +230,16 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
             {loading ? (
               <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20 animate-pulse">
-                Синхронизация баз...
+                Синхронизация источников...
               </span>
-            ) : (
+            ) : availableBalancers.length > 0 ? (
               <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Все плееры онлайн</span>
+                <span>Источники активны ({availableBalancers.length})</span>
+              </span>
+            ) : (
+              <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                Резервный режим Kodik
               </span>
             )}
           </div>
@@ -273,25 +262,28 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
         {/* Dynamic Player Buttons Switcher */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {/* 1. Kinobox Universal Multi-Player Tab */}
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedEngine('kinobox');
-              setIframeKey((k) => k + 1);
-            }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap cursor-pointer ${
-              selectedEngine === 'kinobox'
-                ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.7)] border border-violet-400 scale-[1.02]'
-                : 'bg-[#141722] hover:bg-white/10 text-slate-300 border border-white/10 hover:border-white/20'
-            }`}
-          >
-            <span>🌟</span>
-            <span>KINOBOX (Все плееры)</span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-sans font-bold">
-              УНИВЕРСАЛЬНЫЙ
-            </span>
-          </button>
+          {/* 1. AniLibria Direct 1080p Tab */}
+          {probeData?.results?.anilibria?.available && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedEngine('anilibria');
+                setActiveBalancer('anilibria');
+                setIframeKey((k) => k + 1);
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap cursor-pointer ${
+                effectiveEngine === 'anilibria'
+                  ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.7)] border border-violet-400 scale-[1.02]'
+                  : 'bg-[#141722] hover:bg-white/10 text-slate-300 border border-white/10 hover:border-white/20'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-cyan-400" />
+              <span>ANILIBRIA</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-300 font-sans font-bold">
+                1080p HLS
+              </span>
+            </button>
+          )}
 
           {/* 2. Kodik Standalone Tab */}
           <button
@@ -302,7 +294,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
               setIframeKey((k) => k + 1);
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap cursor-pointer ${
-              selectedEngine === 'kodik' || (selectedEngine === 'auto' && activeBalancer === 'kodik')
+              effectiveEngine === 'kodik'
                 ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.7)] border border-violet-400 scale-[1.02]'
                 : 'bg-[#141722] hover:bg-white/10 text-slate-300 border border-white/10 hover:border-white/20'
             }`}
@@ -323,7 +315,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
               setIframeKey((k) => k + 1);
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap cursor-pointer ${
-              selectedEngine === 'alloha' || (selectedEngine === 'auto' && activeBalancer === 'alloha')
+              effectiveEngine === 'alloha'
                 ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.7)] border border-violet-400 scale-[1.02]'
                 : 'bg-[#141722] hover:bg-white/10 text-slate-300 border border-white/10 hover:border-white/20'
             }`}
@@ -335,30 +327,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             </span>
           </button>
 
-          {/* 4. AniLibria Direct 1080p Tab (If Available) */}
-          {probeData?.results?.anilibria?.available && (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedEngine('anilibria');
-                setActiveBalancer('anilibria');
-                setIframeKey((k) => k + 1);
-              }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap cursor-pointer ${
-                selectedEngine === 'anilibria'
-                  ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.7)] border border-violet-400 scale-[1.02]'
-                  : 'bg-[#141722] hover:bg-white/10 text-slate-300 border border-white/10 hover:border-white/20'
-              }`}
-            >
-              <span>⚡</span>
-              <span>ANILIBRIA</span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-300 font-sans font-bold">
-                1080p HLS
-              </span>
-            </button>
-          )}
-
-          {/* 5. Collaps Standalone Tab */}
+          {/* 4. Collaps Standalone Tab */}
           <button
             type="button"
             onClick={() => {
@@ -367,7 +336,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
               setIframeKey((k) => k + 1);
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap cursor-pointer ${
-              selectedEngine === 'collaps'
+              effectiveEngine === 'collaps'
                 ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.7)] border border-violet-400 scale-[1.02]'
                 : 'bg-[#141722] hover:bg-white/10 text-slate-300 border border-white/10 hover:border-white/20'
             }`}
@@ -376,7 +345,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             <span>COLLAPS</span>
           </button>
 
-          {/* 6. KuroNami Multi-Dub Global Tab */}
+          {/* 5. KuroNami Multi-Dub Global Tab */}
           <button
             type="button"
             onClick={() => {
@@ -390,12 +359,12 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             }`}
           >
             <span>🌐</span>
-            <span>МУЛЬТИ-ДУБ (FHD)</span>
+            <span>МУЛЬТИ-ДУБ</span>
           </button>
         </div>
 
         {/* 2. Real Translation Selector for active balancer */}
-        {selectedEngine !== 'kinobox' && selectedEngine !== 'multidub' && activeTranslations.length > 0 && (
+        {selectedEngine !== 'multidub' && activeTranslations.length > 1 && (
           <div className="pt-2.5 border-t border-white/5 space-y-2">
             <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 px-1">
               <div className="flex items-center gap-1.5">
@@ -438,22 +407,9 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         )}
       </div>
 
-      {/* 3. Main Player Canvas (UNRESTRICTED STORAGE & NO-REFERRER) */}
+      {/* 3. Main Player Canvas */}
       <div className="relative w-full aspect-video min-h-[420px] rounded-3xl overflow-hidden bg-[#07080B] border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.95)]">
-        {selectedEngine === 'kinobox' ? (
-          <KinoboxPlayer
-            animeId={animeId}
-            shikimoriId={effectiveShikimoriId}
-            malId={malId}
-            kinopoiskId={kinopoiskId}
-            episodeNumber={episodeNumber}
-            title={title}
-            russianTitle={russianTitle}
-            englishTitle={englishTitle}
-            romajiTitle={romajiTitle}
-            onEnded={onEnded}
-          />
-        ) : isDirectHls ? (
+        {isDirectHls ? (
           <div ref={containerRef} className="w-full h-full" />
         ) : (
           <iframe
@@ -476,13 +432,19 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10B981]" />
           <span className="text-slate-300">
-            Плеер: <strong className="text-white font-bold">{BALANCER_NAMES[selectedEngine] || BALANCER_NAMES[activeBalancer || ''] || 'Full HD Stream'}</strong> • Серия #{episodeNumber}
+            Плеер: <strong className="text-white font-bold">{BALANCER_NAMES[effectiveEngine] || 'Full HD Stream'}</strong> • Серия #{episodeNumber}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-slate-400 text-[11px]">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>SSL Защита • 1080p HD • Без рекламы</span>
+        <div className="flex items-center gap-3 text-slate-400 text-[11px]">
+          <div className="flex items-center gap-1.5 text-cyan-400">
+            <Info className="w-3.5 h-3.5" />
+            <span>Если плеер не грузится, переключите источник (Kodik / Alloha)</span>
+          </div>
+          <div className="flex items-center gap-1 text-emerald-400">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>1080p HD</span>
+          </div>
         </div>
       </div>
     </div>

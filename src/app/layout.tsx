@@ -6,7 +6,6 @@ import { Footer } from '@/components/ui/Footer';
 export const metadata: Metadata = {
   title: 'KuroNami — Ультимативный аниме-портал нового поколения',
   description: 'Смотрите тысячи аниме в 1080p без рекламы с выбором озвучек, авто-пропуском опенингов и мгновенной синхронизацией.',
-  referrer: 'no-referrer',
 };
 
 export default function RootLayout({
@@ -17,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className="dark">
       <head>
-        <meta name="referrer" content="no-referrer" />
+        <meta name="referrer" content="no-referrer-when-downgrade" />
       </head>
       <body className="bg-[#07080B] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-violet-600 selection:text-white bg-noise">
         <Navbar />
