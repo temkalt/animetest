@@ -46,11 +46,11 @@ const BALANCER_CONFIG: Record<
   string,
   { label: string; badge: string; icon: React.FC<{ className?: string }> }
 > = {
-  anilibria: { label: 'AniLibria', badge: '1080p HLS', icon: Zap },
-  kodik: { label: 'Kodik', badge: 'Все студии', icon: Play },
-  alloha: { label: 'Alloha', badge: 'HD Мульти-озвучка', icon: Sparkles },
-  collaps: { label: 'Collaps', badge: 'Резерв', icon: Layers },
-  multidub: { label: 'Multi-Dub', badge: 'Eng / Raw', icon: Globe },
+  anilibria: { label: 'AniLibria', badge: '1080p FHD', icon: Zap },
+  kodik: { label: 'Kodik', badge: '720p / 1080p', icon: Play },
+  alloha: { label: 'Alloha', badge: '1080p HD', icon: Sparkles },
+  collaps: { label: 'Collaps', badge: 'Full HD', icon: Layers },
+  multidub: { label: 'Multi-Dub', badge: 'Eng / Sub', icon: Globe },
 };
 
 export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
@@ -140,7 +140,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     // 3. Kodik Engine (with mirrors)
     if (effectiveEngine === 'kodik') {
       const mirrorDomain = selectedMirror === 1 ? 'kodik.biz' : 'kodikplayer.com';
-      return `https://${mirrorDomain}/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}`;
+      return `https://${mirrorDomain}/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}&min_quality=720`;
     }
 
     // 4. Alloha Engine fallback

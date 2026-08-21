@@ -123,18 +123,30 @@ export class KodikProber {
           }
         }
 
+        const is1080p = item.quality?.includes('1080') || /1080|FHD|Full HD/i.test(translationTitle);
+
         result.translations.push({
           id: `kodik-${item.id || item.translation?.id || Math.random().toString(36).substring(7)}-${params.episodeNumber}`,
           balancerId: 'kodik',
           teamName: translationTitle,
           type: translationType,
-          quality: ['1080p', '720p', '480p'],
+          quality: is1080p ? ['1080p', '720p', '480p'] : ['720p', '480p'],
           iframeUrl: iframeLink,
           isDirectHls: false,
           episodeNumber: params.episodeNumber,
           availableEpisodes: { min: 1, max: lastEp },
         });
       }
+
+      // Prioritize high-quality studios and 1080p
+      const priorityStudioRegex = /студийная банда|dream cast|anilibria|flarrow|дубляж|дублированный|shiza|jam/i;
+      result.translations.sort((a, b) => {
+        const a1080 = a.quality?.includes('1080p') ? 2 : 0;
+        const b1080 = b.quality?.includes('1080p') ? 2 : 0;
+        const aPrio = priorityStudioRegex.test(a.teamName) ? 1 : 0;
+        const bPrio = priorityStudioRegex.test(b.teamName) ? 1 : 0;
+        return (b1080 + bPrio) - (a1080 + aPrio);
+      });
 
       result.available = result.translations.length > 0;
       return result;
