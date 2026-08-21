@@ -429,6 +429,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             src={activeStreamUrl || ''}
             title={title ? `Плеер для ${title}` : 'Видео-плеер'}
             referrerPolicy="no-referrer-when-downgrade"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *; clipboard-write *"
             frameBorder="0"
             scrolling="no"
@@ -450,7 +451,11 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         <div className="flex items-center gap-4 text-zinc-400 text-[11px]">
           <div className="flex items-center gap-1.5 text-zinc-400">
             <Info className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Выбор сезонов, серий и студий озвучки доступен в левом верхнем углу плеера</span>
+            {effectiveEngine === 'alloha' ? (
+              <span>В бесплатном Alloha есть прероллы. Для просмотра <strong>без рекламы</strong> переключитесь на <strong>AniLibria</strong> или <strong>Kodik</strong>.</span>
+            ) : (
+              <span>Выбор сезонов, серий и студий озвучки доступен в левом верхнем углу плеера</span>
+            )}
           </div>
 
           <div className="hidden lg:flex items-center gap-2 text-zinc-500 font-mono text-[10px]">
