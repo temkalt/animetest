@@ -12,7 +12,6 @@ import {
   Zap,
   RefreshCw,
   ChevronRight,
-  ShieldAlert,
   SlidersHorizontal,
 } from 'lucide-react';
 
@@ -33,24 +32,24 @@ interface VideoPlayerProps {
 }
 
 const PROVIDER_NAMES: Record<string, string> = {
-  alloha: 'ALLOHA (HD)',
-  collaps: 'COLLAPS (HD)',
+  anilibria: 'ANILIBRIA (1080p HLS)',
   kodik: 'KODIK (Все озвучки)',
+  alloha: 'ALLOHA (HD)',
   turbo: 'TURBO (HD)',
   veoveo: 'VEOVEO (HD)',
-  anilibria: 'ANILIBRIA (1080p HLS)',
+  collaps: 'COLLAPS (HD)',
   consumet: 'KURONAMI (Full HD)',
 };
 
 const PROVIDER_ICONS: Record<string, string> = {
   anilibria: '⚡',
-  alloha: '✨',
-  collaps: '⚡',
   kodik: '🌌',
+  alloha: '✨',
   turbo: '🚀',
   veoveo: '🔮',
-  vibix: '📼',
+  collaps: '⚡',
   consumet: '🌟',
+  vibix: '📼',
 };
 
 export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
@@ -78,7 +77,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   const [iframeKey, setIframeKey] = useState<number>(0);
   const [selectedSourceId, setSelectedSourceId] = useState<string>('');
 
-  // 1. Combine and prioritize sources (Alloha / Kodik / Collaps / AniLibria)
+  // 1. Combine and prioritize sources (Kodik / Alloha / AniLibria / Turbo / VeoVeo / Collaps)
   const allSources = useMemo(() => {
     const combined = [...clientSources, ...initialSources];
     const seen = new Set<string>();
@@ -105,14 +104,14 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       });
     }
 
-    // Sort order: Alloha -> Collaps -> Kodik -> Turbo -> Veoveo -> AniLibria -> MultiDub
+    // Sort order: Anilibria HLS -> Kodik -> Alloha -> Turbo -> Veoveo -> Collaps -> MultiDub
     const providerPriority: Record<string, number> = {
-      alloha: 1,
-      collaps: 2,
-      kodik: 3,
+      anilibria: 1,
+      kodik: 2,
+      alloha: 3,
       turbo: 4,
       veoveo: 5,
-      anilibria: 6,
+      collaps: 6,
       consumet: 7,
     };
 
@@ -128,7 +127,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     let isMounted = true;
     const searchName = russianTitle || romajiTitle || englishTitle || title || '';
 
-    // Fetch live DDBB balancers (Alloha, Collaps, Turbo, VeoVeo)
+    // Fetch live DDBB balancers (Alloha, Turbo, VeoVeo)
     fetchDDBBPlayers({
       title: searchName,
       shikimoriId: shikimoriId || undefined,
@@ -176,6 +175,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
           isDirectHls: true,
         };
         setClientSources((prev) => [hlsTrack, ...prev]);
+        setSelectedSourceId(hlsTrack.id);
         if (match.timecodes) setActiveTimecodes(match.timecodes);
       }
     });
@@ -190,11 +190,10 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     if (allSources.length > 0) {
       const match = allSources.find((s) => s.id === selectedSourceId);
       if (!match) {
-        // Default to Alloha, Collaps, or Kodik
         const best =
-          allSources.find((s) => s.provider === 'alloha' && s.iframeUrl) ||
-          allSources.find((s) => s.provider === 'collaps' && s.iframeUrl) ||
+          allSources.find((s) => s.isDirectHls && s.streamUrl) ||
           allSources.find((s) => s.provider === 'kodik' && s.iframeUrl) ||
+          allSources.find((s) => s.provider === 'alloha' && s.iframeUrl) ||
           allSources[0];
         if (best) setSelectedSourceId(best.id);
       }
@@ -289,7 +288,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         if (art && art.destroy) art.destroy(false);
       };
     } catch {
-      // Ignore
+      // Fallback silently
     }
   }, [activeStreamUrl, isDirectHls, animeId, episodeNumber, onEnded]);
 
@@ -332,7 +331,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
           </div>
         </div>
 
-        {/* Player Buttons Matrix (Alloha, Collaps, Kodik, Turbo, VeoVeo, AniLibria) */}
+        {/* Player Buttons Matrix (AniLibria, Kodik, Alloha, Turbo, VeoVeo) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {allSources.map((s) => {
             const isSelected = s.id === selectedSourceId;
@@ -383,7 +382,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         )}
       </div>
 
-      {/* 3. Stream Info & AdBlock Assistant */}
+      {/* 3. Stream Info & Failover Switcher */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-[#0E1017] border border-white/5 text-xs font-mono">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10B981]" />

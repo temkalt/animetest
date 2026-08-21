@@ -16,7 +16,7 @@ export class StreamResolver {
   static cleanTitle(text: string): string {
     return text
       .toLowerCase()
-      .replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\bсезон\s*\d+\b|\b\d+\s*сезон\b|\bseason\s*\d+\b|\b\d+(st|nd|rd|th)\s*season\b)/gi, '')
+      .replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\bсезон\s*\d+\b|\b\d+\s*сезон\b|\bseason\s*\d+\b|\b\d+(st|nd|rd|th)\s*season\b|\bфильм\b|\bтв-\d+\b|\bчасть\s*\d+\b)/gi, '')
       .replace(/[\(\)\[\]\{\}\:\;\,\.\!\?\-\_\'\"\`]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -60,7 +60,7 @@ export class StreamResolver {
       });
     }
 
-    // 2. 🌌 Kodik Основной (Все русские озвучки: Студийная Банда, Dream Cast, SHIZA, AniDUB, Kansai, Jam Club, Субтитры)
+    // 2. 🌌 Kodik Main (Все русские озвучки: Студийная Банда, Dream Cast, SHIZA, AniDUB, Jam Club, Субтитры)
     const kodikMain = `https://kodik.info/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(cleanSearchTitle)}&episode=${episodeNumber}`;
     sources.push({
       id: `kodik-main-${animeId}-${episodeNumber}`,
@@ -74,7 +74,7 @@ export class StreamResolver {
       isDirectHls: false,
     });
 
-    // 3. 🎬 Kodik Зеркало 2 (Aniqit)
+    // 3. 🎬 Kodik Mirror (Aniqit)
     const kodikAniqit = `https://aniqit.com/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(cleanSearchTitle)}&episode=${episodeNumber}`;
     sources.push({
       id: `kodik-aniqit-${animeId}-${episodeNumber}`,
@@ -88,14 +88,14 @@ export class StreamResolver {
       isDirectHls: false,
     });
 
-    // 4. 🚀 Live DDBB Balancers (Alloha, Collaps, Turbo, VeoVeo)
+    // 4. 🚀 Live Verified DDBB Balancers (Alloha, Turbo, VeoVeo, Collaps)
     for (const provider of ddbbProviders) {
-      if (provider.iframeUrl) {
-        const typeName = provider.type || 'HD';
+      if (provider.iframeUrl && provider.iframeUrl.startsWith('http')) {
+        const providerName = provider.type.toUpperCase();
         sources.push({
           id: `ddbb-${provider.type.toLowerCase()}-${animeId}-${episodeNumber}`,
           provider: provider.type.toLowerCase() as any,
-          teamName: `${typeName} (HD Балансер)`,
+          teamName: `${providerName} (HD)`,
           type: 'dub',
           language: 'ru',
           qualities: ['1080p', '720p'],
@@ -105,12 +105,14 @@ export class StreamResolver {
         });
       }
 
-      // If provider has translations list (e.g. VeoVeo with AniLibria, AniDUB, Crunchyroll)
+      // If provider has translations (e.g. VeoVeo / Alloha with specific studios)
       if (Array.isArray(provider.translations)) {
-        for (let i = 0; i < Math.min(provider.translations.length, 5); i++) {
+        for (let i = 0; i < Math.min(provider.translations.length, 4); i++) {
           const tr = provider.translations[i];
-          if (tr && tr.iframeUrl) {
-            const rawName = String(tr.name || provider.type || 'Озвучка').replace(/^русский\.\s*/i, '').slice(0, 25);
+          if (tr && tr.iframeUrl && tr.iframeUrl.startsWith('http') && tr.iframeUrl !== provider.iframeUrl) {
+            const rawName = String(tr.name || provider.type || 'Озвучка')
+              .replace(/^русский\.\s*/i, '')
+              .slice(0, 25);
             sources.push({
               id: `ddbb-${provider.type.toLowerCase()}-tr-${i}-${animeId}-${episodeNumber}`,
               provider: provider.type.toLowerCase() as any,
@@ -152,34 +154,6 @@ export class StreamResolver {
       qualities: ['1080p', '720p'],
       streamUrl: autoEmbedUrl,
       iframeUrl: autoEmbedUrl,
-      isDirectHls: false,
-    });
-
-    // 7. ⚡ Collaps Direct Mirror
-    const collapsUrl = `https://api.bhcesdf.com/embed/movie/${shikiId}`;
-    sources.push({
-      id: `collaps-${animeId}-${episodeNumber}`,
-      provider: 'collaps',
-      teamName: 'Collaps (HD)',
-      type: 'dub',
-      language: 'ru',
-      qualities: ['1080p', '720p'],
-      streamUrl: collapsUrl,
-      iframeUrl: collapsUrl,
-      isDirectHls: false,
-    });
-
-    // 8. ✨ AllOHA Direct Mirror
-    const allohaUrl = `https://api.alloha.tv/?shikimori=${shikiId}`;
-    sources.push({
-      id: `alloha-${animeId}-${episodeNumber}`,
-      provider: 'alloha',
-      teamName: 'AllOHA (HD)',
-      type: 'dub',
-      language: 'ru',
-      qualities: ['1080p', '720p'],
-      streamUrl: allohaUrl,
-      iframeUrl: allohaUrl,
       isDirectHls: false,
     });
 
