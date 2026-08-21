@@ -5,7 +5,6 @@ import { CategoryPills } from '@/components/home/CategoryPills';
 import { RankedTopList } from '@/components/home/RankedTopList';
 import { OngoingSchedule } from '@/components/home/OngoingSchedule';
 import { CuratedSpotlight } from '@/components/home/CuratedSpotlight';
-import { BentoEngineering } from '@/components/home/BentoEngineering';
 import { AnimeCard } from '@/components/anime/AnimeCard';
 import { 
   Flame, 
@@ -88,12 +87,12 @@ export default async function HomePage() {
                   Популярные онгоинги сезона
                 </h2>
                 <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-mono font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                  <Radio className="w-3 h-3 animate-pulse text-rose-400" />
                   В ЭФИРЕ
                 </span>
               </div>
               <p className="text-xs text-zinc-400 font-sans">
-                Свежие серии текущего сезона в Full HD с авто-пропуском интро
+                Свежие серии текущего сезона, выходящие прямо сейчас
               </p>
             </div>
           </div>
@@ -114,13 +113,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 6. Curated Editorial Spotlight Banners */}
-      <section aria-label="Кураторские спецпроекты">
+      {/* 6. Curated Thematic Spotlight Banner */}
+      <section aria-label="Кураторские подборки аниме">
         <CuratedSpotlight />
       </section>
 
       {/* 7. Cult Masterpieces of All Time Grid */}
-      <section aria-label="Культовые шедевры всех времён" className="space-y-6">
+      <section aria-label="Кураторские шедевры всех времён" className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
@@ -155,11 +154,6 @@ export default async function HomePage() {
             <AnimeCard key={anime.id} anime={anime} />
           ))}
         </div>
-      </section>
-
-      {/* 8. Bento Grid: Engineering & Platform Benefits */}
-      <section aria-label="Преимущества платформы и технологии">
-        <BentoEngineering />
       </section>
     </div>
   );
