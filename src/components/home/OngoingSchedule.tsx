@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, ChevronRight, Tv, Calendar } from 'lucide-react';
+import { Calendar, Radio, ArrowRight } from 'lucide-react';
 
 const DAYS = [
   { id: 1, name: 'ПН', fullName: 'Понедельник' },
@@ -44,22 +44,22 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_#06B6D4]" />
-          <h2 className="text-xl font-bold font-display tracking-tight text-white">
-            Расписание онгоингов на неделю
+          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <h2 className="text-lg sm:text-xl font-bold font-display tracking-tight text-white">
+            Расписание онгоингов недели
           </h2>
         </div>
 
         {/* Days Pill Selector */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0F1117] border border-white/[0.06]">
           {DAYS.map((d) => (
             <button
               key={d.id}
               onClick={() => setSelectedDay(d.id)}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
                 selectedDay === d.id
-                  ? 'bg-violet-600 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
               }`}
             >
               {d.name}
@@ -70,10 +70,10 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
 
       {/* Schedule Items Grid */}
       {itemsForDay.length === 0 ? (
-        <div className="p-8 rounded-3xl bg-[#0E1017] border border-white/5 text-center text-xs font-mono text-slate-400 space-y-2">
-          <Calendar className="w-8 h-8 mx-auto text-slate-600 mb-2" />
+        <div className="p-8 rounded-2xl bg-[#0E1118] border border-white/[0.06] text-center text-xs font-mono text-zinc-400 space-y-2">
+          <Calendar className="w-6 h-6 mx-auto text-zinc-600 mb-1" />
           <div>В этот день нет запланированных релизов в эфире.</div>
-          <Link href="/catalog?status=RELEASING" className="text-violet-400 hover:underline">
+          <Link href="/catalog?status=RELEASING" className="text-indigo-400 hover:underline">
             Посмотреть все онгоинги сезона →
           </Link>
         </div>
@@ -83,30 +83,31 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
             <Link
               key={`${item.id}-${item.episode}`}
               href={`/anime/${item.id}`}
-              className="p-3.5 rounded-2xl bg-[#0E1017] border border-white/5 hover:border-violet-500/40 hover:bg-[#141722] transition-all flex items-center gap-3.5 group"
+              className="p-3 rounded-2xl bg-[#0E1118] border border-white/[0.06] hover:border-indigo-500/40 hover:bg-[#131722] transition-all flex items-center gap-3.5 group shadow-sm"
             >
-              <div className="relative w-12 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-slate-800">
+              <div className="relative w-12 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-zinc-800">
                 {item.coverImage && (
-                  <Image src={item.coverImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform" />
+                  <Image
+                    src={item.coverImage}
+                    alt={item.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 )}
               </div>
 
               <div className="flex-1 min-w-0 space-y-1">
-                <span className="text-[10px] font-mono text-cyan-400 font-semibold uppercase block">
-                  {item.timeStr}
-                </span>
-                <h4 className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors truncate">
+                <div className="flex items-center justify-between text-[10px] font-mono">
+                  <span className="text-cyan-400 font-semibold uppercase">{item.timeStr}</span>
+                  <span className="text-zinc-500">Серия #{item.episode}</span>
+                </div>
+                <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors truncate">
                   {item.title}
                 </h4>
-                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-                  <span className="text-violet-400 font-semibold">Серия {item.episode}</span>
-                  {item.studio && <span>• {item.studio}</span>}
-                </div>
+                {item.studio && <p className="text-[10px] text-zinc-400 truncate">{item.studio}</p>}
               </div>
 
-              <div className="p-2 rounded-xl bg-white/5 group-hover:bg-violet-600 group-hover:text-white text-slate-400 transition-colors">
-                <ChevronRight className="w-4 h-4" />
-              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
             </Link>
           ))}
         </div>
@@ -114,4 +115,3 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
     </div>
   );
 };
-

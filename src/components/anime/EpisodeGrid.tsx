@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, ChevronRight } from 'lucide-react';
+import { Play } from 'lucide-react';
 
 interface EpisodeGridProps {
   animeId: number;
@@ -52,11 +52,12 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
               return (
                 <button
                   key={idx}
+                  type="button"
                   onClick={() => setSelectedChunk(idx)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono whitespace-nowrap transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-violet-600 text-white font-bold shadow-[0_0_12px_rgba(139,92,246,0.4)]'
-                      : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-[#0E1118] text-zinc-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.06]'
                   }`}
                 >
                   {cStart} – {cEnd}
@@ -76,11 +77,11 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
               value={jumpInput}
               onChange={(e) => setJumpInput(e.target.value)}
               placeholder={`Серия (1-${totalEpisodes})...`}
-              className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-white placeholder-slate-500 w-36 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="px-3 py-1.5 rounded-xl bg-[#0E1118] border border-white/[0.08] text-xs font-mono text-white placeholder-zinc-500 w-36 focus:outline-none focus:border-indigo-500/60"
             />
             <button
               type="submit"
-              className="px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-mono font-bold transition-colors"
+              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-mono font-bold transition-colors cursor-pointer"
             >
               Перейти
             </button>
@@ -89,24 +90,22 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
       </div>
 
       {/* Episodes Grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2.5">
+      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
         {episodesInCurrentChunk.map((epNum) => {
           const isCurrent = epNum === activeEpisode;
           return (
             <Link
               key={epNum}
               href={`/watch/${animeId}/${epNum}`}
-              className={`p-3 rounded-xl border text-center transition-all group ${
+              className={`p-3 rounded-xl border text-center transition-all group flex flex-col items-center justify-center gap-1 ${
                 isCurrent
-                  ? 'bg-violet-600 text-white shadow-[0_0_12px_rgba(139,92,246,0.5)] border-violet-400'
-                  : 'bg-[#141722] hover:bg-violet-600/30 hover:border-violet-500/40 border-white/5'
+                  ? 'bg-indigo-600 text-white border-indigo-500 font-bold shadow-lg shadow-indigo-600/30 scale-105'
+                  : 'bg-[#0E1118] hover:bg-[#151926] text-zinc-300 hover:text-white border-white/[0.06] hover:border-indigo-500/40'
               }`}
             >
-              <span className="block text-[10px] font-mono text-slate-400 group-hover:text-violet-200">
+              <span className="text-xs font-mono font-bold">{epNum}</span>
+              <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 uppercase tracking-tighter">
                 Серия
-              </span>
-              <span className="text-sm font-bold font-mono text-white">
-                {epNum}
               </span>
             </Link>
           );

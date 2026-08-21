@@ -1,18 +1,18 @@
 import { Variants, Transition } from "framer-motion";
 
 export const SPRINGS = {
-  snappy: { type: "spring", stiffness: 420, damping: 28, mass: 0.8 } as Transition,
-  bouncy: { type: "spring", stiffness: 320, damping: 20, mass: 1 } as Transition,
-  gentle: { type: "spring", stiffness: 180, damping: 24, mass: 1.2 } as Transition,
-  cinematic: { duration: 0.65, ease: [0.16, 1, 0.3, 1] } as Transition,
+  snappy: { type: "spring", stiffness: 400, damping: 30, mass: 0.8 } as Transition,
+  bouncy: { type: "spring", stiffness: 300, damping: 22, mass: 1 } as Transition,
+  gentle: { type: "spring", stiffness: 180, damping: 24, mass: 1.1 } as Transition,
+  cinematic: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } as Transition,
 };
 
 export const heroSliderVariants: Variants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? 120 : -120,
+    x: direction > 0 ? 100 : -100,
     opacity: 0,
-    scale: 0.96,
-    filter: "blur(8px)",
+    scale: 0.98,
+    filter: "blur(6px)",
   }),
   center: {
     x: 0,
@@ -21,17 +21,17 @@ export const heroSliderVariants: Variants = {
     filter: "blur(0px)",
     transition: {
       x: SPRINGS.gentle,
-      opacity: { duration: 0.4 },
+      opacity: { duration: 0.35 },
       scale: SPRINGS.gentle,
-      filter: { duration: 0.3 },
+      filter: { duration: 0.25 },
     },
   },
   exit: (direction: number) => ({
-    x: direction < 0 ? 120 : -120,
+    x: direction < 0 ? 100 : -100,
     opacity: 0,
-    scale: 1.04,
-    filter: "blur(8px)",
-    transition: { duration: 0.4, ease: [0.4, 0, 1, 1] },
+    scale: 1.02,
+    filter: "blur(6px)",
+    transition: { duration: 0.35, ease: [0.4, 0, 1, 1] },
   }),
 };
 
@@ -40,14 +40,14 @@ export const staggerContainerVariants: Variants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1,
+      staggerChildren: 0.04,
+      delayChildren: 0.05,
     },
   },
 };
 
 export const staggerItemVariants: Variants = {
-  hidden: { opacity: 0, y: 24, scale: 0.95 },
+  hidden: { opacity: 0, y: 16, scale: 0.97 },
   visible: {
     opacity: 1,
     y: 0,
@@ -56,12 +56,12 @@ export const staggerItemVariants: Variants = {
   },
 };
 
-export const quickPreviewModalVariants: Variants = {
+export const modalVariants: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.88,
-    y: 16,
-    filter: "blur(12px)",
+    scale: 0.94,
+    y: 12,
+    filter: "blur(8px)",
   },
   visible: {
     opacity: 1,
@@ -72,56 +72,18 @@ export const quickPreviewModalVariants: Variants = {
   },
   exit: {
     opacity: 0,
-    scale: 0.92,
-    y: 12,
-    filter: "blur(8px)",
-    transition: { duration: 0.2, ease: "easeOut" },
-  },
-};
-
-export const theaterHUDVariants: Variants = {
-  visible: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: SPRINGS.snappy,
-  },
-  hidden: {
-    opacity: 0,
-    y: 20,
+    scale: 0.95,
+    y: 8,
     filter: "blur(4px)",
-    transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+    transition: { duration: 0.18, ease: "easeOut" },
   },
 };
 
 export const radarPolygonVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    scale: 0,
-    transformOrigin: "center center",
-  },
+  hidden: { opacity: 0, scale: 0 },
   visible: {
     opacity: 1,
     scale: 1,
-    transition: {
-      ...SPRINGS.bouncy,
-      delay: 0.2,
-    },
-  },
-};
-
-export const pageTransitionVariants: Variants = {
-  initial: { opacity: 0, y: 16, filter: "blur(6px)" },
-  animate: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: SPRINGS.cinematic,
-  },
-  exit: {
-    opacity: 0,
-    y: -16,
-    filter: "blur(6px)",
-    transition: { duration: 0.25, ease: "easeInOut" },
+    transition: { duration: 0.8, ease: "easeOut" },
   },
 };

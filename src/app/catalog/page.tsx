@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { AnimeResolver } from '@/lib/api/resolver';
 import { AnimeCard } from '@/components/anime/AnimeCard';
-import { Sparkles, Search, Filter, ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 
 interface CatalogProps {
   searchParams: Promise<{
@@ -25,8 +25,8 @@ const GENRES = [
   { label: 'Драма', value: 'Drama' },
   { label: 'Фэнтези', value: 'Fantasy' },
   { label: 'Ужасы', value: 'Horror' },
-  { label: 'Меха (Роботы)', value: 'Mecha' },
-  { label: 'Мистика / Детектив', value: 'Mystery' },
+  { label: 'Меха', value: 'Mecha' },
+  { label: 'Мистика', value: 'Mystery' },
   { label: 'Психология', value: 'Psychological' },
   { label: 'Романтика', value: 'Romance' },
   { label: 'Фантастика (Sci-Fi)', value: 'Sci-Fi' },
@@ -46,16 +46,16 @@ const STATUSES = [
 const FORMATS = [
   { label: 'Все форматы', value: '' },
   { label: 'TV Сериал', value: 'TV' },
-  { label: 'Полнометражный фильм', value: 'MOVIE' },
+  { label: 'Фильм', value: 'MOVIE' },
   { label: 'OVA / ONA', value: 'OVA' },
   { label: 'Спешл', value: 'SPECIAL' },
 ];
 
 const SORTS = [
   { label: 'По популярности', value: 'POPULARITY_DESC' },
-  { label: 'По рейтингу (Оценка)', value: 'SCORE_DESC' },
+  { label: 'По рейтингу', value: 'SCORE_DESC' },
   { label: 'В тренде сейчас', value: 'TRENDING_DESC' },
-  { label: 'Новинки (Дата выхода)', value: 'START_DATE_DESC' },
+  { label: 'Новинки', value: 'START_DATE_DESC' },
 ];
 
 export const revalidate = 1800;
@@ -83,7 +83,6 @@ export default async function CatalogPage({ searchParams }: CatalogProps) {
 
   const totalPages = Math.min(pageInfo.lastPage || 100, 500);
 
-  // Helper to build URL with query params
   const makeUrl = (newParams: Record<string, string | number | undefined>) => {
     const merged = {
       genre: activeGenre,
@@ -100,148 +99,194 @@ export default async function CatalogPage({ searchParams }: CatalogProps) {
         search.set(k, String(v));
       }
     });
-    const str = search.toString();
-    return str ? `/catalog?${str}` : '/catalog';
+    const qs = search.toString();
+    return qs ? `/catalog?${qs}` : '/catalog';
   };
+
+  const hasActiveFilters = !!(activeGenre || activeStatus || activeFormat || searchQuery);
 
   return (
     <div className="space-y-8">
-      {/* 1. Header & Quick Search Bar */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* Header & Search Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-violet-400" />
-            <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest font-semibold">
-              Глобальная база 20,000+ тайтлов
-            </span>
-          </div>
-          <h1 className="text-3xl font-extrabold font-display tracking-tight text-white">
-            Каталог всех аниме
+          <h1 className="text-2xl sm:text-3xl font-extrabold font-display text-white">
+            Каталог аниме
           </h1>
+          <p className="text-xs text-zinc-400 font-sans">
+            Исследуйте тысячи тайтлов с мгновенной фильтрацией по жанрам и годам
+          </p>
         </div>
 
-        {/* Search Input In Catalog */}
-        <form action="/catalog" method="GET" className="w-full md:w-96 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            name="search"
-            defaultValue={searchQuery || ''}
-            placeholder="Поиск по названию в каталоге..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#0E1017] border border-white/10 text-white text-xs font-sans placeholder-slate-500 focus:outline-none focus:border-violet-500 shadow-inner"
-          />
+        {/* Search in catalog form */}
+        <form action="/catalog" method="GET" className="flex items-center gap-2 max-w-sm w-full">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <input
+              type="text"
+              name="search"
+              defaultValue={searchQuery || ''}
+              placeholder="Поиск в каталоге..."
+              className="w-full bg-[#0E1118] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/60 transition-all font-sans"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+          >
+            Найти
+          </button>
         </form>
       </div>
 
-      {/* 2. Faceted Filters & Sorting Controls */}
-      <div className="p-5 rounded-3xl bg-[#0E1017] border border-white/5 space-y-4 shadow-xl">
-        {/* Genre Tags Scrollable Row */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-            <span>Жанры:</span>
-            {activeGenre && (
-              <Link href={makeUrl({ genre: undefined, page: 1 })} className="text-rose-400 hover:underline">
-                Сбросить жанр ✕
-              </Link>
-            )}
-          </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {GENRES.map((g) => {
-              const isSelected = (!activeGenre && g.value === '') || activeGenre === g.value;
-              return (
-                <Link
-                  key={g.value}
-                  href={makeUrl({ genre: g.value || undefined, page: 1 })}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-mono whitespace-nowrap transition-all ${
-                    isSelected
-                      ? 'bg-violet-600 text-white font-bold shadow-[0_0_12px_rgba(139,92,246,0.5)] border border-violet-400'
-                      : 'bg-[#141722] hover:bg-white/10 text-slate-400 hover:text-white border border-white/5'
-                  }`}
-                >
-                  {g.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Status, Format & Sorting Selectors */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-white/5">
-          {/* Status */}
+      {/* Filter Control Bar */}
+      <div className="p-4 rounded-2xl bg-[#0E1118] border border-white/[0.07] shadow-lg space-y-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Genre Dropdown */}
           <div className="space-y-1">
-            <span className="text-[11px] font-mono text-slate-400">Статус релиза:</span>
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+            <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Жанр</label>
+            <div className="relative">
+              <select
+                aria-label="Фильтр по жанру"
+                value={activeGenre || ''}
+                onChange={(e) => {
+                  window.location.href = makeUrl({ genre: e.target.value, page: 1 });
+                }}
+                className="w-full bg-[#090A0F] text-xs text-zinc-200 border border-white/[0.08] rounded-xl px-3 py-2 appearance-none focus:outline-none focus:border-indigo-500/60 cursor-pointer"
+              >
+                {GENRES.map((g) => (
+                  <option key={g.value} value={g.value}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Status Dropdown */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Статус</label>
+            <select
+              aria-label="Фильтр по статусу релиза"
+              value={activeStatus || ''}
+              onChange={(e) => {
+                window.location.href = makeUrl({ status: e.target.value, page: 1 });
+              }}
+              className="w-full bg-[#090A0F] text-xs text-zinc-200 border border-white/[0.08] rounded-xl px-3 py-2 appearance-none focus:outline-none focus:border-indigo-500/60 cursor-pointer"
+            >
               {STATUSES.map((s) => (
-                <Link
-                  key={s.value}
-                  href={makeUrl({ status: s.value || undefined, page: 1 })}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-mono whitespace-nowrap transition-all ${
-                    (!activeStatus && s.value === '') || activeStatus === s.value
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
-                      : 'bg-white/5 text-slate-400 hover:text-white'
-                  }`}
-                >
+                <option key={s.value} value={s.value}>
                   {s.label}
-                </Link>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
-          {/* Format */}
+          {/* Format Dropdown */}
           <div className="space-y-1">
-            <span className="text-[11px] font-mono text-slate-400">Формат:</span>
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+            <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Формат</label>
+            <select
+              aria-label="Фильтр по формату аниме"
+              value={activeFormat || ''}
+              onChange={(e) => {
+                window.location.href = makeUrl({ format: e.target.value, page: 1 });
+              }}
+              className="w-full bg-[#090A0F] text-xs text-zinc-200 border border-white/[0.08] rounded-xl px-3 py-2 appearance-none focus:outline-none focus:border-indigo-500/60 cursor-pointer"
+            >
               {FORMATS.map((f) => (
-                <Link
-                  key={f.value}
-                  href={makeUrl({ format: f.value || undefined, page: 1 })}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-mono whitespace-nowrap transition-all ${
-                    (!activeFormat && f.value === '') || activeFormat === f.value
-                      ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40 font-bold'
-                      : 'bg-white/5 text-slate-400 hover:text-white'
-                  }`}
-                >
+                <option key={f.value} value={f.value}>
                   {f.label}
-                </Link>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
-          {/* Sort */}
+          {/* Sort Dropdown */}
           <div className="space-y-1">
-            <span className="text-[11px] font-mono text-slate-400">Сортировка:</span>
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-              {SORTS.map((st) => (
-                <Link
-                  key={st.value}
-                  href={makeUrl({ sort: st.value, page: 1 })}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-mono whitespace-nowrap transition-all ${
-                    (!params.sort && st.value === 'POPULARITY_DESC') || params.sort === st.value
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold'
-                      : 'bg-white/5 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {st.label}
-                </Link>
+            <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Сортировка</label>
+            <select
+              aria-label="Сортировка результатов"
+              value={params.sort || 'POPULARITY_DESC'}
+              onChange={(e) => {
+                window.location.href = makeUrl({ sort: e.target.value, page: 1 });
+              }}
+              className="w-full bg-[#090A0F] text-xs text-zinc-200 border border-white/[0.08] rounded-xl px-3 py-2 appearance-none focus:outline-none focus:border-indigo-500/60 cursor-pointer"
+            >
+              {SORTS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
         </div>
+
+        {/* Active Filter Chips */}
+        {hasActiveFilters && (
+          <div className="pt-2 border-t border-white/[0.05] flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] text-zinc-500 font-mono">Активные фильтры:</span>
+              {activeGenre && (
+                <Link
+                  href={makeUrl({ genre: '', page: 1 })}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-mono"
+                >
+                  <span>{activeGenre}</span>
+                  <X className="w-3 h-3" />
+                </Link>
+              )}
+              {activeStatus && (
+                <Link
+                  href={makeUrl({ status: '', page: 1 })}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-mono"
+                >
+                  <span>{activeStatus}</span>
+                  <X className="w-3 h-3" />
+                </Link>
+              )}
+              {activeFormat && (
+                <Link
+                  href={makeUrl({ format: '', page: 1 })}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono"
+                >
+                  <span>{activeFormat}</span>
+                  <X className="w-3 h-3" />
+                </Link>
+              )}
+              {searchQuery && (
+                <Link
+                  href={makeUrl({ search: '', page: 1 })}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-mono"
+                >
+                  <span>«{searchQuery}»</span>
+                  <X className="w-3 h-3" />
+                </Link>
+              )}
+            </div>
+
+            <Link
+              href="/catalog"
+              className="text-[11px] text-zinc-400 hover:text-white font-mono transition-colors"
+            >
+              Сбросить все
+            </Link>
+          </div>
+        )}
       </div>
 
-      {/* 3. Anime Grid (36 per page) */}
+      {/* Grid of Results */}
       {animeList.length === 0 ? (
-        <div className="p-16 rounded-3xl bg-[#0E1017] border border-white/5 text-center space-y-3">
-          <Filter className="w-10 h-10 mx-auto text-slate-600 mb-2" />
-          <h3 className="text-lg font-bold font-display text-white">Ничего не найдено</h3>
-          <p className="text-xs text-slate-400 font-mono">
-            Попробуйте изменить выбранные фильтры или ввести другое название в строке поиска.
+        <div className="p-16 rounded-3xl bg-[#0E1118] border border-white/[0.08] text-center space-y-3">
+          <Filter className="w-8 h-8 text-zinc-600 mx-auto" />
+          <h3 className="text-base font-bold text-white">Ничего не найдено</h3>
+          <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+            Попробуйте изменить параметры поиска или сбросить фильтры.
           </p>
           <Link
             href="/catalog"
-            className="inline-block px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-mono font-bold"
+            className="inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold shadow-sm"
           >
-            Сбросить все фильтры
+            Сбросить фильтры
           </Link>
         </div>
       ) : (
@@ -252,76 +297,34 @@ export default async function CatalogPage({ searchParams }: CatalogProps) {
         </div>
       )}
 
-      {/* 4. Complete Pagination Controls */}
-      <div className="p-4 rounded-3xl bg-[#0E1017] border border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="text-xs font-mono text-slate-400">
-          Страница <span className="text-white font-bold">{currentPage}</span> из{' '}
-          <span className="text-white font-bold">{totalPages}</span>
-        </div>
-
-        {/* Stepper Buttons */}
-        <div className="flex items-center gap-1.5 flex-wrap justify-center">
-          {/* First Page */}
-          {currentPage > 1 && (
-            <Link
-              href={makeUrl({ page: 1 })}
-              className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-mono"
-            >
-              « Первая
-            </Link>
-          )}
-
-          {/* Prev Page */}
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-6">
           {currentPage > 1 && (
             <Link
               href={makeUrl({ page: currentPage - 1 })}
-              className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#0E1118] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-zinc-300 transition-all"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Назад</span>
             </Link>
           )}
 
-          {/* Surrounding Pages (e.g. -2, -1, current, +1, +2) */}
-          {Array.from({ length: 5 }).map((_, idx) => {
-            const pageNum = currentPage - 2 + idx;
-            if (pageNum < 1 || pageNum > totalPages) return null;
-            const isCurrent = pageNum === currentPage;
-            return (
-              <Link
-                key={pageNum}
-                href={makeUrl({ page: pageNum })}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-mono font-bold transition-all ${
-                  isCurrent
-                    ? 'bg-violet-600 text-white shadow-[0_0_12px_rgba(139,92,246,0.5)] border border-violet-400'
-                    : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5'
-                }`}
-              >
-                {pageNum}
-              </Link>
-            );
-          })}
+          <div className="px-3 py-1.5 rounded-xl bg-[#0E1118] border border-white/[0.08] text-xs font-mono text-zinc-400">
+            Страница <span className="text-white font-bold">{currentPage}</span> из {totalPages}
+          </div>
 
-          {/* Next Page */}
           {currentPage < totalPages && (
             <Link
               href={makeUrl({ page: currentPage + 1 })}
-              className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#0E1118] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-zinc-300 transition-all"
             >
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          )}
-
-          {/* Last Page */}
-          {currentPage < totalPages && (
-            <Link
-              href={makeUrl({ page: totalPages })}
-              className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-mono"
-            >
-              Последняя »
+              <span>Вперёд</span>
+              <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

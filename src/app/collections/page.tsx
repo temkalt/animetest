@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Sparkles, Heart, Film, User, Plus } from 'lucide-react';
+import { Layers, Heart, Film, User, Plus, ArrowRight } from 'lucide-react';
 
 const CURATED_COLLECTIONS = [
   {
@@ -52,20 +52,15 @@ export default function CollectionsPage() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest font-semibold">
+            <Layers className="w-4 h-4 text-indigo-400" />
+            <span className="text-xs font-mono text-indigo-400 uppercase tracking-widest font-semibold">
               Кураторский отбор
             </span>
           </div>
-          <h1 className="text-3xl font-extrabold font-display text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold font-display text-white">
             Тематические коллекции
           </h1>
         </div>
-
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-display font-semibold text-xs shadow-[0_0_15px_rgba(139,92,246,0.4)] transition-all">
-          <Plus className="w-4 h-4" />
-          <span>Создать коллекцию</span>
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -73,9 +68,9 @@ export default function CollectionsPage() {
           <Link
             key={c.id}
             href={c.href || '/catalog'}
-            className="group relative rounded-3xl overflow-hidden bg-[#0E1017] border border-white/10 hover:border-violet-500/50 transition-all shadow-xl flex flex-col justify-end aspect-[16/9] p-6"
+            className="group relative rounded-3xl overflow-hidden bg-[#0E1118] border border-white/[0.08] hover:border-indigo-500/50 transition-all shadow-xl flex flex-col justify-end aspect-[16/9] p-6 sm:p-8"
           >
-            {/* Background Cover */}
+            {/* Background Cover Image */}
             <Image
               src={c.cover}
               alt={c.title}
@@ -83,11 +78,11 @@ export default function CollectionsPage() {
               className="object-cover opacity-40 group-hover:scale-105 group-hover:opacity-50 transition-all duration-500"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-t from-[#07080B] via-[#07080B]/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#08090D] via-[#08090D]/70 to-transparent" />
 
             <div className="relative z-10 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                   {c.count} тайтлов
                 </span>
                 <div className="flex items-center gap-1 text-xs text-rose-400 font-mono">
@@ -96,16 +91,19 @@ export default function CollectionsPage() {
                 </div>
               </div>
 
-              <h3 className="text-lg font-bold font-display text-white group-hover:text-violet-300 transition-colors">
+              <h3 className="text-lg sm:text-xl font-bold font-display text-white group-hover:text-indigo-300 transition-colors">
                 {c.title}
               </h3>
 
-              <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed font-sans">
+              <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed">
                 {c.description}
               </p>
 
-              <div className="text-[11px] font-mono text-slate-400 pt-1">
-                Автор: {c.author}
+              <div className="pt-2 flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                <span>Автор: {c.author}</span>
+                <span className="flex items-center gap-1 text-indigo-400 group-hover:translate-x-1 transition-transform">
+                  Смотреть подборку <ArrowRight className="w-3 h-3" />
+                </span>
               </div>
             </div>
           </Link>
