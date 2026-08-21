@@ -34,6 +34,7 @@ export class StreamAggregator {
     }
 
     voiceoverTeamsSet.add('Kodik (Мульти-озвучка)');
+    voiceoverTeamsSet.add('Kodik Зеркало (Aniqit)');
     voiceoverTeamsSet.add('KuroNami Multi-Dub (Full HD)');
     voiceoverTeamsSet.add('AutoEmbed (Multi-Audio)');
     voiceoverTeamsSet.add('Collaps (HD)');
@@ -71,7 +72,7 @@ export class StreamAggregator {
         }
       }
 
-      // 2. 🌌 Kodik Player (Direct mirror with search title fallback)
+      // 2. 🌌 Kodik Main Mirror (Direct mirror with search title fallback)
       const kodikEmbed = `https://kodik.info/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(searchTitle)}&episode=${epNum}`;
       sources.push({
         id: `kodik-${animeId}-${epNum}`,
@@ -85,7 +86,21 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // 3. 🌟 KuroNami Multi-Dub / International FHD (vidsrc.to)
+      // 3. 🎬 Kodik Backup Mirror (Aniqit)
+      const aniqitEmbed = `https://aniqit.com/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(searchTitle)}&episode=${epNum}`;
+      sources.push({
+        id: `aniqit-${animeId}-${epNum}`,
+        provider: 'kodik',
+        teamName: 'Kodik Зеркало (Aniqit)',
+        type: 'dub',
+        language: 'ru',
+        qualities: ['1080p', '720p'],
+        streamUrl: aniqitEmbed,
+        iframeUrl: aniqitEmbed,
+        isDirectHls: false,
+      });
+
+      // 4. 🌟 KuroNami Multi-Dub / International FHD (vidsrc.to)
       const multiDubEmbed = `https://vidsrc.to/embed/anime/${shikiId}/${epNum}`;
       sources.push({
         id: `vidsrc-${animeId}-${epNum}`,
@@ -99,7 +114,7 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // 4. 🔮 AutoEmbed Player (Multi-Audio FHD)
+      // 5. 🔮 AutoEmbed Player (Multi-Audio FHD)
       const autoEmbedUrl = `https://player.autoembed.cc/embed/anime/${shikiId}/${epNum}`;
       sources.push({
         id: `autoembed-${animeId}-${epNum}`,
@@ -113,7 +128,7 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // 5. ⚡ Collaps Player (HD)
+      // 6. ⚡ Collaps Player (HD)
       const collapsEmbed = `https://api.bhcesdf.com/embed/movie/${shikiId}`;
       sources.push({
         id: `collaps-${animeId}-${epNum}`,
@@ -127,7 +142,7 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // 6. ✨ AllOHA Player (HD)
+      // 7. ✨ AllOHA Player (HD)
       const allohaEmbed = `https://api.alloha.tv/?shikimori=${shikiId}`;
       sources.push({
         id: `alloha-${animeId}-${epNum}`,
