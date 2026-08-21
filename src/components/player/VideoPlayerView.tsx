@@ -6,6 +6,7 @@ import Hls from 'hls.js';
 import { syncManager } from '@/lib/dexie/sync';
 import { EpisodeTimecodes, VoiceoverTrack } from '@/types';
 import { StreamResolver } from '@/lib/player/stream-resolver';
+import { fetchDDBBPlayers } from '@/lib/api/ddbb';
 import {
   Sparkles,
   ShieldCheck,
@@ -18,6 +19,7 @@ import {
   Maximize,
   HelpCircle,
   ChevronRight,
+  Radio,
 } from 'lucide-react';
 
 interface VideoPlayerProps {
@@ -42,6 +44,9 @@ const PLAYER_ICONS: Record<string, string> = {
   consumet: '🌟',
   alloha: '✨',
   collaps: '⚡',
+  turbo: '🚀',
+  veoveo: '🔮',
+  vibix: '📼',
   sibnet: '📼',
   lumex: '🔮',
 };
@@ -65,16 +70,14 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   const artInstanceRef = useRef<Artplayer | null>(null);
   const glowRef = useRef<HTMLDivElement>(null);
 
-  // Client-discovered streams (for Vercel & client-side enrichment)
+  // Client-discovered streams (AniLibria + DDBB live tokens)
   const [clientSources, setClientSources] = useState<VoiceoverTrack[]>([]);
   const [activeTimecodes, setActiveTimecodes] = useState<EpisodeTimecodes | undefined>(initialTimecodes);
   const [iframeKey, setIframeKey] = useState<number>(0);
 
   // Build merged sources list
   const allSources = useMemo(() => {
-    // If we have client-discovered HLS, place it at the front
     const combined = [...clientSources, ...initialSources];
-    // De-duplicate by id
     const seen = new Set<string>();
     const unique: VoiceoverTrack[] = [];
 
@@ -87,7 +90,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
     // Ensure fallback sources always exist for any anime
     if (unique.length === 0) {
-      const fallbackList = StreamResolver.buildSources({
+      return StreamResolver.buildSources({
         animeId,
         malId,
         shikimoriId,
@@ -98,7 +101,6 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
           english: englishTitle,
         },
       });
-      return fallbackList;
     }
 
     return unique;
@@ -113,20 +115,22 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     return allSources[0]?.id || 'default';
   });
 
-  // Client-side discovery on mount / episode change
+  // Client-side live discovery (Direct AniLibria HLS + DDBB live balancers)
   useEffect(() => {
     let isMounted = true;
 
-    // Check if initialSources already has HLS
+    const titles = {
+      russian: russianTitle,
+      romaji: romajiTitle,
+      english: englishTitle,
+    };
+
+    // 1. Discover client-side AniLibria HLS (bypasses server IP bans)
     const hasInitialHls = initialSources.some((s) => s.isDirectHls);
     if (!hasInitialHls) {
       StreamResolver.discoverClientHls({
         episodeNumber,
-        titles: {
-          russian: russianTitle,
-          romaji: romajiTitle,
-          english: englishTitle,
-        },
+        titles,
       }).then((match) => {
         if (isMounted && match?.hlsUrl) {
           const hlsTrack: VoiceoverTrack = {
@@ -139,7 +143,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             streamUrl: match.hlsUrl,
             isDirectHls: true,
           };
-          setClientSources([hlsTrack]);
+          setClientSources((prev) => [hlsTrack, ...prev.filter((p) => !p.isDirectHls)]);
           setSelectedSourceId(hlsTrack.id);
           if (match.timecodes) {
             setActiveTimecodes(match.timecodes);
@@ -148,10 +152,35 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       });
     }
 
+    // 2. Discover live DDBB balancers (Alloha, Collaps, Turbo, VeoVeo)
+    const searchName = russianTitle || romajiTitle || englishTitle || '';
+    if (searchName) {
+      fetchDDBBPlayers({
+        title: searchName,
+        shikimoriId: shikimoriId || undefined,
+      }).then((ddbbProviders) => {
+        if (isMounted && ddbbProviders.length > 0) {
+          const ddbbSources = StreamResolver.buildSources({
+            animeId,
+            malId,
+            shikimoriId,
+            episodeNumber,
+            titles,
+            ddbbProviders,
+          });
+          setClientSources((prev) => {
+            const map = new Map<string, VoiceoverTrack>();
+            [...prev, ...ddbbSources].forEach((s) => map.set(s.id, s));
+            return Array.from(map.values());
+          });
+        }
+      });
+    }
+
     return () => {
       isMounted = false;
     };
-  }, [animeId, episodeNumber, russianTitle, romajiTitle, englishTitle, initialSources]);
+  }, [animeId, episodeNumber, russianTitle, romajiTitle, englishTitle, initialSources, shikimoriId, malId]);
 
   // Sync selected source when allSources change
   useEffect(() => {
@@ -335,7 +364,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-violet-400" />
-            <span>Выберите видеоплеер ({allSources.length}):</span>
+            <span>Плееры & Студии озвучки ({allSources.length}):</span>
           </span>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 text-emerald-400 text-[11px] font-mono bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
@@ -419,7 +448,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10B981]" />
           <span className="text-slate-300">
-            Активен плеер: <strong className="text-white font-bold">{activeSource?.teamName}</strong> • Серия #{episodeNumber}
+            Активен источник: <strong className="text-white font-bold">{activeSource?.teamName}</strong> • Серия #{episodeNumber}
           </span>
         </div>
 

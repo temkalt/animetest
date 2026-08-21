@@ -1,4 +1,5 @@
 import { VoiceoverTrack, EpisodeTimecodes } from '@/types';
+import { fetchDDBBPlayers, DDBBProvider } from '@/lib/api/ddbb';
 
 export interface DynamicStreamMatch {
   hlsUrl?: string;
@@ -36,8 +37,9 @@ export class StreamResolver {
       synonyms?: string[];
     };
     directHls?: string | null;
+    ddbbProviders?: DDBBProvider[];
   }): VoiceoverTrack[] {
-    const { animeId, malId, shikimoriId, episodeNumber, titles, directHls } = params;
+    const { animeId, malId, shikimoriId, episodeNumber, titles, directHls, ddbbProviders = [] } = params;
     const shikiId = shikimoriId || malId || animeId;
     const searchTitle = titles.russian || titles.romaji || titles.english || '';
     const cleanSearchTitle = this.cleanTitle(searchTitle);
@@ -86,7 +88,46 @@ export class StreamResolver {
       isDirectHls: false,
     });
 
-    // 4. 🌟 KuroNami Multi-Dub (Full HD 1080p - VidSrc)
+    // 4. 🚀 Live DDBB Balancers (Alloha, Collaps, Turbo, VeoVeo)
+    for (const provider of ddbbProviders) {
+      if (provider.iframeUrl) {
+        const typeName = provider.type || 'HD';
+        sources.push({
+          id: `ddbb-${provider.type.toLowerCase()}-${animeId}-${episodeNumber}`,
+          provider: provider.type.toLowerCase() as any,
+          teamName: `${typeName} (HD Балансер)`,
+          type: 'dub',
+          language: 'ru',
+          qualities: ['1080p', '720p'],
+          streamUrl: provider.iframeUrl,
+          iframeUrl: provider.iframeUrl,
+          isDirectHls: false,
+        });
+      }
+
+      // If provider has translations list (e.g. VeoVeo with AniLibria, AniDUB, Crunchyroll)
+      if (Array.isArray(provider.translations)) {
+        for (let i = 0; i < Math.min(provider.translations.length, 5); i++) {
+          const tr = provider.translations[i];
+          if (tr && tr.iframeUrl) {
+            const rawName = String(tr.name || provider.type || 'Озвучка').replace(/^русский\.\s*/i, '').slice(0, 25);
+            sources.push({
+              id: `ddbb-${provider.type.toLowerCase()}-tr-${i}-${animeId}-${episodeNumber}`,
+              provider: provider.type.toLowerCase() as any,
+              teamName: `${rawName} (${provider.type})`,
+              type: 'dub',
+              language: 'ru',
+              qualities: ['1080p', '720p'],
+              streamUrl: tr.iframeUrl,
+              iframeUrl: tr.iframeUrl,
+              isDirectHls: false,
+            });
+          }
+        }
+      }
+    }
+
+    // 5. 🌟 KuroNami Multi-Dub (Full HD 1080p - VidSrc)
     const vidsrcUrl = `https://vidsrc.to/embed/anime/${shikiId}/${episodeNumber}`;
     sources.push({
       id: `vidsrc-${animeId}-${episodeNumber}`,
@@ -100,7 +141,7 @@ export class StreamResolver {
       isDirectHls: false,
     });
 
-    // 5. 🔮 AutoEmbed Player (Multi-Audio & English/Original Sub/Dub)
+    // 6. 🔮 AutoEmbed Player (Multi-Audio & English/Original Sub/Dub)
     const autoEmbedUrl = `https://player.autoembed.cc/embed/anime/${shikiId}/${episodeNumber}`;
     sources.push({
       id: `autoembed-${animeId}-${episodeNumber}`,
@@ -114,7 +155,7 @@ export class StreamResolver {
       isDirectHls: false,
     });
 
-    // 6. ⚡ Collaps (HD)
+    // 7. ⚡ Collaps Direct Mirror
     const collapsUrl = `https://api.bhcesdf.com/embed/movie/${shikiId}`;
     sources.push({
       id: `collaps-${animeId}-${episodeNumber}`,
@@ -128,7 +169,7 @@ export class StreamResolver {
       isDirectHls: false,
     });
 
-    // 7. ✨ AllOHA (HD)
+    // 8. ✨ AllOHA Direct Mirror
     const allohaUrl = `https://api.alloha.tv/?shikimori=${shikiId}`;
     sources.push({
       id: `alloha-${animeId}-${episodeNumber}`,

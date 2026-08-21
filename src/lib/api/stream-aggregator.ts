@@ -1,5 +1,7 @@
 import { VoiceoverTrack, EpisodeItem } from '@/types';
 import { getAniLibriaReleaseDetails, searchAniLibriaReleases, AniLibriaReleaseItem } from './anilibria';
+import { fetchDDBBPlayers } from './ddbb';
+import { StreamResolver } from '../player/stream-resolver';
 
 export interface StreamResolutionResult {
   episodes: EpisodeItem[];
@@ -29,18 +31,14 @@ export class StreamAggregator {
     const anilibriaRelease = await this.findAniLibriaMatch(titles);
     const hasAniLibria = !!(anilibriaRelease && anilibriaRelease.episodes && anilibriaRelease.episodes.length > 0);
 
-    if (hasAniLibria) {
-      voiceoverTeamsSet.add('KuroNami Direct (1080p HLS)');
-    }
+    // 2. Fetch live DDBB balancers (Alloha, Collaps, Turbo, VeoVeo)
+    const searchTitle = titles.russian || titles.romaji || titles.english || '';
+    const ddbbProviders = await fetchDDBBPlayers({
+      title: searchTitle,
+      shikimoriId: shikimoriId || undefined,
+    });
 
-    voiceoverTeamsSet.add('Kodik (Мульти-озвучка)');
-    voiceoverTeamsSet.add('Kodik Зеркало (Aniqit)');
-    voiceoverTeamsSet.add('KuroNami Multi-Dub (Full HD)');
-    voiceoverTeamsSet.add('AutoEmbed (Multi-Audio)');
-    voiceoverTeamsSet.add('Collaps (HD)');
-    voiceoverTeamsSet.add('AllOHA (HD)');
-
-    // 2. Generate episode list with complete multi-player tree
+    // 3. Generate episode list with complete multi-player tree
     const targetEpisodesCount = Math.max(
       totalEpisodes || 1,
       anilibriaRelease?.episodes?.length || 0,
@@ -48,113 +46,24 @@ export class StreamAggregator {
     );
 
     const episodes: EpisodeItem[] = [];
-    const shikiId = shikimoriId || malId || animeId;
-    const searchTitle = titles.russian || titles.romaji || titles.english || '';
 
     for (let epNum = 1; epNum <= targetEpisodesCount; epNum++) {
-      const sources: VoiceoverTrack[] = [];
       const anilibriaEp = anilibriaRelease?.episodes?.find((e) => e.ordinal === epNum);
+      const directHls = hasAniLibria && anilibriaEp
+        ? (anilibriaEp.hls_1080 || anilibriaEp.hls_720 || anilibriaEp.hls_480)
+        : null;
 
-      // 1. ⚡ KuroNami Direct HLS Source (AniLibria 1080p - 100% active HLS stream)
-      if (hasAniLibria && anilibriaEp) {
-        const directHls = anilibriaEp.hls_1080 || anilibriaEp.hls_720 || anilibriaEp.hls_480;
-        if (directHls) {
-          sources.push({
-            id: `anilibria-${anilibriaEp.id || epNum}`,
-            provider: 'anilibria',
-            teamName: 'KuroNami Direct (1080p HLS)',
-            type: 'dub',
-            language: 'ru',
-            qualities: ['1080p', '720p', '480p'],
-            streamUrl: directHls,
-            isDirectHls: true,
-          });
-        }
-      }
-
-      // 2. 🌌 Kodik Main Mirror (Direct mirror with search title fallback)
-      const kodikEmbed = `https://kodik.info/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(searchTitle)}&episode=${epNum}`;
-      sources.push({
-        id: `kodik-${animeId}-${epNum}`,
-        provider: 'kodik',
-        teamName: 'Kodik (Мульти-озвучка)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: kodikEmbed,
-        iframeUrl: kodikEmbed,
-        isDirectHls: false,
+      const sources = StreamResolver.buildSources({
+        animeId,
+        malId,
+        shikimoriId,
+        episodeNumber: epNum,
+        titles,
+        directHls,
+        ddbbProviders,
       });
 
-      // 3. 🎬 Kodik Backup Mirror (Aniqit)
-      const aniqitEmbed = `https://aniqit.com/find-player?shikimoriID=${shikiId}&title=${encodeURIComponent(searchTitle)}&episode=${epNum}`;
-      sources.push({
-        id: `aniqit-${animeId}-${epNum}`,
-        provider: 'kodik',
-        teamName: 'Kodik Зеркало (Aniqit)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: aniqitEmbed,
-        iframeUrl: aniqitEmbed,
-        isDirectHls: false,
-      });
-
-      // 4. 🌟 KuroNami Multi-Dub / International FHD (vidsrc.to)
-      const multiDubEmbed = `https://vidsrc.to/embed/anime/${shikiId}/${epNum}`;
-      sources.push({
-        id: `vidsrc-${animeId}-${epNum}`,
-        provider: 'consumet',
-        teamName: 'KuroNami Multi-Dub (Full HD)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: multiDubEmbed,
-        iframeUrl: multiDubEmbed,
-        isDirectHls: false,
-      });
-
-      // 5. 🔮 AutoEmbed Player (Multi-Audio FHD)
-      const autoEmbedUrl = `https://player.autoembed.cc/embed/anime/${shikiId}/${epNum}`;
-      sources.push({
-        id: `autoembed-${animeId}-${epNum}`,
-        provider: 'consumet',
-        teamName: 'AutoEmbed (Multi-Audio)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: autoEmbedUrl,
-        iframeUrl: autoEmbedUrl,
-        isDirectHls: false,
-      });
-
-      // 6. ⚡ Collaps Player (HD)
-      const collapsEmbed = `https://api.bhcesdf.com/embed/movie/${shikiId}`;
-      sources.push({
-        id: `collaps-${animeId}-${epNum}`,
-        provider: 'collaps',
-        teamName: 'Collaps (HD)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: collapsEmbed,
-        iframeUrl: collapsEmbed,
-        isDirectHls: false,
-      });
-
-      // 7. ✨ AllOHA Player (HD)
-      const allohaEmbed = `https://api.alloha.tv/?shikimori=${shikiId}`;
-      sources.push({
-        id: `alloha-${animeId}-${epNum}`,
-        provider: 'alloha',
-        teamName: 'AllOHA (HD)',
-        type: 'dub',
-        language: 'ru',
-        qualities: ['1080p', '720p'],
-        streamUrl: allohaEmbed,
-        iframeUrl: allohaEmbed,
-        isDirectHls: false,
-      });
+      sources.forEach((s) => voiceoverTeamsSet.add(s.teamName));
 
       episodes.push({
         id: `ep-${animeId}-${epNum}`,
@@ -181,11 +90,7 @@ export class StreamAggregator {
   }
 
   private static cleanQuery(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[\(\)\[\]\{\}\:\;\,\.\!\?\-\_\'\"\`]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    return StreamResolver.cleanTitle(text);
   }
 
   private static async findAniLibriaMatch(titles: {
@@ -198,26 +103,20 @@ export class StreamAggregator {
 
     if (titles.russian) {
       candidates.push(titles.russian);
-      const cleanRu = titles.russian.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\bсезон\s*\d+\b|\b\d+\s*сезон\b)/gi, '').trim();
-      if (cleanRu && cleanRu !== titles.russian) {
-        candidates.push(cleanRu);
-      }
+      const cleanRu = this.cleanQuery(titles.russian);
+      if (cleanRu && cleanRu !== titles.russian) candidates.push(cleanRu);
     }
 
     if (titles.english) {
       candidates.push(titles.english);
-      const cleanEn = titles.english.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\bseason\s*\d+\b|\b\d+(st|nd|rd|th)\s*season\b)/gi, '').trim();
-      if (cleanEn && cleanEn !== titles.english) {
-        candidates.push(cleanEn);
-      }
+      const cleanEn = this.cleanQuery(titles.english);
+      if (cleanEn && cleanEn !== titles.english) candidates.push(cleanEn);
     }
 
     if (titles.romaji) {
       candidates.push(titles.romaji);
-      const cleanRomaji = titles.romaji.replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\b\d+(st|nd|rd|th)?\s*season\b)/gi, '').trim();
-      if (cleanRomaji && cleanRomaji !== titles.romaji) {
-        candidates.push(cleanRomaji);
-      }
+      const cleanRomaji = this.cleanQuery(titles.romaji);
+      if (cleanRomaji && cleanRomaji !== titles.romaji) candidates.push(cleanRomaji);
     }
 
     titles.synonyms.forEach((s) => {
