@@ -41,12 +41,12 @@ interface VideoPlayerProps {
 const PLAYER_ICONS: Record<string, string> = {
   anilibria: '⚡',
   kodik: '🌌',
-  consumet: '🌟',
   alloha: '✨',
   collaps: '⚡',
   turbo: '🚀',
   veoveo: '🔮',
   vibix: '📼',
+  consumet: '🌟',
   sibnet: '📼',
   lumex: '🔮',
 };
@@ -74,6 +74,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   const [clientSources, setClientSources] = useState<VoiceoverTrack[]>([]);
   const [activeTimecodes, setActiveTimecodes] = useState<EpisodeTimecodes | undefined>(initialTimecodes);
   const [iframeKey, setIframeKey] = useState<number>(0);
+  const [hlsFailed, setHlsFailed] = useState<boolean>(false);
 
   // Build merged sources list
   const allSources = useMemo(() => {
@@ -88,7 +89,6 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       }
     }
 
-    // Ensure fallback sources always exist for any anime
     if (unique.length === 0) {
       return StreamResolver.buildSources({
         animeId,
@@ -106,12 +106,14 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     return unique;
   }, [clientSources, initialSources, animeId, malId, shikimoriId, episodeNumber, russianTitle, romajiTitle, englishTitle]);
 
-  // Selected source ID
+  // Selected source ID: prefer HLS if available and not failed, else Kodik or Alloha
   const [selectedSourceId, setSelectedSourceId] = useState<string>(() => {
-    const hls = allSources.find((s) => s.isDirectHls);
-    if (hls) return hls.id;
+    const hls = allSources.find((s) => s.isDirectHls && s.streamUrl);
+    if (hls && !hlsFailed) return hls.id;
     const kodik = allSources.find((s) => s.provider === 'kodik');
     if (kodik) return kodik.id;
+    const alloha = allSources.find((s) => s.provider === 'alloha');
+    if (alloha) return alloha.id;
     return allSources[0]?.id || 'default';
   });
 
@@ -125,8 +127,8 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       english: englishTitle,
     };
 
-    // 1. Discover client-side AniLibria HLS (bypasses server IP bans)
-    const hasInitialHls = initialSources.some((s) => s.isDirectHls);
+    // 1. Discover client-side AniLibria HLS
+    const hasInitialHls = initialSources.some((s) => s.isDirectHls && s.streamUrl);
     if (!hasInitialHls) {
       StreamResolver.discoverClientHls({
         episodeNumber,
@@ -144,7 +146,9 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             isDirectHls: true,
           };
           setClientSources((prev) => [hlsTrack, ...prev.filter((p) => !p.isDirectHls)]);
-          setSelectedSourceId(hlsTrack.id);
+          if (!hlsFailed) {
+            setSelectedSourceId(hlsTrack.id);
+          }
           if (match.timecodes) {
             setActiveTimecodes(match.timecodes);
           }
@@ -180,171 +184,181 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [animeId, episodeNumber, russianTitle, romajiTitle, englishTitle, initialSources, shikimoriId, malId]);
+  }, [animeId, episodeNumber, russianTitle, romajiTitle, englishTitle, initialSources, shikimoriId, malId, hlsFailed]);
 
   // Sync selected source when allSources change
   useEffect(() => {
     if (allSources.length > 0) {
       const match = allSources.find((s) => s.id === selectedSourceId);
       if (!match) {
-        const hls = allSources.find((s) => s.isDirectHls);
+        const hls = allSources.find((s) => s.isDirectHls && s.streamUrl);
         const kodik = allSources.find((s) => s.provider === 'kodik');
-        setSelectedSourceId(hls?.id || kodik?.id || allSources[0].id);
+        const alloha = allSources.find((s) => s.provider === 'alloha');
+        setSelectedSourceId((!hlsFailed && hls?.id) || kodik?.id || alloha?.id || allSources[0].id);
       }
     }
-  }, [allSources, selectedSourceId]);
+  }, [allSources, selectedSourceId, hlsFailed]);
 
   const activeSource = allSources.find((s) => s.id === selectedSourceId) || allSources[0];
-  const isDirectHls = activeSource?.isDirectHls;
+  const isDirectHls = activeSource?.isDirectHls && !hlsFailed && !!activeSource?.streamUrl;
   const activeStreamUrl = activeSource?.streamUrl || url;
 
   // Initialize ArtPlayer for direct HLS (AniLibria)
   useEffect(() => {
     if (!isDirectHls || !containerRef.current || !activeStreamUrl) return;
 
-    const art = new Artplayer({
-      container: containerRef.current,
-      url: activeStreamUrl,
-      poster: poster || '',
-      volume: 0.8,
-      isLive: false,
-      muted: false,
-      autoplay: false,
-      pip: true,
-      autoSize: false,
-      autoMini: true,
-      screenshot: true,
-      setting: true,
-      loop: false,
-      flip: true,
-      playbackRate: true,
-      aspectRatio: true,
-      fullscreen: true,
-      fullscreenWeb: true,
-      subtitleOffset: true,
-      miniProgressBar: true,
-      theme: '#8B5CF6',
-      customType: {
-        m3u8: function (video: HTMLVideoElement, url: string, art: any) {
-          if (Hls.isSupported()) {
-            if (art.hls) art.hls.destroy();
-            const hls = new Hls({
-              maxBufferLength: 60,
-              maxMaxBufferLength: 120,
-              enableWorker: true,
-              lowLatencyMode: true,
-            });
-            hls.loadSource(url);
-            hls.attachMedia(video);
-            art.hls = hls;
+    let art: any = null;
 
-            hls.on(Hls.Events.ERROR, function (_event, data) {
-              if (data.fatal) {
-                switch (data.type) {
-                  case Hls.ErrorTypes.NETWORK_ERROR:
-                    hls.startLoad();
-                    break;
-                  case Hls.ErrorTypes.MEDIA_ERROR:
-                    hls.recoverMediaError();
-                    break;
-                  default:
-                    art.notice.show = 'Восстановление видеопотока...';
-                    break;
+    try {
+      art = new Artplayer({
+        container: containerRef.current,
+        url: activeStreamUrl,
+        poster: poster || '',
+        volume: 0.8,
+        isLive: false,
+        muted: false,
+        autoplay: false,
+        pip: true,
+        autoSize: false,
+        autoMini: true,
+        screenshot: true,
+        setting: true,
+        loop: false,
+        flip: true,
+        playbackRate: true,
+        aspectRatio: true,
+        fullscreen: true,
+        fullscreenWeb: true,
+        subtitleOffset: true,
+        miniProgressBar: true,
+        theme: '#8B5CF6',
+        customType: {
+          m3u8: function (video: HTMLVideoElement, url: string, art: any) {
+            if (Hls.isSupported()) {
+              if (art.hls) art.hls.destroy();
+              const hls = new Hls({
+                maxBufferLength: 60,
+                maxMaxBufferLength: 120,
+                enableWorker: true,
+                lowLatencyMode: true,
+              });
+              hls.loadSource(url);
+              hls.attachMedia(video);
+              art.hls = hls;
+
+              hls.on(Hls.Events.ERROR, function (_event, data) {
+                if (data.fatal) {
+                  switch (data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                      hls.startLoad();
+                      break;
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                      hls.recoverMediaError();
+                      break;
+                    default:
+                      // Fallback to Kodik/Alloha on unrecoverable HLS error
+                      setHlsFailed(true);
+                      const fallback = allSources.find((s) => s.provider === 'kodik') || allSources.find((s) => s.provider === 'alloha');
+                      if (fallback) setSelectedSourceId(fallback.id);
+                      break;
+                  }
                 }
-              }
-            });
+              });
 
-            art.on('destroy', () => hls.destroy());
-          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
-          } else {
-            art.notice.show = 'HLS не поддерживается в этом браузере';
-          }
-        },
-      },
-      controls: [
-        {
-          name: 'skip-intro-btn',
-          position: 'right',
-          html: '<button class="px-3 py-1 bg-violet-600/90 hover:bg-violet-600 text-xs font-semibold rounded-lg backdrop-blur-md transition-all shadow-md">Пропустить интро (S)</button>',
-          click: function () {
-            if (activeTimecodes?.intro?.end && art.currentTime < activeTimecodes.intro.end) {
-              art.currentTime = activeTimecodes.intro.end;
-              art.notice.show = 'Интро успешно пропущено';
+              art.on('destroy', () => hls.destroy());
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+              video.src = url;
+            } else {
+              setHlsFailed(true);
             }
           },
         },
-      ],
-    });
+        controls: [
+          {
+            name: 'skip-intro-btn',
+            position: 'right',
+            html: '<button class="px-3 py-1 bg-violet-600/90 hover:bg-violet-600 text-xs font-semibold rounded-lg backdrop-blur-md transition-all shadow-md">Пропустить интро (S)</button>',
+            click: function () {
+              if (activeTimecodes?.intro?.end && art.currentTime < activeTimecodes.intro.end) {
+                art.currentTime = activeTimecodes.intro.end;
+                art.notice.show = 'Интро успешно пропущено';
+              }
+            },
+          },
+        ],
+      });
 
-    artInstanceRef.current = art;
+      artInstanceRef.current = art;
 
-    syncManager.getWatchProgress(animeId, episodeNumber).then((saved) => {
-      if (saved && saved.currentTimeSeconds > 5 && !saved.isCompleted) {
-        art.on('ready', () => {
-          art.currentTime = saved.currentTimeSeconds;
-          art.notice.show = `Продолжение с ${Math.floor(saved.currentTimeSeconds / 60)} мин`;
-        });
-      }
-    });
-
-    let lastSaveTime = 0;
-    art.on('video:timeupdate', () => {
-      const cur = art.currentTime;
-      const dur = art.duration || 1;
-
-      if (activeTimecodes?.intro?.start !== undefined && activeTimecodes?.intro?.end !== undefined) {
-        const inIntro = cur >= activeTimecodes.intro.start && cur <= activeTimecodes.intro.end;
-        const btn = (art.controls as any)['skip-intro-btn'];
-        if (btn) {
-          btn.style.display = inIntro ? 'inline-block' : 'none';
+      syncManager.getWatchProgress(animeId, episodeNumber).then((saved) => {
+        if (saved && saved.currentTimeSeconds > 5 && !saved.isCompleted) {
+          art.on('ready', () => {
+            art.currentTime = saved.currentTimeSeconds;
+            art.notice.show = `Продолжение с ${Math.floor(saved.currentTimeSeconds / 60)} мин`;
+          });
         }
-      }
+      });
 
-      if (Math.abs(cur - lastSaveTime) > 4) {
-        lastSaveTime = cur;
-        const isCompleted = cur / dur >= 0.9;
+      let lastSaveTime = 0;
+      art.on('video:timeupdate', () => {
+        const cur = art.currentTime;
+        const dur = art.duration || 1;
+
+        if (activeTimecodes?.intro?.start !== undefined && activeTimecodes?.intro?.end !== undefined) {
+          const inIntro = cur >= activeTimecodes.intro.start && cur <= activeTimecodes.intro.end;
+          const btn = (art.controls as any)['skip-intro-btn'];
+          if (btn) {
+            btn.style.display = inIntro ? 'inline-block' : 'none';
+          }
+        }
+
+        if (Math.abs(cur - lastSaveTime) > 4) {
+          lastSaveTime = cur;
+          const isCompleted = cur / dur >= 0.9;
+          syncManager.saveWatchProgress({
+            animeId,
+            episodeNumber,
+            currentTimeSeconds: cur,
+            durationSeconds: dur,
+            progressPercentage: (cur / dur) * 100,
+            isCompleted,
+          });
+        }
+      });
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+        if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') {
+          if (activeTimecodes?.intro?.end && art.currentTime < activeTimecodes.intro.end) {
+            art.currentTime = activeTimecodes.intro.end;
+            art.notice.show = 'Интро успешно пропущено';
+          }
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+
+      art.on('video:ended', () => {
         syncManager.saveWatchProgress({
           animeId,
           episodeNumber,
-          currentTimeSeconds: cur,
-          durationSeconds: dur,
-          progressPercentage: (cur / dur) * 100,
-          isCompleted,
+          currentTimeSeconds: art.duration,
+          durationSeconds: art.duration,
+          progressPercentage: 100,
+          isCompleted: true,
         });
-      }
-    });
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
-      if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') {
-        if (activeTimecodes?.intro?.end && art.currentTime < activeTimecodes.intro.end) {
-          art.currentTime = activeTimecodes.intro.end;
-          art.notice.show = 'Интро успешно пропущено';
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-
-    art.on('video:ended', () => {
-      syncManager.saveWatchProgress({
-        animeId,
-        episodeNumber,
-        currentTimeSeconds: art.duration,
-        durationSeconds: art.duration,
-        progressPercentage: 100,
-        isCompleted: true,
+        if (onEnded) onEnded();
       });
-      if (onEnded) onEnded();
-    });
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      if (art && art.destroy) {
-        art.destroy(false);
-      }
-    };
-  }, [activeStreamUrl, isDirectHls, animeId, episodeNumber, activeTimecodes]);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        if (art && art.destroy) {
+          art.destroy(false);
+        }
+      };
+    } catch {
+      setHlsFailed(true);
+    }
+  }, [activeStreamUrl, isDirectHls, animeId, episodeNumber, activeTimecodes, allSources]);
 
   // Switch to next mirror helper
   const switchToNextMirror = () => {
