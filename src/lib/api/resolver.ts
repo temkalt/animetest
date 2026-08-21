@@ -1,5 +1,5 @@
 import { fetchAniListGraphQL, ANIME_DETAILS_QUERY, POPULAR_ANIME_QUERY, AIRING_SCHEDULE_QUERY } from './anilist';
-import { fetchShikimoriMetadata } from './shikimori';
+import { fetchShikimoriMetadata, fetchBatchShikimoriTitles } from './shikimori';
 import { getKnownRussianTitle, getKnownEpisodeCount } from './russian-titles';
 import { StreamAggregator } from './stream-aggregator';
 import { UnifiedAnime, EpisodeItem, VoiceoverTrack } from '@/types';
@@ -15,7 +15,10 @@ export class AnimeResolver {
       });
 
       const list = data?.Page?.media || [];
-      return list.map((item: any) => this.mapAniListToUnified(item));
+      const malIds = list.map((m: any) => m.idMal).filter(Boolean);
+      const ruMap = await fetchBatchShikimoriTitles(malIds);
+
+      return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
     } catch (err) {
       console.error('[AnimeResolver] getPopular error:', err);
       return [];
@@ -42,7 +45,10 @@ export class AnimeResolver {
       });
 
       const list = data?.Page?.media || [];
-      return list.map((item: any) => this.mapAniListToUnified(item));
+      const malIds = list.map((m: any) => m.idMal).filter(Boolean);
+      const ruMap = await fetchBatchShikimoriTitles(malIds);
+
+      return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
     } catch (err) {
       console.error('[AnimeResolver] searchCatalog error:', err);
       return [];
@@ -73,6 +79,9 @@ export class AnimeResolver {
       });
 
       const schedules = data?.Page?.airingSchedules || [];
+      const malIds = schedules.map((s: any) => s.media?.idMal).filter(Boolean);
+      const ruMap = await fetchBatchShikimoriTitles(malIds);
+
       const result: { [day: number]: any[] } = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
 
       for (const item of schedules) {
@@ -84,7 +93,10 @@ export class AnimeResolver {
         const hours = date.getHours().toString().padStart(2, '0');
         const minutes = date.getMinutes().toString().padStart(2, '0');
 
-        const knownRu = getKnownRussianTitle(item.media.id) || (item.media.idMal ? getKnownRussianTitle(item.media.idMal) : null);
+        const knownRu = (item.media.idMal ? ruMap.get(item.media.idMal) : null) ||
+          getKnownRussianTitle(item.media.id) ||
+          (item.media.idMal ? getKnownRussianTitle(item.media.idMal) : null);
+
         const titleStr = knownRu || item.media.title?.english || item.media.title?.romaji || 'Аниме';
 
         result[day].push({
@@ -115,9 +127,8 @@ export class AnimeResolver {
       const unified = this.mapAniListToUnified(media);
 
       // Ingest Russian metadata & synopses from Shikimori
-      let shikiData: any = null;
       if (media.idMal) {
-        shikiData = await fetchShikimoriMetadata(media.idMal);
+        const shikiData = await fetchShikimoriMetadata(media.idMal);
         if (shikiData) {
           unified.shikimoriId = Number(shikiData.id);
           unified.title.russian = shikiData.russian || unified.title.russian;
@@ -157,9 +168,12 @@ export class AnimeResolver {
     }
   }
 
-  private static mapAniListToUnified(media: any): UnifiedAnime {
+  private static mapAniListToUnified(media: any, ruMap?: Map<number, string>): UnifiedAnime {
     const slug = (media.title?.romaji || `anime-${media.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const knownRu = getKnownRussianTitle(media.id) || (media.idMal ? getKnownRussianTitle(media.idMal) : null) || getKnownRussianTitle(slug);
+    const knownRu = (media.idMal && ruMap ? ruMap.get(media.idMal) : null) ||
+      getKnownRussianTitle(media.id) ||
+      (media.idMal ? getKnownRussianTitle(media.idMal) : null) ||
+      getKnownRussianTitle(slug);
 
     const knownEps = getKnownEpisodeCount(media.id) || (media.idMal ? getKnownEpisodeCount(media.idMal) : null);
     const totalEps = knownEps || media.episodes || (media.nextAiringEpisode?.episode ? media.nextAiringEpisode.episode : null);

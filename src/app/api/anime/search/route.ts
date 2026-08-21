@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchAniListGraphQL } from '@/lib/api/anilist';
+import { fetchBatchShikimoriTitles } from '@/lib/api/shikimori';
 import { getKnownRussianTitle } from '@/lib/api/russian-titles';
 
 export const runtime = 'edge';
@@ -37,8 +38,15 @@ export async function GET(req: NextRequest) {
 
   try {
     const data: any = await fetchAniListGraphQL(SEARCH_QUERY, { search: q.trim() });
-    const list = (data?.Page?.media || []).map((m: any) => {
-      const ruTitle = getKnownRussianTitle(m.id) || (m.idMal ? getKnownRussianTitle(m.idMal) : null);
+    const mediaList = data?.Page?.media || [];
+    const malIds = mediaList.map((m: any) => m.idMal).filter(Boolean);
+    const ruMap = await fetchBatchShikimoriTitles(malIds);
+
+    const list = mediaList.map((m: any) => {
+      const ruTitle = (m.idMal ? ruMap.get(m.idMal) : null) ||
+        getKnownRussianTitle(m.id) ||
+        (m.idMal ? getKnownRussianTitle(m.idMal) : null);
+
       return {
         ...m,
         title: {
@@ -52,4 +60,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
 
