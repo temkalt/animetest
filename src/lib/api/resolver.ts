@@ -45,6 +45,72 @@ export class AnimeResolver {
     };
   }> {
     try {
+      const isCyrillic = params.search ? /[а-яё]/i.test(params.search) : false;
+
+      if (isCyrillic && params.search) {
+        const shikiRes = await fetch(
+          `https://shikimori.one/api/animes?search=${encodeURIComponent(params.search)}&limit=${params.perPage || 36}&page=${params.page || 1}`,
+          { headers: { 'User-Agent': 'KuroNamiAnimePortal/2.0' } }
+        );
+
+        if (shikiRes.ok) {
+          const shikiList: any[] = await shikiRes.json();
+          if (shikiList.length > 0) {
+            const malIds = shikiList.map((s) => s.id);
+            const ruMap = new Map<number, string>();
+            shikiList.forEach((s) => {
+              if (s.russian) ruMap.set(s.id, s.russian);
+            });
+
+            // Map Shikimori items to UnifiedAnime
+            const items = shikiList.map((s) => ({
+              id: s.id,
+              malId: s.id,
+              slug: (s.name || `anime-${s.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+              title: {
+                romaji: s.name,
+                english: null,
+                native: null,
+                russian: s.russian || s.name,
+              },
+              synonyms: [],
+              format: (s.kind || 'TV').toUpperCase(),
+              status: (s.status === 'anons' ? 'NOT_YET_RELEASED' : s.status === 'ongoing' ? 'RELEASING' : 'FINISHED') as 'NOT_YET_RELEASED' | 'RELEASING' | 'FINISHED',
+              season: null,
+              seasonYear: s.aired_on ? parseInt(s.aired_on.slice(0, 4), 10) : null,
+              episodesTotal: s.episodes || null,
+              episodesAired: s.episodes_aired || s.episodes || 12,
+              durationMinutes: s.duration || 24,
+              coverImage: {
+                original: s.image?.original ? `https://shikimori.one${s.image.original}` : '',
+                medium: s.image?.preview ? `https://shikimori.one${s.image.preview}` : '',
+                color: '#8B5CF6',
+              },
+              bannerImage: null,
+              synopsisRu: null,
+              synopsisEn: '',
+              score: s.score ? parseFloat(s.score) : 8.0,
+              popularity: 100,
+              genres: [],
+              studios: [],
+              tags: [],
+              relations: [],
+              nextAiringEpisode: null,
+            }));
+
+            return {
+              items,
+              pageInfo: {
+                total: shikiList.length,
+                currentPage: params.page || 1,
+                lastPage: Math.ceil(shikiList.length / (params.perPage || 36)) || 1,
+                hasNextPage: shikiList.length >= (params.perPage || 36),
+              },
+            };
+          }
+        }
+      }
+
       const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
         page: params.page || 1,
         perPage: params.perPage || 36,
