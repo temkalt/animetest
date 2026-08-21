@@ -210,23 +210,72 @@ export class AnimeResolver {
 
   static async getDetails(anilistId: number): Promise<UnifiedAnime | null> {
     try {
-      const data: any = await fetchAniListGraphQL(ANIME_DETAILS_QUERY, { id: anilistId });
-      const media = data?.Media;
-      if (!media) return null;
+      let data: any = await fetchAniListGraphQL(ANIME_DETAILS_QUERY, { id: anilistId });
+      let media = data?.Media;
 
-      const unified = this.mapAniListToUnified(media);
+      // Fallback 1: lookup by idMal
+      if (!media) {
+        data = await fetchAniListGraphQL(ANIME_DETAILS_QUERY, { idMal: anilistId });
+        media = data?.Media;
+      }
 
-      // Ingest Russian metadata & synopses from Shikimori
-      if (media.idMal) {
-        const shikiData = await fetchShikimoriMetadata(media.idMal);
-        if (shikiData) {
-          unified.shikimoriId = Number(shikiData.id);
-          unified.title.russian = shikiData.russian || unified.title.russian;
-          unified.synopsisRu = shikiData.description || unified.synopsisRu;
-          if (shikiData.episodes) {
-            unified.episodesTotal = Math.max(unified.episodesTotal || 0, shikiData.episodes);
+      let unified: UnifiedAnime;
+
+      if (media) {
+        unified = this.mapAniListToUnified(media);
+
+        // Ingest Russian metadata & synopses from Shikimori
+        if (media.idMal) {
+          const shikiData = await fetchShikimoriMetadata(media.idMal);
+          if (shikiData) {
+            unified.shikimoriId = Number(shikiData.id);
+            unified.title.russian = shikiData.russian || unified.title.russian;
+            unified.synopsisRu = shikiData.description || unified.synopsisRu;
+            if (shikiData.episodes) {
+              unified.episodesTotal = Math.max(unified.episodesTotal || 0, shikiData.episodes);
+            }
           }
         }
+      } else {
+        // Fallback 2: Direct Shikimori Fetch
+        const shikiData = await fetchShikimoriMetadata(anilistId);
+        if (!shikiData) return null;
+
+        unified = {
+          id: anilistId,
+          malId: anilistId,
+          shikimoriId: anilistId,
+          slug: (shikiData.name || `anime-${anilistId}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          title: {
+            romaji: shikiData.name,
+            english: null,
+            native: null,
+            russian: shikiData.russian || shikiData.name,
+          },
+          synonyms: [],
+          format: (shikiData.kind || 'TV').toUpperCase(),
+          status: shikiData.status === 'anons' ? 'NOT_YET_RELEASED' : shikiData.status === 'ongoing' ? 'RELEASING' : 'FINISHED',
+          season: null,
+          seasonYear: shikiData.aired_on ? parseInt(shikiData.aired_on.slice(0, 4), 10) : null,
+          episodesTotal: shikiData.episodes || 12,
+          episodesAired: shikiData.episodes_aired || shikiData.episodes || 12,
+          durationMinutes: shikiData.duration || 24,
+          coverImage: {
+            original: shikiData.image?.original ? `https://shikimori.one${shikiData.image.original}` : '',
+            medium: shikiData.image?.preview ? `https://shikimori.one${shikiData.image.preview}` : '',
+            color: '#8B5CF6',
+          },
+          bannerImage: null,
+          synopsisRu: shikiData.description || null,
+          synopsisEn: '',
+          score: shikiData.score ? parseFloat(shikiData.score) : 8.0,
+          popularity: 100,
+          genres: [],
+          studios: [],
+          tags: [],
+          relations: [],
+          nextAiringEpisode: null,
+        };
       }
 
       // Check known episode count overrides (for 100+ series like One Piece, Naruto, Bleach)

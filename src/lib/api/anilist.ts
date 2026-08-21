@@ -70,8 +70,8 @@ query GetPopularAnime(
 `;
 
 export const ANIME_DETAILS_QUERY = `
-query GetAnimeDetails($id: Int) {
-  Media(id: $id, type: ANIME) {
+query GetAnimeDetails($id: Int, $idMal: Int) {
+  Media(id: $id, idMal: $idMal, type: ANIME) {
     id
     idMal
     title {
