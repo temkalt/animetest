@@ -23,20 +23,25 @@ export class StreamAggregator {
     totalEpisodes: number;
   }): Promise<StreamResolutionResult> {
     const { animeId, malId, shikimoriId, titles, totalEpisodes } = params;
-    const voiceoverTeamsSet = new Set<string>([
-      'AniLibria (FHD 1080p)',
-      'Studio Band (Дубляж 1080p)',
-      'SHIZA Project (1080p)',
-      'AniDUB (Многоголосый)',
-      'Dream Cast (1080p)',
-      'AnimeVost (1080p)',
-      'Persona 99',
-      'Оригинал + Русские субтитры',
-      'English Dub (1080p)',
-    ]);
+    const voiceoverTeamsSet = new Set<string>();
 
     // 1. Try to find authentic AniLibria HLS release
     const anilibriaRelease = await this.findAniLibriaMatch(titles);
+    const hasAniLibria = !!(anilibriaRelease && anilibriaRelease.episodes && anilibriaRelease.episodes.length > 0);
+
+    if (hasAniLibria) {
+      voiceoverTeamsSet.add('AniLibria (FHD 1080p HLS)');
+    }
+
+    // Add multi-studio voiceovers available for this title
+    voiceoverTeamsSet.add('Studio Band (Дубляж 1080p)');
+    voiceoverTeamsSet.add('SHIZA Project (1080p)');
+    voiceoverTeamsSet.add('AniDUB (Многоголосый)');
+    voiceoverTeamsSet.add('AnimeVost (1080p)');
+    voiceoverTeamsSet.add('Dream Cast (Дубляж)');
+    voiceoverTeamsSet.add('Persona 99');
+    voiceoverTeamsSet.add('Оригинал + Русские субтитры');
+    voiceoverTeamsSet.add('English Dub (1080p)');
 
     // 2. Generate episode list with multi-voiceover source tree
     const targetEpisodesCount = Math.max(
@@ -51,14 +56,14 @@ export class StreamAggregator {
       const sources: VoiceoverTrack[] = [];
       const anilibriaEp = anilibriaRelease?.episodes?.find((e) => e.ordinal === epNum);
 
-      // A. AniLibria Source (if matched and available)
-      if (anilibriaEp) {
+      // A. AniLibria Direct HLS Source (ONLY if authentic release was verified)
+      if (hasAniLibria && anilibriaEp) {
         const streamUrl = anilibriaEp.hls_1080 || anilibriaEp.hls_720 || anilibriaEp.hls_480;
         if (streamUrl) {
           sources.push({
             id: `anilibria-${anilibriaEp.id}`,
             provider: 'anilibria',
-            teamName: 'AniLibria (FHD 1080p)',
+            teamName: 'AniLibria (FHD 1080p HLS)',
             type: 'dub',
             language: 'ru',
             qualities: ['1080p', '720p', '480p'],
@@ -112,11 +117,11 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // Dream Cast
+      // AnimeVost
       sources.push({
-        id: `dreamcast-${animeId}-${epNum}`,
+        id: `animevost-${animeId}-${epNum}`,
         provider: 'kodik',
-        teamName: 'Dream Cast (1080p)',
+        teamName: 'AnimeVost (1080p)',
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
@@ -125,11 +130,24 @@ export class StreamAggregator {
         isDirectHls: false,
       });
 
-      // AnimeVost
+      // Dream Cast
       sources.push({
-        id: `animevost-${animeId}-${epNum}`,
+        id: `dreamcast-${animeId}-${epNum}`,
         provider: 'kodik',
-        teamName: 'AnimeVost (1080p)',
+        teamName: 'Dream Cast (Дубляж)',
+        type: 'dub',
+        language: 'ru',
+        qualities: ['1080p', '720p'],
+        streamUrl: kodikPlayerEmbed,
+        iframeUrl: kodikPlayerEmbed,
+        isDirectHls: false,
+      });
+
+      // Persona 99
+      sources.push({
+        id: `persona99-${animeId}-${epNum}`,
+        provider: 'kodik',
+        teamName: 'Persona 99',
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
@@ -194,6 +212,23 @@ export class StreamAggregator {
     english?: string | null;
     synonyms: string[];
   }): Promise<AniLibriaReleaseItem | null> {
+    // 1. Try clean slug alias lookup first
+    const cleanSlug = titles.romaji.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    try {
+      const aliasRes = await fetch(`https://anilibria.top/api/v1/anime/releases/${cleanSlug}`, {
+        next: { revalidate: 3600 },
+      });
+      if (aliasRes.ok) {
+        const release: AniLibriaReleaseItem = await aliasRes.json();
+        if (release && release.episodes && release.episodes.length > 0) {
+          return release;
+        }
+      }
+    } catch {
+      // Continue to search
+    }
+
+    // 2. Search AniLibria catalog
     const candidates = [
       titles.russian,
       titles.romaji,
@@ -205,17 +240,16 @@ export class StreamAggregator {
       if (term.length < 3) continue;
       const releases = await searchAniLibriaReleases(term);
       if (releases && releases.length > 0) {
-        // Strict verification: check if names closely match
         for (const rel of releases) {
           const mainRu = rel.name?.main?.toLowerCase() || '';
           const eng = rel.name?.english?.toLowerCase() || '';
           const termLower = term.toLowerCase();
 
           if (
-            mainRu.includes(termLower) ||
-            termLower.includes(mainRu) ||
-            eng.includes(termLower) ||
-            termLower.includes(eng)
+            mainRu === termLower ||
+            eng === termLower ||
+            (mainRu.length > 4 && termLower.includes(mainRu)) ||
+            (eng.length > 4 && termLower.includes(eng))
           ) {
             const full = await getAniLibriaReleaseDetails(rel.id);
             if (full && full.episodes && full.episodes.length > 0) {
