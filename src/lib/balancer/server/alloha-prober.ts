@@ -1,6 +1,6 @@
 import { SingleBalancerProbeResult, BalancerTranslation } from '@/types/balancer';
 
-const ALLOHA_TOKEN = '5009a7a2d05cb714cc53c8408471e3';
+const ALLOHA_TOKEN = process.env.ALLOHA_TOKEN || '5009a7a2d05cb714cc53c8408471e3';
 
 export class AllohaProber {
   static async probe(params: {
@@ -27,7 +27,6 @@ export class AllohaProber {
         searchQueries.push(`kp=${params.kinopoiskId}`);
       }
       if (params.title) {
-        // Clean title for searching (remove (TV), seasons, etc.)
         const cleanTitle = params.title
           .replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\bсезон\s*\d+\b|\b\d+\s*сезон\b|\bseason\s*\d+\b|\bтв-\d+\b|\bфильм\b)/gi, '')
           .trim();
@@ -42,13 +41,13 @@ export class AllohaProber {
       for (const query of searchQueries) {
         try {
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 2500);
+          const timeout = setTimeout(() => controller.abort(), 3000);
 
           const res = await fetch(`https://api.alloha.tv/?token=${ALLOHA_TOKEN}&${query}`, {
             signal: controller.signal,
             headers: {
               'Accept': 'application/json',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             },
           }).catch(() => null);
 
@@ -60,37 +59,45 @@ export class AllohaProber {
           if (json.status === 'success' && json.data) {
             const data = json.data;
             const tokenMovie = data.token_movie;
-            const seasons = data.seasons || {};
-            const firstSeason = seasons['1'] || Object.values(seasons)[0];
-            const epObj = firstSeason?.episodes?.[String(params.episodeNumber)];
 
-            if (epObj?.translation && typeof epObj.translation === 'object') {
-              for (const [trId, trInfo] of Object.entries<any>(epObj.translation)) {
+            // Extract translations from translation_iframe
+            if (data.translation_iframe && typeof data.translation_iframe === 'object') {
+              for (const [trId, trInfo] of Object.entries<any>(data.translation_iframe)) {
                 if (!trInfo) continue;
-                const trName = trInfo.translation || 'Озвучка Alloha';
-                const iframeUrl =
-                  trInfo.iframe ||
-                  `https://theatre.stravers.live/?token_movie=${tokenMovie}&translation=${trId}&season=1&episode=${params.episodeNumber}&token=${ALLOHA_TOKEN}`;
+                const trName = trInfo.name || trInfo.translation || 'Озвучка Alloha';
+                let iframeUrl = trInfo.iframe || `https://theatre.stravers.live/?token_movie=${tokenMovie}&translation=${trId}&token=${ALLOHA_TOKEN}`;
+
+                // Add episode parameter if missing
+                if (iframeUrl && !iframeUrl.includes('episode=')) {
+                  const delimiter = iframeUrl.includes('?') ? '&' : '?';
+                  iframeUrl = `${iframeUrl}${delimiter}episode=${params.episodeNumber}`;
+                }
 
                 result.translations.push({
                   id: `alloha-tr-${trId}-${params.episodeNumber}`,
                   balancerId: 'alloha',
                   teamName: trName,
                   type: /субтитр/i.test(trName) ? 'sub' : 'dub',
-                  quality: trInfo.quality?.includes('1080') ? ['1080p', '720p'] : ['720p', '480p'],
+                  quality: ['1080p', '720p'],
                   iframeUrl,
                   isDirectHls: false,
                   episodeNumber: params.episodeNumber,
                 });
               }
             } else if (data.iframe) {
+              let mainIframe = data.iframe;
+              if (!mainIframe.includes('episode=')) {
+                const delimiter = mainIframe.includes('?') ? '&' : '?';
+                mainIframe = `${mainIframe}${delimiter}episode=${params.episodeNumber}`;
+              }
+
               result.translations.push({
                 id: `alloha-main-${params.episodeNumber}`,
                 balancerId: 'alloha',
                 teamName: 'Alloha Player (Мульти-озвучка HD)',
                 type: 'dub',
                 quality: ['1080p', '720p'],
-                iframeUrl: data.iframe,
+                iframeUrl: mainIframe,
                 isDirectHls: false,
                 episodeNumber: params.episodeNumber,
               });
@@ -107,7 +114,7 @@ export class AllohaProber {
         }
       }
 
-      // 2. Fallback to DDBB aggregator if direct Alloha search returned empty
+      // 2. Fallback to DDBB aggregator
       if (params.kinopoiskId || params.title) {
         const ddbbQuery = params.kinopoiskId ? `kinopoisk=${params.kinopoiskId}` : `title=${encodeURIComponent(params.title)}`;
         const controller = new AbortController();
@@ -129,25 +136,37 @@ export class AllohaProber {
             if (Array.isArray(allohaProv.translations) && allohaProv.translations.length > 0) {
               for (const tr of allohaProv.translations) {
                 if (!tr.iframeUrl) continue;
+                let trIframe = tr.iframeUrl;
+                if (!trIframe.includes('episode=')) {
+                  const delimiter = trIframe.includes('?') ? '&' : '?';
+                  trIframe = `${trIframe}${delimiter}episode=${params.episodeNumber}`;
+                }
+
                 result.translations.push({
                   id: `alloha-ddbb-${tr.id || Math.random().toString(36).substring(7)}-${params.episodeNumber}`,
                   balancerId: 'alloha',
                   teamName: tr.name || 'Alloha Dub',
                   type: /субтитр/i.test(tr.name) ? 'sub' : 'dub',
                   quality: ['1080p', '720p'],
-                  iframeUrl: tr.iframeUrl,
+                  iframeUrl: trIframe,
                   isDirectHls: false,
                   episodeNumber: params.episodeNumber,
                 });
               }
             } else if (allohaProv.iframeUrl) {
+              let provIframe = allohaProv.iframeUrl;
+              if (!provIframe.includes('episode=')) {
+                const delimiter = provIframe.includes('?') ? '&' : '?';
+                provIframe = `${provIframe}${delimiter}episode=${params.episodeNumber}`;
+              }
+
               result.translations.push({
                 id: `alloha-ddbb-main-${params.episodeNumber}`,
                 balancerId: 'alloha',
                 teamName: 'Alloha Player (Мульти-озвучка HD)',
                 type: 'dub',
                 quality: ['1080p', '720p'],
-                iframeUrl: allohaProv.iframeUrl,
+                iframeUrl: provIframe,
                 isDirectHls: false,
                 episodeNumber: params.episodeNumber,
               });

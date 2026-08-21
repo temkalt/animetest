@@ -52,6 +52,10 @@ export class CollapsProber {
             for (const tr of collapsProvider.translations) {
               if (!tr.iframeUrl) continue;
               let iframe = tr.iframeUrl.startsWith('http') ? tr.iframeUrl : `https:${tr.iframeUrl}`;
+              if (!iframe.includes('episode=')) {
+                const delimiter = iframe.includes('?') ? '&' : '?';
+                iframe = `${iframe}${delimiter}episode=${params.episodeNumber}`;
+              }
               const cleanName = String(tr.name || 'Collaps HD').replace(/^русский\.\s*/i, '').trim();
 
               result.translations.push({
@@ -69,6 +73,11 @@ export class CollapsProber {
             let iframe = collapsProvider.iframeUrl.startsWith('http')
               ? collapsProvider.iframeUrl
               : `https:${collapsProvider.iframeUrl}`;
+
+            if (!iframe.includes('episode=')) {
+              const delimiter = iframe.includes('?') ? '&' : '?';
+              iframe = `${iframe}${delimiter}episode=${params.episodeNumber}`;
+            }
 
             result.translations.push({
               id: `collaps-main-${params.episodeNumber}`,
