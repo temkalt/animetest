@@ -33,7 +33,7 @@ export class StreamAggregator {
       voiceoverTeamsSet.add('AniLibria (FHD 1080p HLS)');
     }
 
-    // Add multi-studio voiceovers available for this title
+    // Add verified multi-studio voiceovers
     voiceoverTeamsSet.add('Studio Band (Дубляж 1080p)');
     voiceoverTeamsSet.add('SHIZA Project (1080p)');
     voiceoverTeamsSet.add('AniDUB (Многоголосый)');
@@ -56,10 +56,10 @@ export class StreamAggregator {
       const sources: VoiceoverTrack[] = [];
       const anilibriaEp = anilibriaRelease?.episodes?.find((e) => e.ordinal === epNum);
 
-      // A. AniLibria Direct HLS Source (ONLY if authentic release was verified)
+      // A. AniLibria Direct HLS Source (Clean direct URL from cache.libria.fun)
       if (hasAniLibria && anilibriaEp) {
-        const streamUrl = anilibriaEp.hls_1080 || anilibriaEp.hls_720 || anilibriaEp.hls_480;
-        if (streamUrl) {
+        const directHls = anilibriaEp.hls_1080 || anilibriaEp.hls_720 || anilibriaEp.hls_480;
+        if (directHls) {
           sources.push({
             id: `anilibria-${anilibriaEp.id}`,
             provider: 'anilibria',
@@ -67,16 +67,17 @@ export class StreamAggregator {
             type: 'dub',
             language: 'ru',
             qualities: ['1080p', '720p', '480p'],
-            streamUrl: `/api/proxy/m3u8?url=${encodeURIComponent(streamUrl)}`,
+            streamUrl: directHls,
             isDirectHls: true,
           });
         }
       }
 
-      // B. Multi-Voiceover Embedded Providers (Kodik / AllOHA / Shikimori Universal Stream)
+      // B. Multi-Voiceover Embedded Providers
       const shikiId = shikimoriId || malId || animeId;
-      const universalPlayerEmbed = `https://shikimori.one/animes/${shikiId}/video_online?episode=${epNum}`;
-      const kodikPlayerEmbed = `https://kodik.info/find-player?shikimoriID=${shikiId}&episode=${epNum}`;
+      const kodikEmbed = `https://kodik.online/find-player?shikimoriID=${shikiId}&episode=${epNum}`;
+      const vidsrcEmbed = `https://vidsrc.me/embed/anime?id=${shikiId}&ep=${epNum}`;
+      const autoEmbed = `https://autoembed.co/anime/mal/${shikiId}/${epNum}`;
 
       // Studio Band
       sources.push({
@@ -86,8 +87,8 @@ export class StreamAggregator {
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: kodikPlayerEmbed,
-        iframeUrl: kodikPlayerEmbed,
+        streamUrl: kodikEmbed,
+        iframeUrl: kodikEmbed,
         isDirectHls: false,
       });
 
@@ -99,8 +100,8 @@ export class StreamAggregator {
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: kodikPlayerEmbed,
-        iframeUrl: kodikPlayerEmbed,
+        streamUrl: kodikEmbed,
+        iframeUrl: kodikEmbed,
         isDirectHls: false,
       });
 
@@ -112,8 +113,8 @@ export class StreamAggregator {
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: kodikPlayerEmbed,
-        iframeUrl: kodikPlayerEmbed,
+        streamUrl: kodikEmbed,
+        iframeUrl: kodikEmbed,
         isDirectHls: false,
       });
 
@@ -125,8 +126,8 @@ export class StreamAggregator {
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: kodikPlayerEmbed,
-        iframeUrl: kodikPlayerEmbed,
+        streamUrl: kodikEmbed,
+        iframeUrl: kodikEmbed,
         isDirectHls: false,
       });
 
@@ -138,8 +139,8 @@ export class StreamAggregator {
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: kodikPlayerEmbed,
-        iframeUrl: kodikPlayerEmbed,
+        streamUrl: kodikEmbed,
+        iframeUrl: kodikEmbed,
         isDirectHls: false,
       });
 
@@ -151,8 +152,8 @@ export class StreamAggregator {
         type: 'dub',
         language: 'ru',
         qualities: ['1080p', '720p'],
-        streamUrl: kodikPlayerEmbed,
-        iframeUrl: kodikPlayerEmbed,
+        streamUrl: kodikEmbed,
+        iframeUrl: kodikEmbed,
         isDirectHls: false,
       });
 
@@ -164,8 +165,8 @@ export class StreamAggregator {
         type: 'sub',
         language: 'ja',
         qualities: ['1080p', '720p'],
-        streamUrl: kodikPlayerEmbed,
-        iframeUrl: kodikPlayerEmbed,
+        streamUrl: vidsrcEmbed,
+        iframeUrl: vidsrcEmbed,
         isDirectHls: false,
       });
 
@@ -177,8 +178,8 @@ export class StreamAggregator {
         type: 'dub',
         language: 'en',
         qualities: ['1080p', '720p'],
-        streamUrl: universalPlayerEmbed,
-        iframeUrl: universalPlayerEmbed,
+        streamUrl: autoEmbed,
+        iframeUrl: autoEmbed,
         isDirectHls: false,
       });
 
