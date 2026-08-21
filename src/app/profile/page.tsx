@@ -16,6 +16,12 @@ export default function ProfilePage() {
     syncManager.getAllBookmarks().then(setBookmarks);
   }, []);
 
+  const totalSeconds = history.reduce((acc, curr) => acc + (curr.currentTimeSeconds || 0), 0);
+  const totalHours = (totalSeconds / 3600).toFixed(1);
+  const completedEpisodes = history.filter((h) => h.isCompleted).length;
+  const rank = totalHours >= '50' ? 'S-TIER ARCHIVIST' : totalHours >= '10' ? 'A-TIER EXPLORER' : 'NOVICE OTAKU';
+  const level = Math.max(1, Math.floor(totalSeconds / 1800));
+
   return (
     <div className="space-y-10 max-w-6xl mx-auto">
       {/* 1. Otaku Passport Header */}
@@ -35,28 +41,28 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold font-display text-white">KuroNami Explorer</h1>
                 <span className="px-2.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 text-[10px] font-mono font-bold">
-                  S-TIER ARCHIVIST
+                  {rank}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-mono">ID: #KN-2026-9840 • Уровень 42</p>
+              <p className="text-xs text-slate-400 font-mono">ID: #KN-2026-9840 • Уровень {level}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4 border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-8 text-center">
             <div>
-              <div className="text-lg font-bold font-mono text-cyan-400">142ч</div>
+              <div className="text-lg font-bold font-mono text-cyan-400">{totalHours}ч</div>
               <div className="text-[10px] text-slate-400 font-sans">Просмотрено</div>
             </div>
             <div>
-              <div className="text-lg font-bold font-mono text-violet-400">284</div>
-              <div className="text-[10px] text-slate-400 font-sans">Серий</div>
+              <div className="text-lg font-bold font-mono text-violet-400">{history.length}</div>
+              <div className="text-[10px] text-slate-400 font-sans">Серий начато</div>
             </div>
             <div>
               <div className="text-lg font-bold font-mono text-rose-400 flex items-center justify-center gap-0.5">
                 <Flame className="w-4 h-4 fill-rose-400" />
-                <span>18</span>
+                <span>{completedEpisodes}</span>
               </div>
-              <div className="text-[10px] text-slate-400 font-sans">Дней стрик</div>
+              <div className="text-[10px] text-slate-400 font-sans">Завершено</div>
             </div>
           </div>
         </div>

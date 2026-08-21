@@ -27,7 +27,14 @@ export default async function CatalogPage({ searchParams }: CatalogProps) {
   const activeGenre = params.genre === 'Все' || !params.genre ? undefined : params.genre;
   const activeStatus = params.status;
 
-  const animeList = await AnimeResolver.getPopular(1, 24);
+  const animeList = await AnimeResolver.searchCatalog({
+    page: 1,
+    perPage: 24,
+    genre: activeGenre,
+    status: activeStatus,
+    season: params.season,
+    seasonYear: params.year ? parseInt(params.year, 10) : undefined,
+  });
 
   return (
     <div className="space-y-8">

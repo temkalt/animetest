@@ -8,8 +8,9 @@ const CURATED_COLLECTIONS = [
     id: 'cyberpunk-masterpieces',
     title: 'Культовый Киберпанк и Неоновое Будущее',
     description: 'Мрачные мегаполисы, аугментации, искусственный интеллект и философские вопросы человечности.',
-    cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
-    count: 14,
+    cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/148862-10f7690fe4223f66.jpg',
+    href: '/catalog?genre=Sci-Fi',
+    count: 24,
     likes: 342,
     author: 'KuroNami Curators',
   },
@@ -17,26 +18,29 @@ const CURATED_COLLECTIONS = [
     id: 'sakuga-gods',
     title: 'Сакуга-Шедевры: Безупречная Анимация',
     description: 'Тайтлы с невероятным уровнем графики и хореографии боев от MAPPA, Ufotable, Bones и Wit Studio.',
-    cover: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80',
-    count: 22,
+    cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/113415-jQBSkxWAAk83.jpg',
+    href: '/catalog?genre=Action',
+    count: 36,
     likes: 890,
     author: 'SakugaLovers',
   },
   {
     id: 'isekai-essentials',
-    title: 'Лучшие Исекаи с нетривиальным сюжетом',
-    description: 'Перерождения без штампов: глубокие миры, продуманная магия и развитие персонажей.',
-    cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80',
-    count: 18,
+    title: 'Лучшие Исекаи и Темное Фэнтези',
+    description: 'Глубокие миры, продуманная магия, психологическое напряжение и путешествия во времени.',
+    cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/154587-n1HJZokE9A31.jpg',
+    href: '/catalog?genre=Fantasy',
+    count: 28,
     likes: 512,
     author: 'PortalOtaku',
   },
   {
     id: 'mind-games',
     title: 'Интеллектуальные дуэли и Психология',
-    description: 'Игры разума, многоходовочки, манипуляции и закрученные детективы.',
-    cover: 'https://images.unsplash.com/photo-1514533450685-4493e01d1fdc?w=800&auto=format&fit=crop&q=80',
-    count: 16,
+    description: 'Игры разума, многоходовочки, манипуляции и закрученные психологические триллеры.',
+    cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/9253-53d9e87ec096b797.jpg',
+    href: '/catalog?genre=Psychological',
+    count: 19,
     likes: 720,
     author: 'DetectiveK',
   },
@@ -68,7 +72,7 @@ export default function CollectionsPage() {
         {CURATED_COLLECTIONS.map((c) => (
           <Link
             key={c.id}
-            href={`/catalog`}
+            href={c.href || '/catalog'}
             className="group relative rounded-3xl overflow-hidden bg-[#0E1017] border border-white/10 hover:border-violet-500/50 transition-all shadow-xl flex flex-col justify-end aspect-[16/9] p-6"
           >
             {/* Background Cover */}

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calendar, Clock, Tv, ChevronRight } from 'lucide-react';
+import { Clock, ChevronRight, Tv, Calendar } from 'lucide-react';
 
 const DAYS = [
   { id: 1, name: 'ПН', fullName: 'Понедельник' },
@@ -15,20 +15,38 @@ const DAYS = [
   { id: 7, name: 'ВС', fullName: 'Воскресенье' },
 ];
 
+export interface ScheduleItem {
+  id: number;
+  title: string;
+  episode: number;
+  airingAt: number;
+  timeStr: string;
+  coverImage: string;
+  format: string;
+  studio?: string;
+}
+
 interface ScheduleProps {
+  scheduleData?: {
+    [day: number]: ScheduleItem[];
+  };
   initialDay?: number;
 }
 
-export const OngoingSchedule: React.FC<ScheduleProps> = ({ initialDay = new Date().getDay() || 7 }) => {
+export const OngoingSchedule: React.FC<ScheduleProps> = ({
+  scheduleData = {},
+  initialDay = new Date().getDay() || 7,
+}) => {
   const [selectedDay, setSelectedDay] = useState(initialDay);
+  const itemsForDay = scheduleData[selectedDay] || [];
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
           <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_#06B6D4]" />
           <h2 className="text-xl font-bold font-display tracking-tight text-white">
-            Расписание релиза серий
+            Расписание онгоингов на неделю
           </h2>
         </div>
 
@@ -51,49 +69,49 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({ initialDay = new Date
       </div>
 
       {/* Schedule Items Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <div className="p-4 rounded-2xl bg-[#0E1017] border border-white/5 flex items-center justify-between hover:border-violet-500/30 transition-colors">
-          <div className="space-y-1">
-            <span className="text-[10px] font-mono text-cyan-400 font-semibold uppercase">Сегодня в 18:30 МСК</span>
-            <h4 className="text-sm font-semibold text-white">Магическая битва: 3 сезон</h4>
-            <span className="text-xs text-slate-400 font-mono">Серия 8 • AniLibria</span>
-          </div>
-          <Link
-            href="/catalog"
-            className="p-2 rounded-xl bg-white/5 hover:bg-violet-600 hover:text-white text-slate-400 transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
+      {itemsForDay.length === 0 ? (
+        <div className="p-8 rounded-3xl bg-[#0E1017] border border-white/5 text-center text-xs font-mono text-slate-400 space-y-2">
+          <Calendar className="w-8 h-8 mx-auto text-slate-600 mb-2" />
+          <div>В этот день нет запланированных релизов в эфире.</div>
+          <Link href="/catalog?status=RELEASING" className="text-violet-400 hover:underline">
+            Посмотреть все онгоинги сезона →
           </Link>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {itemsForDay.map((item) => (
+            <Link
+              key={`${item.id}-${item.episode}`}
+              href={`/anime/${item.id}`}
+              className="p-3.5 rounded-2xl bg-[#0E1017] border border-white/5 hover:border-violet-500/40 hover:bg-[#141722] transition-all flex items-center gap-3.5 group"
+            >
+              <div className="relative w-12 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-slate-800">
+                {item.coverImage && (
+                  <Image src={item.coverImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform" />
+                )}
+              </div>
 
-        <div className="p-4 rounded-2xl bg-[#0E1017] border border-white/5 flex items-center justify-between hover:border-violet-500/30 transition-colors">
-          <div className="space-y-1">
-            <span className="text-[10px] font-mono text-cyan-400 font-semibold uppercase">Сегодня в 20:00 МСК</span>
-            <h4 className="text-sm font-semibold text-white">Поднятие уровня в одиночку 2</h4>
-            <span className="text-xs text-slate-400 font-mono">Серия 12 • Studio Band</span>
-          </div>
-          <Link
-            href="/catalog"
-            className="p-2 rounded-xl bg-white/5 hover:bg-violet-600 hover:text-white text-slate-400 transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
+              <div className="flex-1 min-w-0 space-y-1">
+                <span className="text-[10px] font-mono text-cyan-400 font-semibold uppercase block">
+                  {item.timeStr}
+                </span>
+                <h4 className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors truncate">
+                  {item.title}
+                </h4>
+                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                  <span className="text-violet-400 font-semibold">Серия {item.episode}</span>
+                  {item.studio && <span>• {item.studio}</span>}
+                </div>
+              </div>
 
-        <div className="p-4 rounded-2xl bg-[#0E1017] border border-white/5 flex items-center justify-between hover:border-violet-500/30 transition-colors">
-          <div className="space-y-1">
-            <span className="text-[10px] font-mono text-cyan-400 font-semibold uppercase">Сегодня в 22:15 МСК</span>
-            <h4 className="text-sm font-semibold text-white">Клинок, рассекающий демонов: Крепость</h4>
-            <span className="text-xs text-slate-400 font-mono">Серия 4 • SHIZA Project</span>
-          </div>
-          <Link
-            href="/catalog"
-            className="p-2 rounded-xl bg-white/5 hover:bg-violet-600 hover:text-white text-slate-400 transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Link>
+              <div className="p-2 rounded-xl bg-white/5 group-hover:bg-violet-600 group-hover:text-white text-slate-400 transition-colors">
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </Link>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 };
+

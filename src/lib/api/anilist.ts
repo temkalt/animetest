@@ -127,6 +127,46 @@ query GetAnimeDetails($id: Int) {
 }
 `;
 
+export const AIRING_SCHEDULE_QUERY = `
+query GetAiringSchedule($airingAt_greater: Int, $airingAt_lesser: Int, $perPage: Int) {
+  Page(page: 1, perPage: $perPage) {
+    airingSchedules(
+      airingAt_greater: $airingAt_greater,
+      airingAt_lesser: $airingAt_lesser,
+      sort: TIME
+    ) {
+      id
+      airingAt
+      episode
+      timeUntilAiring
+      media {
+        id
+        idMal
+        title {
+          romaji
+          english
+          native
+          userPreferred
+        }
+        coverImage {
+          large
+          medium
+          color
+        }
+        format
+        genres
+        averageScore
+        studios(isMain: true) {
+          nodes {
+            name
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
 export async function fetchAniListGraphQL<T>(query: string, variables: Record<string, any> = {}): Promise<T> {
   const res = await fetch(ANILIST_ENDPOINT, {
     method: 'POST',
@@ -135,7 +175,7 @@ export async function fetchAniListGraphQL<T>(query: string, variables: Record<st
       'Accept': 'application/json',
     },
     body: JSON.stringify({ query, variables }),
-    next: { revalidate: 3600 },
+    next: { revalidate: 1800 },
   });
 
   if (!res.ok) {
@@ -145,3 +185,4 @@ export async function fetchAniListGraphQL<T>(query: string, variables: Record<st
   const json = await res.json();
   return json.data;
 }
+

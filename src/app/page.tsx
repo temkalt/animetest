@@ -9,8 +9,11 @@ import Link from 'next/link';
 export const revalidate = 3600; // ISR 1 hour
 
 export default async function HomePage() {
-  // Fetch popular anime from AniList/Shikimori ingestion engine
-  const trendingList = await AnimeResolver.getPopular(1, 16);
+  // Fetch popular anime and real airing schedule from AniList/Shikimori
+  const [trendingList, scheduleData] = await Promise.all([
+    AnimeResolver.getPopular(1, 16),
+    AnimeResolver.getAiringSchedule(),
+  ]);
   const heroItems = trendingList.slice(0, 5);
   const ongoingItems = trendingList.slice(0, 8);
   const topRatedItems = trendingList.slice(8, 16);
@@ -21,7 +24,7 @@ export default async function HomePage() {
       <HeroShowcase items={heroItems} />
 
       {/* 2. Interactive Ongoing Schedule */}
-      <OngoingSchedule />
+      <OngoingSchedule scheduleData={scheduleData} />
 
       {/* 3. Trending On-Air Releases */}
       <section className="space-y-4">
