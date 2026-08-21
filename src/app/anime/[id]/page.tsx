@@ -2,17 +2,58 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { AnimeResolver } from '@/lib/api/resolver';
 import { FranchiseTree } from '@/components/anime/FranchiseTree';
 import { EpisodeGrid } from '@/components/anime/EpisodeGrid';
 import { TimecodeComments } from '@/components/player/TimecodeComments';
-import { Play, Star, Calendar, Tv, Clock, Bookmark, Sparkles, Film, ArrowLeft } from 'lucide-react';
+import { AnimeHeroActions } from '@/components/anime/AnimeHeroActions';
+import { SynopsisClamp } from '@/components/anime/SynopsisClamp';
+import {
+  Star,
+  Calendar,
+  Tv,
+  Clock,
+  Film,
+  Sparkles,
+  ArrowLeft,
+  Flame,
+  Radio,
+  Layers,
+  CheckCircle2,
+  AlertCircle,
+  Hash,
+} from 'lucide-react';
 
 interface AnimeDetailsProps {
   params: Promise<{ id: string }>;
 }
 
 export const revalidate = 3600;
+
+export async function generateMetadata({ params }: AnimeDetailsProps): Promise<Metadata> {
+  const { id } = await params;
+  const animeId = parseInt(id, 10);
+  if (isNaN(animeId)) return { title: 'Аниме не найдено — KuroNami' };
+
+  const anime = await AnimeResolver.getDetails(animeId);
+  if (!anime) return { title: 'Аниме не найдено — KuroNami' };
+
+  const title = anime.title.russian || anime.title.english || anime.title.romaji;
+  const rawDescription = anime.synopsisRu || anime.synopsisEn || 'Смотрите аниме онлайн в отличном качестве 1080p на KuroNami.';
+  const description = rawDescription.replace(/<[^>]+>/g, '').slice(0, 160) + '...';
+  const ogImage = anime.bannerImage || anime.coverImage.original;
+
+  return {
+    title: `${title} — Смотреть онлайн | KuroNami`,
+    description,
+    openGraph: {
+      title: `${title} — KuroNami`,
+      description,
+      images: ogImage ? [{ url: ogImage, width: 1200, height: 630, alt: title }] : [],
+    },
+  };
+}
 
 export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
   const { id } = await params;
@@ -28,147 +69,355 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
   }
 
   const title = anime.title.russian || anime.title.english || anime.title.romaji;
-  const episodesCount = anime.episodes?.length || anime.episodesTotal || 12;
+  const subTitle = anime.title.english && anime.title.english !== title ? anime.title.english : anime.title.romaji;
+  const nativeTitle = anime.title.native;
+  const episodesCount = anime.episodes?.length || anime.episodesTotal || (anime.episodesAired ? Math.max(anime.episodesAired, 12) : 12);
+
+  // Formatting helpers
+  const formatSeason = (season?: string | null, year?: number | null) => {
+    if (!season && !year) return null;
+    const seasonMap: Record<string, string> = {
+      WINTER: 'Зима',
+      SPRING: 'Весна',
+      SUMMER: 'Лето',
+      FALL: 'Осень',
+    };
+    const sName = season ? seasonMap[season] || season : '';
+    return [sName, year].filter(Boolean).join(' ');
+  };
+
+  const formatTypeLabel: Record<string, string> = {
+    TV: 'ТВ Сериал',
+    MOVIE: 'Фильм',
+    OVA: 'OVA',
+    ONA: 'ONA',
+    SPECIAL: 'Спешл',
+  };
+
+  const formatType = formatTypeLabel[anime.format] || anime.format || 'ТВ Сериал';
+
+  const statusLabel: Record<string, { label: string; color: string; border: string; bg: string }> = {
+    RELEASING: {
+      label: 'Онгоинг',
+      color: 'text-emerald-400',
+      border: 'border-emerald-500/30',
+      bg: 'bg-emerald-500/10',
+    },
+    FINISHED: {
+      label: 'Вышел',
+      color: 'text-indigo-400',
+      border: 'border-indigo-500/30',
+      bg: 'bg-indigo-500/10',
+    },
+    NOT_YET_RELEASED: {
+      label: 'Анонс',
+      color: 'text-amber-400',
+      border: 'border-amber-500/30',
+      bg: 'bg-amber-500/10',
+    },
+  };
+
+  const currentStatus = statusLabel[anime.status] || statusLabel.FINISHED;
+  const seasonString = formatSeason(anime.season, anime.seasonYear);
+  const studioName = anime.studios && anime.studios.length > 0 ? anime.studios.join(', ') : 'Не указана';
+  const ratingValue = anime.score > 0 ? anime.score.toFixed(1) : '8.5';
+  const durationStr = anime.durationMinutes ? `${anime.durationMinutes} мин / сер` : '24 мин / сер';
+  const bannerBg = anime.bannerImage || anime.coverImage.original;
 
   return (
-    <div className="space-y-10">
-      {/* Breadcrumb Navigation */}
+    <div className="space-y-10 pb-12">
+      {/* 0. Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
-        <Link href="/catalog" className="flex items-center gap-1 hover:text-white transition-colors">
+        <Link href="/catalog" className="flex items-center gap-1.5 hover:text-white transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Каталог</span>
         </Link>
         <span>/</span>
-        <span className="text-zinc-200 truncate">{title}</span>
+        <span className="text-zinc-200 font-semibold truncate max-w-xs sm:max-w-md">{title}</span>
       </div>
 
-      {/* 1. Backdrop Banner Header */}
-      <div className="relative w-full rounded-3xl overflow-hidden bg-[#0E1118] border border-white/[0.08] p-6 sm:p-10 shadow-2xl">
-        {/* Banner Blur Ambient Background */}
-        {anime.bannerImage || anime.coverImage.original ? (
-          <div className="absolute inset-0 -z-10 opacity-25 filter blur-2xl scale-110">
-            <Image
-              src={anime.bannerImage || anime.coverImage.original}
-              alt={title}
-              fill
-              className="object-cover"
-            />
-          </div>
-        ) : null}
-
-        <div className="flex flex-col md:flex-row gap-8 items-start relative z-10">
-          {/* Poster */}
-          <div className="relative w-48 sm:w-60 aspect-[3/4] rounded-2xl overflow-hidden flex-shrink-0 shadow-2xl border border-white/[0.12] bg-zinc-900">
-            {anime.coverImage.original && (
-              <Image src={anime.coverImage.original} alt={title} fill priority className="object-cover" />
-            )}
-          </div>
-
-          {/* Details Content */}
-          <div className="flex-1 space-y-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-mono font-bold">
-                {anime.format || 'TV'}
-              </span>
-              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-mono font-bold">
-                {anime.status || 'FINISHED'}
-              </span>
-              {anime.score > 0 && (
-                <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-mono font-bold text-xs">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <span>{anime.score.toFixed(1)} / 10</span>
-                </div>
-              )}
+      {/* 1. Luxury Ambient Blurred Backdrop Banner & Hero Header */}
+      <div className="relative w-full rounded-3xl overflow-hidden bg-[#0A0D14] border border-white/[0.08] shadow-2xl shadow-black/80">
+        {/* Ambient Blurred Aura Layer */}
+        {bannerBg && (
+          <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+            {/* Super blurred ambient color glow */}
+            <div className="absolute -top-1/4 -left-1/4 w-[150%] h-[150%] opacity-35 filter blur-3xl scale-125 saturate-150">
+              <Image
+                src={bannerBg}
+                alt={title}
+                fill
+                priority
+                className="object-cover"
+              />
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-extrabold font-display text-white tracking-tight">
-              {title}
-            </h1>
-
-            {anime.title.english && anime.title.english !== title && (
-              <h2 className="text-sm font-sans text-zinc-400">
-                {anime.title.english}
-              </h2>
-            )}
-
-            {/* Quick Meta Stats Grid */}
-            <div className="flex items-center gap-6 text-xs text-zinc-300 font-mono flex-wrap py-3 border-y border-white/[0.08]">
-              {anime.seasonYear && (
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>{anime.season} {anime.seasonYear}</span>
-                </div>
-              )}
-              {anime.studios && anime.studios.length > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <Tv className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>{anime.studios.join(', ')}</span>
-                </div>
-              )}
-              {anime.durationMinutes && (
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-rose-400" />
-                  <span>{anime.durationMinutes} мин / серия</span>
-                </div>
-              )}
+            {/* High-res Banner Layer with Cinematic Lighting */}
+            <div className="absolute inset-0 opacity-40 mix-blend-screen">
+              <Image
+                src={bannerBg}
+                alt={title}
+                fill
+                priority
+                className="object-cover object-top"
+              />
             </div>
 
-            {/* Genres List */}
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              {anime.genres.map((g) => (
-                <Link
-                  key={g}
-                  href={`/catalog?genre=${encodeURIComponent(g)}`}
-                  className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 border border-white/[0.08] text-xs font-sans transition-colors"
+            {/* Vignette Gradients & Fade Scrims */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14]/85 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0A0D14] via-[#0A0D14]/60 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0A0D14]/80 to-transparent" />
+          </div>
+        )}
+
+        {/* Specular Top Line Highlight */}
+        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent pointer-events-none" />
+
+        {/* Hero Content Section */}
+        <div className="relative z-10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row gap-8 items-start">
+          {/* Poster Column */}
+          <div className="flex flex-col items-center gap-4 flex-shrink-0 w-full sm:w-64 md:w-64">
+            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border border-white/[0.12] bg-[#0E1118] group">
+              {anime.coverImage.original && (
+                <Image
+                  src={anime.coverImage.original}
+                  alt={title}
+                  fill
+                  priority
+                  sizes="(max-width: 640px) 100vw, 256px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              )}
+
+              {/* Status Badge on Poster */}
+              <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                <span
+                  className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider backdrop-blur-md border ${currentStatus.bg} ${currentStatus.color} ${currentStatus.border} shadow-lg`}
                 >
-                  {g}
-                </Link>
-              ))}
+                  {currentStatus.label}
+                </span>
+              </div>
+
+              {/* Rating Badge on Poster */}
+              {anime.score > 0 && (
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/70 backdrop-blur-md border border-amber-500/30 text-amber-300 font-mono font-bold text-xs shadow-lg">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span>{ratingValue}</span>
+                </div>
+              )}
+
+              {/* Quality Watermark */}
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/[0.08] text-[10px] font-mono text-zinc-300">
+                <span className="font-bold text-indigo-300">1080p FHD</span>
+                <span className="text-zinc-400">Мульти-озвучка</span>
+              </div>
             </div>
+          </div>
 
-            {/* Synopsis */}
-            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans pt-2">
-              {anime.synopsisRu || anime.synopsisEn || 'Смотрите все серии в высоком качестве с выбором студий озвучки.'}
-            </p>
+          {/* Details Column */}
+          <div className="flex-1 space-y-5">
+            {/* Format & Status Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-3 py-1 rounded-xl bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
+                <Film className="w-3 h-3 text-indigo-400" />
+                <span>{formatType}</span>
+              </span>
 
-            {/* Main Action Buttons */}
-            <div className="flex items-center gap-3 pt-3">
-              <Link
-                href={`/watch/${anime.id}/1`}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-display font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95"
+              <span
+                className={`px-3 py-1 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 border shadow-sm ${currentStatus.bg} ${currentStatus.color} ${currentStatus.border}`}
               >
-                <Play className="w-4 h-4 fill-white" />
-                <span>Смотреть 1 серию</span>
-              </Link>
+                {anime.status === 'RELEASING' ? (
+                  <Radio className="w-3 h-3 animate-pulse" />
+                ) : (
+                  <CheckCircle2 className="w-3 h-3" />
+                )}
+                <span>{currentStatus.label}</span>
+              </span>
+
+              {anime.popularity > 0 && (
+                <span className="px-3 py-1 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/20 text-xs font-mono flex items-center gap-1.5">
+                  <Flame className="w-3 h-3 text-rose-400" />
+                  <span>Популярно #{anime.popularity}</span>
+                </span>
+              )}
             </div>
+
+            {/* Title & Subtitles */}
+            <div className="space-y-1.5">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-display text-white tracking-tight leading-tight">
+                {title}
+              </h1>
+
+              {subTitle && (
+                <p className="text-xs sm:text-sm font-sans text-zinc-400 font-medium">
+                  {subTitle}
+                  {nativeTitle && nativeTitle !== subTitle && (
+                    <span className="text-zinc-500 ml-2 font-normal">({nativeTitle})</span>
+                  )}
+                </p>
+              )}
+            </div>
+
+            {/* Glassmorphic Meta Stats Panel (Year, Studio, Episodes, Duration, Rating) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-1">
+              {/* Rating Metric */}
+              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-amber-500/30 transition-all flex flex-col justify-between">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+                  <Star className="w-3 h-3 text-amber-400" />
+                  Рейтинг
+                </span>
+                <span className="text-sm font-bold font-mono text-amber-300 mt-1">
+                  {ratingValue} <span className="text-[10px] text-zinc-500">/ 10</span>
+                </span>
+              </div>
+
+              {/* Year & Season Metric */}
+              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-cyan-500/30 transition-all flex flex-col justify-between">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-cyan-400" />
+                  Сезон / Год
+                </span>
+                <span className="text-xs font-bold font-mono text-zinc-200 mt-1 truncate">
+                  {seasonString || (anime.seasonYear ? `${anime.seasonYear} год` : 'Неизвестно')}
+                </span>
+              </div>
+
+              {/* Episodes Metric */}
+              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-indigo-500/30 transition-all flex flex-col justify-between">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+                  <Layers className="w-3 h-3 text-indigo-400" />
+                  Эпизоды
+                </span>
+                <span className="text-xs font-bold font-mono text-indigo-300 mt-1">
+                  {anime.episodesAired ? `${anime.episodesAired} из ` : ''}
+                  {episodesCount} эп.
+                </span>
+              </div>
+
+              {/* Duration Metric */}
+              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-rose-500/30 transition-all flex flex-col justify-between">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-rose-400" />
+                  Длительность
+                </span>
+                <span className="text-xs font-bold font-mono text-zinc-200 mt-1 truncate">
+                  {durationStr}
+                </span>
+              </div>
+
+              {/* Studio Metric */}
+              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-violet-500/30 transition-all flex flex-col justify-between col-span-2 sm:col-span-1">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+                  <Tv className="w-3 h-3 text-violet-400" />
+                  Студия
+                </span>
+                <span className="text-xs font-bold font-mono text-zinc-200 mt-1 truncate" title={studioName}>
+                  {studioName}
+                </span>
+              </div>
+            </div>
+
+            {/* Genre Pill Tags */}
+            {anime.genres && anime.genres.length > 0 && (
+              <div className="space-y-1.5 pt-1">
+                <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">Жанры:</div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {anime.genres.map((g) => (
+                    <Link
+                      key={g}
+                      href={`/catalog?genre=${encodeURIComponent(g)}`}
+                      className="px-3 py-1 rounded-xl bg-white/[0.04] hover:bg-indigo-500/20 text-zinc-300 hover:text-white border border-white/[0.08] hover:border-indigo-500/40 text-xs font-sans transition-all duration-200 shadow-sm"
+                    >
+                      {g}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Synopsis with Clamp */}
+            <div className="pt-1">
+              <SynopsisClamp synopsisRu={anime.synopsisRu} synopsisEn={anime.synopsisEn} />
+            </div>
+
+            {/* Next Airing Episode Banner if Releasing */}
+            {anime.nextAiringEpisode && (
+              <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center gap-3 text-xs font-mono text-indigo-300">
+                <Radio className="w-4 h-4 text-indigo-400 animate-pulse flex-shrink-0" />
+                <div>
+                  <strong>Следующая {anime.nextAiringEpisode.episode} серия</strong> выйдет{' '}
+                  <span className="text-white font-semibold">
+                    {new Date(anime.nextAiringEpisode.airingAt * 1000).toLocaleDateString('ru-RU', {
+                      day: 'numeric',
+                      month: 'long',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Unreleased Anime Notice */}
+            {anime.status === 'NOT_YET_RELEASED' && (
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 text-xs font-mono text-amber-300">
+                <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <span>
+                  Тайтл находится в статусе «Анонс». Серии станут доступны сразу после официальной премьеры.
+                </span>
+              </div>
+            )}
+
+            {/* Quick Actions Bar (Watch / Resume + Quick Bookmark Selector + Share) */}
+            <AnimeHeroActions
+              animeId={anime.id}
+              totalEpisodes={episodesCount}
+              animeTitle={title}
+            />
           </div>
         </div>
       </div>
 
-      {/* 2. Episode Selection Section */}
+      {/* 2. Episode Selection Section (EpisodeGrid) */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Film className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-xl font-bold font-display text-white">Список серий ({episodesCount})</h2>
+            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+              <Film className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold font-display text-white">Список серий</h2>
+              <p className="text-xs font-mono text-zinc-400">Всего доступно {episodesCount} эпизодов</p>
+            </div>
           </div>
+          <span className="px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-xs font-mono text-zinc-300">
+            1080p / 720p
+          </span>
         </div>
 
-        <EpisodeGrid animeId={anime.id} totalEpisodes={episodesCount} />
+        <div className="p-6 rounded-3xl bg-[#0A0D14] border border-white/[0.08] shadow-xl">
+          <EpisodeGrid animeId={anime.id} totalEpisodes={episodesCount} />
+        </div>
       </section>
 
-      {/* 3. Franchise Timeline Tree */}
+      {/* 3. Franchise Timeline Tree Section */}
       {anime.relations && anime.relations.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2.5">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-xl font-bold font-display text-white">Хронология и связанные сезоны</h2>
+            <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold font-display text-white">Хронология франшизы</h2>
+              <p className="text-xs font-mono text-zinc-400">Связанные сезоны, фильмы и ответвления</p>
+            </div>
           </div>
+
           <FranchiseTree currentAnimeId={anime.id} relations={anime.relations} />
         </section>
       )}
 
-      {/* 4. Timecode Comments */}
+      {/* 4. Timecode Comments Section */}
       <section className="space-y-4">
         <TimecodeComments animeId={anime.id} episodeId={`${anime.id}-1`} />
       </section>

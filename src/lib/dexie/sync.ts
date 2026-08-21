@@ -45,6 +45,11 @@ class LocalFirstSyncManager {
     return localDB.bookmarks.get(animeId);
   }
 
+  async removeBookmark(animeId: number) {
+    await localDB.bookmarks.delete(animeId);
+    this.scheduleDebouncedSync();
+  }
+
   async getAllBookmarks(): Promise<LocalBookmarkItem[]> {
     return localDB.bookmarks.toArray();
   }

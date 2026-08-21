@@ -2,18 +2,19 @@ import { fetchAniListGraphQL, ANIME_DETAILS_QUERY, POPULAR_ANIME_QUERY, AIRING_S
 import { fetchShikimoriMetadata, fetchBatchShikimoriTitles, fetchKinopoiskId } from './shikimori';
 import { getKnownRussianTitle, getKnownEpisodeCount } from './russian-titles';
 import { StreamAggregator } from './stream-aggregator';
-import { UnifiedAnime, EpisodeItem, VoiceoverTrack } from '@/types';
+import {
+  UnifiedAnime,
+  EpisodeItem,
+  VoiceoverTrack,
+  WeeklySchedule,
+  CatalogSearchResult,
+  CatalogFilterParams,
+} from '@/types';
 
 export class AnimeResolver {
-  private static async fetchShikimoriCatalogFallback(params: {
-    page?: number;
-    perPage?: number;
-    genre?: string;
-    status?: string;
-    format?: string;
-    search?: string;
-    sort?: string[];
-  }): Promise<{ items: UnifiedAnime[]; pageInfo: { total: number; currentPage: number; lastPage: number; hasNextPage: boolean } }> {
+  private static async fetchShikimoriCatalogFallback(
+    params: CatalogFilterParams
+  ): Promise<CatalogSearchResult> {
     try {
       const query = new URLSearchParams();
       query.set('limit', String(params.perPage || 36));
@@ -115,25 +116,7 @@ export class AnimeResolver {
     return fallback.items;
   }
 
-  static async searchCatalog(params: {
-    page?: number;
-    perPage?: number;
-    genre?: string;
-    status?: string;
-    format?: string;
-    season?: string;
-    seasonYear?: number;
-    search?: string;
-    sort?: string[];
-  }): Promise<{
-    items: UnifiedAnime[];
-    pageInfo: {
-      total: number;
-      currentPage: number;
-      lastPage: number;
-      hasNextPage: boolean;
-    };
-  }> {
+  static async searchCatalog(params: CatalogFilterParams): Promise<CatalogSearchResult> {
     const isCyrillic = params.search ? /[а-яё]/i.test(params.search) : false;
 
     if (isCyrillic && params.search) {
@@ -175,18 +158,7 @@ export class AnimeResolver {
     return this.fetchShikimoriCatalogFallback(params);
   }
 
-  static async getAiringSchedule(): Promise<{
-    [dayOfWeek: number]: Array<{
-      id: number;
-      title: string;
-      episode: number;
-      airingAt: number;
-      timeStr: string;
-      coverImage: string;
-      format: string;
-      studio?: string;
-    }>;
-  }> {
+  static async getAiringSchedule(): Promise<WeeklySchedule> {
     try {
       const now = Math.floor(Date.now() / 1000);
       const startOfWeek = now - 86400 * 2;
@@ -385,6 +357,7 @@ export class AnimeResolver {
         title: relRu || edge.node.title?.romaji || edge.node.title?.english || 'Unknown',
         format: edge.node.format || 'TV',
         coverImage: edge.node.coverImage?.large || '',
+        year: edge.node.startDate?.year || edge.node.seasonYear || undefined,
       };
     });
 

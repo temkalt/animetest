@@ -1,95 +1,52 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { authStore } from '@/lib/auth/user-store';
-import { Sparkles, Mail, Lock, ArrowRight, User } from 'lucide-react';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { Sparkles, Shield, ArrowLeft, Zap, Tv, Compass } from 'lucide-react';
 
 export default function SignInPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes('@')) {
-      setError('Пожалуйста, введите валидный email');
-      return;
-    }
-    authStore.login(email);
-    router.push('/profile');
-  };
-
-  const handleGuest = () => {
-    authStore.loginAsGuest();
-    router.push('/profile');
-  };
-
   return (
-    <div className="max-w-md mx-auto py-12 space-y-6">
-      <div className="p-8 rounded-3xl bg-[#0E1017] border border-white/10 shadow-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 text-xs font-mono">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>ВХОД В АККАУНТ</span>
-          </div>
-          <h1 className="text-2xl font-bold font-display text-white">Добро пожаловать в KuroNami</h1>
-          <p className="text-xs text-slate-400">Войдите в свой профиль для доступа к истории и закладкам</p>
+    <div className="relative min-h-[82vh] flex flex-col justify-center items-center py-8 px-4 overflow-hidden">
+      {/* Cyberpunk Background Neon Glow Orbs */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-gradient-to-tr from-violet-600/20 via-cyan-500/15 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none -z-10" />
+
+      {/* Top Breadcrumb / Return */}
+      <div className="w-full max-w-md mb-6 flex items-center justify-between">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-cyan-400 transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          <span>Вернуться на главную</span>
+        </Link>
+
+        <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span>СЕРВЕР: ONLINE</span>
         </div>
+      </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          {error && (
-            <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-mono">
-              {error}
-            </div>
-          )}
+      {/* Main Glass Auth Card */}
+      <AuthCard initialMode="login" redirectTo="/profile" />
 
-          <div className="space-y-1">
-            <label className="block text-xs font-mono text-slate-300">Email адрес:</label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#07080B] border border-white/10 text-white text-xs font-sans placeholder-slate-500 focus:outline-none focus:border-violet-500"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-xs font-mono text-slate-300">Пароль:</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#07080B] border border-white/10 text-white text-xs font-sans placeholder-slate-500 focus:outline-none focus:border-violet-500"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-display font-bold text-xs shadow-[0_0_20px_rgba(139,92,246,0.4)] transition-all flex items-center justify-center gap-2"
-          >
-            <span>Войти в профиль</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
-
-        <div className="pt-2 border-t border-white/10 flex flex-col gap-2 text-center text-xs font-mono">
-          <Link href="/auth/signup" className="text-violet-400 hover:underline">
-            Еще нет аккаунта? Зарегистрироваться →
-          </Link>
-          <button onClick={handleGuest} className="text-slate-400 hover:text-cyan-400 transition-colors">
-            Войти как гость
-          </button>
+      {/* Cyberpunk Feature Pillars */}
+      <div className="w-full max-w-md mt-8 grid grid-cols-3 gap-3 text-center">
+        <div className="p-2.5 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm space-y-1">
+          <Tv className="w-4 h-4 mx-auto text-cyan-400" />
+          <p className="text-[10px] font-mono font-bold text-white">1080p FHD</p>
+          <p className="text-[9px] text-slate-400">Без рекламы</p>
+        </div>
+        <div className="p-2.5 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm space-y-1">
+          <Zap className="w-4 h-4 mx-auto text-violet-400" />
+          <p className="text-[10px] font-mono font-bold text-white">Синхронизация</p>
+          <p className="text-[9px] text-slate-400">Все устройства</p>
+        </div>
+        <div className="p-2.5 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm space-y-1">
+          <Shield className="w-4 h-4 mx-auto text-emerald-400" />
+          <p className="text-[10px] font-mono font-bold text-white">Отаку-Паспорт</p>
+          <p className="text-[9px] text-slate-400">Прокачка уровня</p>
         </div>
       </div>
     </div>

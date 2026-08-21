@@ -131,6 +131,10 @@ query GetAnimeDetails($id: Int, $idMal: Int) {
             english
           }
           format
+          seasonYear
+          startDate {
+            year
+          }
           coverImage {
             large
           }
