@@ -1,24 +1,31 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 import { syncManager } from '@/lib/dexie/sync';
 import { EpisodeTimecodes, VoiceoverTrack } from '@/types';
-import { StreamResolver } from '@/lib/player/stream-resolver';
-import { fetchDDBBPlayers } from '@/lib/api/ddbb';
 import {
-  Layers,
+  useBalancerProbe,
+} from '@/lib/balancer/client/use-balancer-probe';
+import { BalancerId, BalancerTranslation } from '@/types/balancer';
+import {
   Zap,
   RefreshCw,
-  ChevronRight,
   SlidersHorizontal,
+  Volume2,
+  AlertCircle,
+  Sparkles,
+  Layers,
+  ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface VideoPlayerProps {
   animeId: number;
   shikimoriId?: number | null;
   malId?: number | null;
+  kinopoiskId?: number | null;
   episodeNumber: number;
   url: string;
   poster?: string;
@@ -31,24 +38,27 @@ interface VideoPlayerProps {
   onEnded?: () => void;
 }
 
-const PROVIDER_NAMES: Record<string, string> = {
-  anilibria: 'ANILIBRIA (1080p HLS)',
-  kodik: 'KODIK (Все озвучки)',
-  alloha: 'ALLOHA (HD)',
-  turbo: 'TURBO (HD)',
-  veoveo: 'VEOVEO (HD)',
-  collaps: 'COLLAPS (HD)',
-  consumet: 'KURONAMI (Full HD)',
+const BALANCER_NAMES: Record<string, string> = {
+  anilibria: 'ANILIBRIA',
+  kodik: 'KODIK',
+  alloha: 'ALLOHA',
+  collaps: 'COLLAPS',
+  lumex: 'LUMEX',
+  sibnet: 'SIBNET',
+  turbo: 'TURBO',
+  veoveo: 'VEOVEO',
+  vibix: 'VIBIX',
 };
 
-const PROVIDER_ICONS: Record<string, string> = {
+const BALANCER_ICONS: Record<string, string> = {
   anilibria: '⚡',
   kodik: '🌌',
   alloha: '✨',
+  collaps: '⚡',
+  lumex: '🔮',
+  sibnet: '📼',
   turbo: '🚀',
   veoveo: '🔮',
-  collaps: '⚡',
-  consumet: '🌟',
   vibix: '📼',
 };
 
@@ -56,6 +66,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   animeId,
   shikimoriId,
   malId,
+  kinopoiskId,
   episodeNumber,
   url,
   poster,
@@ -64,147 +75,45 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   englishTitle,
   romajiTitle,
   timecodes: initialTimecodes,
-  sources: initialSources = [],
   onEnded,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const artInstanceRef = useRef<Artplayer | null>(null);
   const playerIframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Client-discovered streams (DDBB live balancers + AniLibria)
-  const [clientSources, setClientSources] = useState<VoiceoverTrack[]>([]);
-  const [activeTimecodes, setActiveTimecodes] = useState<EpisodeTimecodes | undefined>(initialTimecodes);
   const [iframeKey, setIframeKey] = useState<number>(0);
-  const [selectedSourceId, setSelectedSourceId] = useState<string>('');
 
-  // 1. Combine and prioritize sources (Kodik / Alloha / AniLibria / Turbo / VeoVeo / Collaps)
-  const allSources = useMemo(() => {
-    const combined = [...clientSources, ...initialSources];
-    const seen = new Set<string>();
-    const unique: VoiceoverTrack[] = [];
+  // Dynamic Balancer Availability Probe (Strictly hides non-existent balancers)
+  const {
+    loading,
+    probeData,
+    availableBalancers,
+    activeBalancer,
+    activeTranslation,
+    setActiveBalancer,
+    setActiveTranslation,
+    refresh,
+  } = useBalancerProbe({
+    animeId,
+    shikimoriId,
+    malId,
+    kinopoiskId,
+    episodeNumber,
+    titles: {
+      russian: russianTitle,
+      english: englishTitle,
+      romaji: romajiTitle,
+    },
+  });
 
-    for (const s of combined) {
-      if (!seen.has(s.id)) {
-        seen.add(s.id);
-        unique.push(s);
-      }
-    }
+  const activeTranslations =
+    activeBalancer && probeData ? probeData.results[activeBalancer]?.translations || [] : [];
+  const isDirectHls = activeTranslation?.isDirectHls && !!activeTranslation?.streamUrl;
+  const activeStreamUrl =
+    activeTranslation?.streamUrl ||
+    activeTranslation?.iframeUrl ||
+    (shikimoriId ? `https://vidsrc.me/embed/anime?id=${shikimoriId}&ep=${episodeNumber}` : url);
 
-    if (unique.length === 0) {
-      return StreamResolver.buildSources({
-        animeId,
-        malId,
-        shikimoriId,
-        episodeNumber,
-        titles: {
-          russian: russianTitle,
-          romaji: romajiTitle,
-          english: englishTitle,
-        },
-      });
-    }
-
-    // Sort order: Anilibria HLS -> Kodik -> Alloha -> Turbo -> Veoveo -> Collaps -> MultiDub
-    const providerPriority: Record<string, number> = {
-      anilibria: 1,
-      kodik: 2,
-      alloha: 3,
-      turbo: 4,
-      veoveo: 5,
-      collaps: 6,
-      consumet: 7,
-    };
-
-    return unique.sort((a, b) => {
-      const pA = providerPriority[a.provider] || 99;
-      const pB = providerPriority[b.provider] || 99;
-      return pA - pB;
-    });
-  }, [clientSources, initialSources, animeId, malId, shikimoriId, episodeNumber, russianTitle, romajiTitle, englishTitle]);
-
-  // 2. Fetch live ReYohoho / DDBB balancers & AniLibria on mount and on title change
-  useEffect(() => {
-    let isMounted = true;
-    const searchName = russianTitle || romajiTitle || englishTitle || title || '';
-
-    // Fetch live DDBB balancers (Alloha, Turbo, VeoVeo)
-    fetchDDBBPlayers({
-      title: searchName,
-      shikimoriId: shikimoriId || undefined,
-    }).then((ddbbProviders) => {
-      if (isMounted && ddbbProviders.length > 0) {
-        const ddbbSources = StreamResolver.buildSources({
-          animeId,
-          malId,
-          shikimoriId,
-          episodeNumber,
-          titles: {
-            russian: russianTitle,
-            romaji: romajiTitle,
-            english: englishTitle,
-          },
-          ddbbProviders,
-        });
-
-        setClientSources((prev) => {
-          const map = new Map<string, VoiceoverTrack>();
-          [...prev, ...ddbbSources].forEach((s) => map.set(s.id, s));
-          return Array.from(map.values());
-        });
-      }
-    });
-
-    // Check direct AniLibria
-    StreamResolver.discoverClientHls({
-      episodeNumber,
-      titles: {
-        russian: russianTitle,
-        romaji: romajiTitle,
-        english: englishTitle,
-      },
-    }).then((match) => {
-      if (isMounted && match?.hlsUrl) {
-        const hlsTrack: VoiceoverTrack = {
-          id: `client-anilibria-${animeId}-${episodeNumber}`,
-          provider: 'anilibria',
-          teamName: 'KuroNami Direct (1080p HLS)',
-          type: 'dub',
-          language: 'ru',
-          qualities: match.qualities || ['1080p', '720p', '480p'],
-          streamUrl: match.hlsUrl,
-          isDirectHls: true,
-        };
-        setClientSources((prev) => [hlsTrack, ...prev]);
-        setSelectedSourceId(hlsTrack.id);
-        if (match.timecodes) setActiveTimecodes(match.timecodes);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [animeId, episodeNumber, russianTitle, romajiTitle, englishTitle, title, shikimoriId, malId]);
-
-  // Set initial or matching active source
-  useEffect(() => {
-    if (allSources.length > 0) {
-      const match = allSources.find((s) => s.id === selectedSourceId);
-      if (!match) {
-        const best =
-          allSources.find((s) => s.isDirectHls && s.streamUrl) ||
-          allSources.find((s) => s.provider === 'kodik' && s.iframeUrl) ||
-          allSources.find((s) => s.provider === 'alloha' && s.iframeUrl) ||
-          allSources[0];
-        if (best) setSelectedSourceId(best.id);
-      }
-    }
-  }, [allSources, selectedSourceId]);
-
-  const activeSource = allSources.find((s) => s.id === selectedSourceId) || allSources[0];
-  const isDirectHls = activeSource?.isDirectHls && !!activeSource?.streamUrl;
-  const activeStreamUrl = activeSource?.iframeUrl || activeSource?.streamUrl || url;
-
-  // Initialize ArtPlayer if direct HLS is selected
+  // 1. Initialize Artplayer for Direct HLS streams (AniLibria 1080p)
   useEffect(() => {
     if (!isDirectHls || !containerRef.current || !activeStreamUrl) return;
 
@@ -255,6 +164,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
       artInstanceRef.current = art;
 
+      // Restore saved progress
       syncManager.getWatchProgress(animeId, episodeNumber).then((saved) => {
         if (saved && saved.currentTimeSeconds > 5 && !saved.isCompleted) {
           art.on('ready', () => {
@@ -263,6 +173,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         }
       });
 
+      // Save watch progress periodically
       let lastSaveTime = 0;
       art.on('video:timeupdate', () => {
         const cur = art.currentTime;
@@ -288,83 +199,156 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         if (art && art.destroy) art.destroy(false);
       };
     } catch {
-      // Fallback silently
+      // Fallback
     }
-  }, [activeStreamUrl, isDirectHls, animeId, episodeNumber, onEnded]);
+  }, [activeStreamUrl, isDirectHls, animeId, episodeNumber, poster, onEnded]);
 
-  // Switch to next mirror helper
-  const switchToNextMirror = () => {
-    const currentIndex = allSources.findIndex((s) => s.id === selectedSourceId);
-    const nextIndex = (currentIndex + 1) % allSources.length;
-    const nextSource = allSources[nextIndex];
-    if (nextSource) {
-      setSelectedSourceId(nextSource.id);
+  // Failover: switch to next available verified balancer
+  const switchToNextBalancer = () => {
+    if (availableBalancers.length <= 1) return;
+    const currentIndex = activeBalancer ? availableBalancers.indexOf(activeBalancer) : -1;
+    const nextIndex = (currentIndex + 1) % availableBalancers.length;
+    const nextBalancer = availableBalancers[nextIndex];
+    if (nextBalancer) {
+      setActiveBalancer(nextBalancer);
       setIframeKey((k) => k + 1);
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* 1. ReYohoho-Style Top Player Navigation Bar */}
-      <div className="p-3.5 rounded-2xl bg-[#0E1017] border border-white/10 shadow-2xl space-y-3">
-        <div className="flex items-center justify-between px-1">
+      {/* 1. Verified Dynamic Balancer Bar */}
+      <div className="p-4 rounded-3xl bg-[#0E1017] border border-white/10 shadow-2xl space-y-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <SlidersHorizontal className="w-3.5 h-3.5 text-violet-400" />
-              <span>Плеер:</span>
+              <span>Доступные плееры:</span>
             </span>
-            <span className="text-xs font-mono font-bold text-violet-400 bg-violet-500/10 px-2.5 py-1 rounded-lg border border-violet-500/20">
-              {PROVIDER_NAMES[activeSource?.provider] || activeSource?.teamName || 'Онлайн-плеер'}
-            </span>
+
+            {loading ? (
+              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20 animate-pulse">
+                Синхронизация баз...
+              </span>
+            ) : (
+              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{availableBalancers.length} онлайн</span>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setIframeKey((prev) => prev + 1)}
-              title="Перезагрузить текущий плеер"
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-mono transition-colors border border-white/5"
+              onClick={() => refresh()}
+              title="Перепроверить доступность плееров"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-mono transition-all border border-white/5 shadow-sm"
             >
-              <RefreshCw className="w-3 h-3 text-cyan-400" />
-              <span>Обновить</span>
+              <RefreshCw className={`w-3 h-3 text-cyan-400 ${loading ? 'animate-spin' : ''}`} />
+              <span>Обновить базы</span>
             </button>
           </div>
         </div>
 
-        {/* Player Buttons Matrix (AniLibria, Kodik, Alloha, Turbo, VeoVeo) */}
+        {/* Dynamic Verified Buttons (Zero Dead Links) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {allSources.map((s) => {
-            const isSelected = s.id === selectedSourceId;
-            const icon = PROVIDER_ICONS[s.provider] || '🎬';
+          {loading && availableBalancers.length === 0 ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 w-32 rounded-xl bg-white/5 animate-pulse border border-white/5"
+              />
+            ))
+          ) : availableBalancers.length === 0 ? (
+            <div className="w-full p-3 text-xs font-mono text-amber-400 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>Для данной серии плееры обновляются в сети. Задействован резервный Full HD плеер.</span>
+            </div>
+          ) : (
+            availableBalancers.map((bId) => {
+              const res = probeData?.results[bId];
+              const isSelected = bId === activeBalancer;
+              if (!res || !res.available) return null;
 
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => {
-                  setSelectedSourceId(s.id);
-                  setIframeKey((prev) => prev + 1);
-                }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
-                  isSelected
-                    ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.7)] border border-violet-400 scale-[1.02]'
-                    : 'bg-[#141722] hover:bg-white/10 text-slate-300 border border-white/10 hover:border-white/20'
-                }`}
-              >
-                <span>{icon}</span>
-                <span>{s.teamName}</span>
-                {s.isDirectHls && (
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-400/20 text-cyan-300 font-sans font-bold">
-                    1080p HLS
+              const icon = BALANCER_ICONS[bId] || res.icon || '🎬';
+              const name = BALANCER_NAMES[bId] || res.name;
+
+              return (
+                <button
+                  key={bId}
+                  type="button"
+                  onClick={() => {
+                    setActiveBalancer(bId);
+                    setIframeKey((k) => k + 1);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    isSelected
+                      ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.7)] border border-violet-400 scale-[1.02]'
+                      : 'bg-[#141722] hover:bg-white/10 text-slate-300 border border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <span>{icon}</span>
+                  <span>{name}</span>
+                  {bId === 'anilibria' && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-300 font-sans font-bold">
+                      1080p HLS
+                    </span>
+                  )}
+                  <span className="text-[10px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded">
+                    {res.translations.length}
                   </span>
-                )}
-              </button>
-            );
-          })}
+                </button>
+              );
+            })
+          )}
         </div>
+
+        {/* 2. Real Translation Selector (Studio Band, AniDUB, SHIZA, Wakanim, etc.) */}
+        {activeTranslations.length > 0 && (
+          <div className="pt-2.5 border-t border-white/5 space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 px-1">
+              <div className="flex items-center gap-1.5">
+                <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Озвучки для текущего плеера:</span>
+              </div>
+              <span className="text-slate-500">
+                Активно: <strong className="text-violet-300">{activeTranslation?.teamName}</strong>
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 max-h-36 overflow-y-auto pr-1">
+              {activeTranslations.map((tr) => {
+                const isTrSelected = tr.id === activeTranslation?.id;
+                return (
+                  <button
+                    key={tr.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveTranslation(tr);
+                      setIframeKey((k) => k + 1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                      isTrSelected
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.4)] font-bold'
+                        : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5 hover:border-white/10'
+                    }`}
+                  >
+                    <span>{tr.teamName}</span>
+                    {tr.type === 'sub' && (
+                      <span className="ml-1 text-[9px] text-amber-400 bg-amber-400/10 px-1 py-0.5 rounded">
+                        SUB
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 2. Main Video Player Canvas (ReYohoho standard iframe mounting) */}
+      {/* 3. Main Player Canvas with Sandbox & no-referrer Protection */}
       <div className="relative w-full aspect-video min-h-[420px] rounded-3xl overflow-hidden bg-[#07080B] border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.95)]">
         {isDirectHls ? (
           <div ref={containerRef} className="w-full h-full" />
@@ -374,34 +358,39 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             key={`${activeStreamUrl}-${iframeKey}`}
             src={activeStreamUrl}
             title={title ? `Плеер для ${title}` : 'Видео-плеер'}
-            frameBorder="0"
-            allowFullScreen
+            referrerPolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox"
             allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *; clipboard-write *"
-            className="w-full h-full border-0 rounded-3xl"
+            frameBorder="0"
+            scrolling="no"
+            allowFullScreen
+            className="w-full h-full border-0 rounded-3xl z-10 relative"
           />
         )}
       </div>
 
-      {/* 3. Stream Info & Failover Switcher */}
+      {/* 4. Stream Info & Next Balancer Switcher */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-[#0E1017] border border-white/5 text-xs font-mono">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10B981]" />
           <span className="text-slate-300">
-            Источник: <strong className="text-white font-bold">{activeSource?.teamName}</strong> • Серия #{episodeNumber}
+            Источник: <strong className="text-white font-bold">{activeTranslation?.teamName || activeBalancer?.toUpperCase() || 'Full HD Stream'}</strong> • Серия #{episodeNumber}
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={switchToNextMirror}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600 text-violet-300 hover:text-white border border-violet-500/40 text-[11px] font-bold transition-all shadow-md"
-          >
-            <Zap className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Следующий плеер</span>
-            <ChevronRight className="w-3 h-3" />
-          </button>
-        </div>
+        {availableBalancers.length > 1 && (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={switchToNextBalancer}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600 text-violet-300 hover:text-white border border-violet-500/40 text-[11px] font-bold transition-all shadow-md cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Следующий плеер</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

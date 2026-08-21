@@ -78,6 +78,7 @@ export default async function WatchPage({ params }: WatchProps) {
           animeId={anime.id}
           shikimoriId={anime.shikimoriId}
           malId={anime.malId}
+          kinopoiskId={anime.kinopoiskId}
           episodeNumber={epNumber}
           url={streamUrl}
           title={`${title} — Серия ${epNumber}`}

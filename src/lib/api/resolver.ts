@@ -1,5 +1,5 @@
 import { fetchAniListGraphQL, ANIME_DETAILS_QUERY, POPULAR_ANIME_QUERY, AIRING_SCHEDULE_QUERY } from './anilist';
-import { fetchShikimoriMetadata, fetchBatchShikimoriTitles } from './shikimori';
+import { fetchShikimoriMetadata, fetchBatchShikimoriTitles, fetchKinopoiskId } from './shikimori';
 import { getKnownRussianTitle, getKnownEpisodeCount } from './russian-titles';
 import { StreamAggregator } from './stream-aggregator';
 import { UnifiedAnime, EpisodeItem, VoiceoverTrack } from '@/types';
@@ -276,6 +276,12 @@ export class AnimeResolver {
           relations: [],
           nextAiringEpisode: null,
         };
+      }
+
+      // Fetch Kinopoisk ID for balancers (Alloha, Collaps, VideoCDN, Turbo)
+      const targetShikiId = unified.shikimoriId || unified.malId;
+      if (targetShikiId) {
+        unified.kinopoiskId = await fetchKinopoiskId(targetShikiId);
       }
 
       // Check known episode count overrides (for 100+ series like One Piece, Naruto, Bleach)

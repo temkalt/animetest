@@ -54,6 +54,7 @@ export interface UnifiedAnime {
   id: number; // AniList ID as master key
   malId?: number | null;
   shikimoriId?: number | null;
+  kinopoiskId?: number | null;
   anilibriaId?: number | null;
   anilibriaAlias?: string | null;
   slug: string;

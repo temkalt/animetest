@@ -102,3 +102,39 @@ export async function fetchShikimoriMetadata(malId: number) {
   }
 }
 
+const kinopoiskCache = new Map<number, number | null>();
+
+export async function fetchKinopoiskId(shikiId: number): Promise<number | null> {
+  if (kinopoiskCache.has(shikiId)) {
+    return kinopoiskCache.get(shikiId) || null;
+  }
+
+  try {
+    const res = await fetch(`https://shikimori.one/api/animes/${shikiId}/external_links`, {
+      headers: {
+        'User-Agent': 'KuroNamiAnimePortal/2.0',
+        'Accept': 'application/json',
+      },
+      next: { revalidate: 86400 * 7 },
+    });
+
+    if (res.ok) {
+      const links: Array<{ kind: string; url: string }> = await res.json();
+      const kp = links.find((l) => l.kind === 'kinopoisk' || l.url?.includes('kinopoisk.ru'));
+      if (kp?.url) {
+        const match = kp.url.match(/kinopoisk\.ru\/(?:film|series)\/(\d+)/i);
+        if (match && match[1]) {
+          const id = parseInt(match[1], 10);
+          kinopoiskCache.set(shikiId, id);
+          return id;
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  kinopoiskCache.set(shikiId, null);
+  return null;
+}
+
