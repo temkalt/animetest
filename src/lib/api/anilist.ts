@@ -182,21 +182,45 @@ query GetAiringSchedule($airingAt_greater: Int, $airingAt_lesser: Int, $perPage:
 `;
 
 export async function fetchAniListGraphQL<T>(query: string, variables: Record<string, any> = {}): Promise<T> {
-  const res = await fetch(ANILIST_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify({ query, variables }),
-    next: { revalidate: 1800 },
-  });
+  const maxRetries = 2;
+  let lastError: Error | null = null;
 
-  if (!res.ok) {
-    throw new Error(`AniList GraphQL error: ${res.statusText}`);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      const res = await fetch(ANILIST_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'KuroNami/2.0 (AnimeStreamingPlatform)',
+        },
+        body: JSON.stringify({ query, variables }),
+        signal: controller.signal,
+        next: { revalidate: 1800 },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`AniList GraphQL error: ${res.status} ${res.statusText}`);
+      }
+
+      const json = await res.json();
+      if (json.errors && json.errors.length > 0) {
+        throw new Error(`AniList GraphQL error: ${json.errors[0].message}`);
+      }
+      return json.data;
+    } catch (err: any) {
+      lastError = err;
+      if (attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 400 * attempt));
+      }
+    }
   }
 
-  const json = await res.json();
-  return json.data;
+  throw lastError || new Error('AniList GraphQL request failed');
 }
 

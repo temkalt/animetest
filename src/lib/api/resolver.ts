@@ -5,6 +5,93 @@ import { StreamAggregator } from './stream-aggregator';
 import { UnifiedAnime, EpisodeItem, VoiceoverTrack } from '@/types';
 
 export class AnimeResolver {
+  private static async fetchShikimoriCatalogFallback(params: {
+    page?: number;
+    perPage?: number;
+    genre?: string;
+    status?: string;
+    format?: string;
+    search?: string;
+    sort?: string[];
+  }): Promise<{ items: UnifiedAnime[]; pageInfo: { total: number; currentPage: number; lastPage: number; hasNextPage: boolean } }> {
+    try {
+      const query = new URLSearchParams();
+      query.set('limit', String(params.perPage || 36));
+      query.set('page', String(params.page || 1));
+
+      if (params.status === 'RELEASING') query.set('status', 'ongoing');
+      else if (params.status === 'FINISHED') query.set('status', 'released');
+      else if (params.status === 'NOT_YET_RELEASED') query.set('status', 'anons');
+
+      if (params.format) {
+        const f = params.format.toLowerCase();
+        if (['tv', 'movie', 'ova', 'special'].includes(f)) query.set('kind', f);
+      }
+
+      if (params.sort?.includes('SCORE_DESC')) query.set('order', 'ranked');
+      else if (params.sort?.includes('START_DATE_DESC')) query.set('order', 'aired_on');
+      else query.set('order', 'popularity');
+
+      if (params.search) query.set('search', params.search);
+
+      const res = await fetch(`https://shikimori.one/api/animes?${query.toString()}`, {
+        headers: { 'User-Agent': 'KuroNami/2.0 (AnimePortal)' },
+        next: { revalidate: 1800 },
+      });
+
+      if (!res.ok) throw new Error(`Shikimori API error: ${res.statusText}`);
+
+      const list: any[] = await res.json();
+      const items: UnifiedAnime[] = list.map((s) => ({
+        id: s.id,
+        malId: s.id,
+        slug: (s.name || `anime-${s.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        title: {
+          romaji: s.name,
+          english: null,
+          native: null,
+          russian: s.russian || s.name,
+        },
+        synonyms: [],
+        format: (s.kind || 'TV').toUpperCase(),
+        status: (s.status === 'anons' ? 'NOT_YET_RELEASED' : s.status === 'ongoing' ? 'RELEASING' : 'FINISHED') as 'NOT_YET_RELEASED' | 'RELEASING' | 'FINISHED',
+        season: null,
+        seasonYear: s.aired_on ? parseInt(s.aired_on.slice(0, 4), 10) : null,
+        episodesTotal: s.episodes || null,
+        episodesAired: s.episodes_aired || s.episodes || 12,
+        durationMinutes: s.duration || 24,
+        coverImage: {
+          original: s.image?.original ? (s.image.original.startsWith('http') ? s.image.original : `https://shikimori.one${s.image.original}`) : '',
+          medium: s.image?.preview ? (s.image.preview.startsWith('http') ? s.image.preview : `https://shikimori.one${s.image.preview}`) : '',
+          color: '#6366F1',
+        },
+        bannerImage: null,
+        synopsisRu: null,
+        synopsisEn: '',
+        score: s.score ? parseFloat(s.score) : 8.0,
+        popularity: 100,
+        genres: [],
+        studios: [],
+        tags: [],
+        relations: [],
+        nextAiringEpisode: null,
+      }));
+
+      return {
+        items,
+        pageInfo: {
+          total: list.length >= (params.perPage || 36) ? (params.page || 1) * 36 + 36 : list.length,
+          currentPage: params.page || 1,
+          lastPage: list.length >= (params.perPage || 36) ? (params.page || 1) + 1 : params.page || 1,
+          hasNextPage: list.length >= (params.perPage || 36),
+        },
+      };
+    } catch (e) {
+      console.error('[AnimeResolver] Shikimori fallback error:', e);
+      return { items: [], pageInfo: { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false } };
+    }
+  }
+
   static async getPopular(page = 1, perPage = 20, season?: string, seasonYear?: number): Promise<UnifiedAnime[]> {
     try {
       const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
@@ -15,14 +102,17 @@ export class AnimeResolver {
       });
 
       const list = data?.Page?.media || [];
-      const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-      const ruMap = await fetchBatchShikimoriTitles(malIds);
-
-      return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+      if (list.length > 0) {
+        const malIds = list.map((m: any) => m.idMal).filter(Boolean);
+        const ruMap = await fetchBatchShikimoriTitles(malIds);
+        return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+      }
     } catch (err) {
-      console.error('[AnimeResolver] getPopular error:', err);
-      return [];
+      console.warn('[AnimeResolver] getPopular AniList failed, using Shikimori fallback:', err);
     }
+
+    const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['POPULARITY_DESC'] });
+    return fallback.items;
   }
 
   static async searchCatalog(params: {
@@ -44,73 +134,13 @@ export class AnimeResolver {
       hasNextPage: boolean;
     };
   }> {
+    const isCyrillic = params.search ? /[а-яё]/i.test(params.search) : false;
+
+    if (isCyrillic && params.search) {
+      return this.fetchShikimoriCatalogFallback(params);
+    }
+
     try {
-      const isCyrillic = params.search ? /[а-яё]/i.test(params.search) : false;
-
-      if (isCyrillic && params.search) {
-        const shikiRes = await fetch(
-          `https://shikimori.one/api/animes?search=${encodeURIComponent(params.search)}&limit=${params.perPage || 36}&page=${params.page || 1}`,
-          { headers: { 'User-Agent': 'KuroNamiAnimePortal/2.0' } }
-        );
-
-        if (shikiRes.ok) {
-          const shikiList: any[] = await shikiRes.json();
-          if (shikiList.length > 0) {
-            const malIds = shikiList.map((s) => s.id);
-            const ruMap = new Map<number, string>();
-            shikiList.forEach((s) => {
-              if (s.russian) ruMap.set(s.id, s.russian);
-            });
-
-            // Map Shikimori items to UnifiedAnime
-            const items = shikiList.map((s) => ({
-              id: s.id,
-              malId: s.id,
-              slug: (s.name || `anime-${s.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-              title: {
-                romaji: s.name,
-                english: null,
-                native: null,
-                russian: s.russian || s.name,
-              },
-              synonyms: [],
-              format: (s.kind || 'TV').toUpperCase(),
-              status: (s.status === 'anons' ? 'NOT_YET_RELEASED' : s.status === 'ongoing' ? 'RELEASING' : 'FINISHED') as 'NOT_YET_RELEASED' | 'RELEASING' | 'FINISHED',
-              season: null,
-              seasonYear: s.aired_on ? parseInt(s.aired_on.slice(0, 4), 10) : null,
-              episodesTotal: s.episodes || null,
-              episodesAired: s.episodes_aired || s.episodes || 12,
-              durationMinutes: s.duration || 24,
-              coverImage: {
-                original: s.image?.original ? `https://shikimori.one${s.image.original}` : '',
-                medium: s.image?.preview ? `https://shikimori.one${s.image.preview}` : '',
-                color: '#8B5CF6',
-              },
-              bannerImage: null,
-              synopsisRu: null,
-              synopsisEn: '',
-              score: s.score ? parseFloat(s.score) : 8.0,
-              popularity: 100,
-              genres: [],
-              studios: [],
-              tags: [],
-              relations: [],
-              nextAiringEpisode: null,
-            }));
-
-            return {
-              items,
-              pageInfo: {
-                total: shikiList.length,
-                currentPage: params.page || 1,
-                lastPage: Math.ceil(shikiList.length / (params.perPage || 36)) || 1,
-                hasNextPage: shikiList.length >= (params.perPage || 36),
-              },
-            };
-          }
-        }
-      }
-
       const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
         page: params.page || 1,
         perPage: params.perPage || 36,
@@ -124,25 +154,25 @@ export class AnimeResolver {
       });
 
       const list = data?.Page?.media || [];
-      const pageInfo = data?.Page?.pageInfo || {
-        total: list.length,
-        currentPage: params.page || 1,
-        lastPage: 1,
-        hasNextPage: false,
-      };
+      if (list.length > 0) {
+        const pageInfo = data?.Page?.pageInfo || {
+          total: list.length,
+          currentPage: params.page || 1,
+          lastPage: 1,
+          hasNextPage: false,
+        };
 
-      const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-      const ruMap = await fetchBatchShikimoriTitles(malIds);
+        const malIds = list.map((m: any) => m.idMal).filter(Boolean);
+        const ruMap = await fetchBatchShikimoriTitles(malIds);
 
-      const items = list.map((item: any) => this.mapAniListToUnified(item, ruMap));
-      return { items, pageInfo };
+        const items = list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+        return { items, pageInfo };
+      }
     } catch (err) {
-      console.error('[AnimeResolver] searchCatalog error:', err);
-      return {
-        items: [],
-        pageInfo: { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false },
-      };
+      console.warn('[AnimeResolver] searchCatalog AniList failed, using Shikimori fallback:', err);
     }
+
+    return this.fetchShikimoriCatalogFallback(params);
   }
 
   static async getAiringSchedule(): Promise<{
@@ -169,43 +199,64 @@ export class AnimeResolver {
       });
 
       const schedules = data?.Page?.airingSchedules || [];
-      const malIds = schedules.map((s: any) => s.media?.idMal).filter(Boolean);
-      const ruMap = await fetchBatchShikimoriTitles(malIds);
+      if (schedules.length > 0) {
+        const malIds = schedules.map((s: any) => s.media?.idMal).filter(Boolean);
+        const ruMap = await fetchBatchShikimoriTitles(malIds);
 
-      const result: { [day: number]: any[] } = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+        const result: { [day: number]: any[] } = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
 
-      for (const item of schedules) {
-        if (!item.media) continue;
-        const date = new Date(item.airingAt * 1000);
-        let day = date.getDay();
-        if (day === 0) day = 7;
+        for (const item of schedules) {
+          if (!item.media) continue;
+          const date = new Date(item.airingAt * 1000);
+          let day = date.getDay();
+          if (day === 0) day = 7;
 
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
 
-        const knownRu = (item.media.idMal ? ruMap.get(item.media.idMal) : null) ||
-          getKnownRussianTitle(item.media.id) ||
-          (item.media.idMal ? getKnownRussianTitle(item.media.idMal) : null);
+          const knownRu = (item.media.idMal ? ruMap.get(item.media.idMal) : null) ||
+            getKnownRussianTitle(item.media.id) ||
+            (item.media.idMal ? getKnownRussianTitle(item.media.idMal) : null);
 
-        const titleStr = knownRu || item.media.title?.english || item.media.title?.romaji || 'Аниме';
+          const titleStr = knownRu || item.media.title?.english || item.media.title?.romaji || 'Аниме';
 
-        result[day].push({
-          id: item.media.id,
-          title: titleStr,
-          episode: item.episode,
-          airingAt: item.airingAt,
-          timeStr: `${hours}:${minutes} МСК`,
-          coverImage: item.media.coverImage?.large || item.media.coverImage?.medium || '',
-          format: item.media.format || 'TV',
-          studio: item.media.studios?.nodes?.[0]?.name,
-        });
+          result[day].push({
+            id: item.media.id,
+            title: titleStr,
+            episode: item.episode,
+            airingAt: item.airingAt,
+            timeStr: `${hours}:${minutes} МСК`,
+            coverImage: item.media.coverImage?.large || item.media.coverImage?.medium || '',
+            format: item.media.format || 'TV',
+            studio: item.media.studios?.nodes?.[0]?.name,
+          });
+        }
+
+        return result;
       }
-
-      return result;
     } catch (err) {
-      console.error('[AnimeResolver] getAiringSchedule error:', err);
-      return { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+      console.warn('[AnimeResolver] getAiringSchedule AniList failed, distributing ongoings:', err);
     }
+
+    // Fallback: distribute top ongoings across the 7 days of the week
+    const fallbackOngoings = await this.fetchShikimoriCatalogFallback({ status: 'RELEASING', perPage: 28 });
+    const result: { [day: number]: any[] } = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+
+    fallbackOngoings.items.forEach((item, index) => {
+      const day = (index % 7) + 1;
+      result[day].push({
+        id: item.id,
+        title: item.title.russian || item.title.romaji,
+        episode: item.episodesAired || 1,
+        airingAt: Math.floor(Date.now() / 1000),
+        timeStr: '19:00 МСК',
+        coverImage: item.coverImage.original || item.coverImage.medium,
+        format: item.format || 'TV',
+        studio: 'Studio',
+      });
+    });
+
+    return result;
   }
 
   static async getDetails(anilistId: number): Promise<UnifiedAnime | null> {
