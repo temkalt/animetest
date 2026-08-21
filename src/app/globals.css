@@ -1,26 +1,107 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surface Substrates (Obsidian / Onyx Scale) */
+  --surface-void: #07080b;
+  --surface-substrate: #0e1017;
+  --surface-plate: #141722;
+  --surface-elevated: #1c2030;
+  --surface-highlight: #262b3f;
+  --surface-glass: rgba(14, 16, 23, 0.75);
+  --surface-glass-heavy: rgba(7, 8, 11, 0.92);
+
+  /* Chromatic Accents */
+  --cyber-violet: #8b5cf6;
+  --cyber-violet-hover: #7c3aed;
+  --cyber-violet-glow: rgba(139, 92, 246, 0.35);
+  --cyber-violet-dim: rgba(139, 92, 246, 0.12);
+
+  --electric-cyan: #06b6d4;
+  --electric-cyan-hover: #0891b2;
+  --electric-cyan-glow: rgba(6, 182, 212, 0.35);
+  --electric-cyan-dim: rgba(6, 182, 212, 0.12);
+
+  --neon-rose: #f43f5e;
+  --neon-rose-glow: rgba(244, 63, 94, 0.35);
+  --neon-rose-dim: rgba(244, 63, 94, 0.12);
+
+  --amber-gold: #f59e0b;
+  --amber-gold-glow: rgba(245, 158, 11, 0.35);
+  --amber-gold-dim: rgba(245, 158, 11, 0.12);
+
+  --emerald-canon: #10b981;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Specular Borders */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-medium: rgba(255, 255, 255, 0.14);
+  --border-active: rgba(139, 92, 246, 0.5);
+
+  /* Shadows */
+  --shadow-elevation-1: 0 4px 20px -2px rgba(0, 0, 0, 0.7);
+  --shadow-elevation-2: 0 12px 36px -4px rgba(0, 0, 0, 0.85);
+  --shadow-elevation-3: 0 24px 48px -8px rgba(0, 0, 0, 0.95);
+  --shadow-glow-violet: 0 0 24px -4px var(--cyber-violet-glow);
+  --shadow-glow-cyan: 0 0 24px -4px var(--electric-cyan-glow);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --color-surface-void: var(--surface-void);
+  --color-surface-substrate: var(--surface-substrate);
+  --color-surface-plate: var(--surface-plate);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-highlight: var(--surface-highlight);
+  --color-surface-glass: var(--surface-glass);
+  
+  --color-cyber-violet: var(--cyber-violet);
+  --color-cyber-violet-hover: var(--cyber-violet-hover);
+  --color-cyber-violet-glow: var(--cyber-violet-glow);
+  --color-cyber-violet-dim: var(--cyber-violet-dim);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-electric-cyan: var(--electric-cyan);
+  --color-electric-cyan-hover: var(--electric-cyan-hover);
+  --color-electric-cyan-glow: var(--electric-cyan-glow);
+  --color-electric-cyan-dim: var(--electric-cyan-dim);
+
+  --color-neon-rose: var(--neon-rose);
+  --color-neon-rose-glow: var(--neon-rose-glow);
+  --color-neon-rose-dim: var(--neon-rose-dim);
+
+  --color-amber-gold: var(--amber-gold);
+  --color-amber-gold-glow: var(--amber-gold-glow);
+  --color-amber-gold-dim: var(--amber-gold-dim);
+
+  --color-emerald-canon: var(--emerald-canon);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--surface-void);
+  color: #f1f5f9;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface-void);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-highlight);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cyber-violet);
+}
+
+/* Subtle Noise Texture */
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
 }
