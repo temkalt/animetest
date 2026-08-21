@@ -6,6 +6,7 @@ import { RefreshCw, ShieldAlert, Sparkles, Layers, Volume2, ShieldCheck, AlertCi
 interface KinoboxPlayerProps {
   shikimoriId?: number | null;
   malId?: number | null;
+  kinopoiskId?: number | null;
   animeId: number;
   episodeNumber: number;
   title: string;
@@ -18,6 +19,7 @@ interface KinoboxPlayerProps {
 export const KinoboxPlayer: React.FC<KinoboxPlayerProps> = ({
   shikimoriId,
   malId,
+  kinopoiskId,
   animeId,
   episodeNumber,
   title,
@@ -55,6 +57,7 @@ export const KinoboxPlayer: React.FC<KinoboxPlayerProps> = ({
 
         const kinobox = new KinoboxClass(containerRef.current, {
           search: {
+            kinopoisk: kinopoiskId ? String(kinopoiskId) : undefined,
             shikimori: effectiveShikimori ? String(effectiveShikimori) : undefined,
             title: searchTitle,
           },
