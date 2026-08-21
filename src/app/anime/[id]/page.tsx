@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AnimeResolver } from '@/lib/api/resolver';
 import { FranchiseTree } from '@/components/anime/FranchiseTree';
+import { EpisodeGrid } from '@/components/anime/EpisodeGrid';
 import { TimecodeComments } from '@/components/player/TimecodeComments';
 import { Play, Star, Calendar, Tv, Film, Clock, Bookmark, Sparkles } from 'lucide-react';
 
@@ -126,21 +127,7 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
           <span className="text-xs font-mono text-slate-400">{episodesCount} серий</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5">
-          {Array.from({ length: episodesCount }).map((_, idx) => {
-            const epNum = idx + 1;
-            return (
-              <Link
-                key={epNum}
-                href={`/watch/${anime.id}/${epNum}`}
-                className="p-3 rounded-xl bg-[#141722] hover:bg-violet-600 hover:text-white border border-white/5 text-center text-xs font-mono font-semibold transition-all group"
-              >
-                <span className="block text-slate-400 group-hover:text-violet-200 text-[10px]">Серия</span>
-                <span className="text-sm font-bold text-white group-hover:text-white">{epNum}</span>
-              </Link>
-            );
-          })}
-        </div>
+        <EpisodeGrid animeId={anime.id} totalEpisodes={episodesCount} />
       </section>
 
       {/* 3. Franchise Universe Tree */}

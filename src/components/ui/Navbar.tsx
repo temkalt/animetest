@@ -185,7 +185,7 @@ export const Navbar: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-semibold text-white group-hover:text-violet-400 transition-colors truncate">
-                            {item.title.english || item.title.romaji}
+                            {item.title.russian || item.title.english || item.title.romaji}
                           </h4>
                           <div className="flex items-center gap-2 text-xs text-slate-400 font-mono mt-0.5">
                             <span>{item.format || 'TV'}</span>

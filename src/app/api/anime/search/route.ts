@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchAniListGraphQL } from '@/lib/api/anilist';
+import { getKnownRussianTitle } from '@/lib/api/russian-titles';
 
 export const runtime = 'edge';
 
@@ -8,6 +9,7 @@ query SearchAnime($search: String) {
   Page(page: 1, perPage: 8) {
     media(type: ANIME, search: $search, sort: POPULARITY_DESC, isAdult: false) {
       id
+      idMal
       title {
         romaji
         english
@@ -35,9 +37,19 @@ export async function GET(req: NextRequest) {
 
   try {
     const data: any = await fetchAniListGraphQL(SEARCH_QUERY, { search: q.trim() });
-    const list = data?.Page?.media || [];
+    const list = (data?.Page?.media || []).map((m: any) => {
+      const ruTitle = getKnownRussianTitle(m.id) || (m.idMal ? getKnownRussianTitle(m.idMal) : null);
+      return {
+        ...m,
+        title: {
+          ...m.title,
+          russian: ruTitle,
+        },
+      };
+    });
     return NextResponse.json({ results: list });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
