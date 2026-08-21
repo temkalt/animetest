@@ -1,12 +1,24 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 import { syncManager } from '@/lib/dexie/sync';
 import { EpisodeTimecodes, VoiceoverTrack } from '@/types';
-import { KinoboxPlayer } from './KinoboxPlayer';
-import { Sparkles, ShieldCheck, Play, Radio, Film, Layers, Zap, Tv, Eye, AlertCircle, RefreshCw, Volume2 } from 'lucide-react';
+import { StreamResolver } from '@/lib/player/stream-resolver';
+import {
+  Sparkles,
+  ShieldCheck,
+  Play,
+  Layers,
+  Zap,
+  Tv,
+  AlertCircle,
+  RefreshCw,
+  Maximize,
+  HelpCircle,
+  ChevronRight,
+} from 'lucide-react';
 
 interface VideoPlayerProps {
   animeId: number;
@@ -26,7 +38,6 @@ interface VideoPlayerProps {
 
 const PLAYER_ICONS: Record<string, string> = {
   anilibria: '⚡',
-  kinobox: '🎬',
   kodik: '🌌',
   consumet: '🌟',
   alloha: '✨',
@@ -46,45 +57,121 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   russianTitle,
   englishTitle,
   romajiTitle,
-  timecodes,
-  sources = [],
+  timecodes: initialTimecodes,
+  sources: initialSources = [],
   onEnded,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const artInstanceRef = useRef<Artplayer | null>(null);
   const glowRef = useRef<HTMLDivElement>(null);
 
-  // Pick initial source: prefer HLS if present, else Kodik, else first available
-  const [selectedSourceId, setSelectedSourceId] = useState<string>(() => {
-    const hlsSource = sources.find((s) => s.isDirectHls);
-    if (hlsSource) return hlsSource.id;
-    const kodikSource = sources.find((s) => s.provider === 'kodik');
-    if (kodikSource) return kodikSource.id;
-    return sources[0]?.id || 'default';
-  });
-
+  // Client-discovered streams (for Vercel & client-side enrichment)
+  const [clientSources, setClientSources] = useState<VoiceoverTrack[]>([]);
+  const [activeTimecodes, setActiveTimecodes] = useState<EpisodeTimecodes | undefined>(initialTimecodes);
   const [iframeKey, setIframeKey] = useState<number>(0);
 
-  // Sync selected source when episode or sources update
-  useEffect(() => {
-    if (sources.length > 0) {
-      const match = sources.find((s) => s.id === selectedSourceId);
-      if (!match) {
-        const hls = sources.find((s) => s.isDirectHls);
-        const kodik = sources.find((s) => s.provider === 'kodik');
-        setSelectedSourceId(hls?.id || kodik?.id || sources[0].id);
+  // Build merged sources list
+  const allSources = useMemo(() => {
+    // If we have client-discovered HLS, place it at the front
+    const combined = [...clientSources, ...initialSources];
+    // De-duplicate by id
+    const seen = new Set<string>();
+    const unique: VoiceoverTrack[] = [];
+
+    for (const s of combined) {
+      if (!seen.has(s.id)) {
+        seen.add(s.id);
+        unique.push(s);
       }
     }
-  }, [sources, episodeNumber]);
 
-  const activeSource = sources.find((s) => s.id === selectedSourceId) || sources[0];
+    // Ensure fallback sources always exist for any anime
+    if (unique.length === 0) {
+      const fallbackList = StreamResolver.buildSources({
+        animeId,
+        malId,
+        shikimoriId,
+        episodeNumber,
+        titles: {
+          russian: russianTitle,
+          romaji: romajiTitle,
+          english: englishTitle,
+        },
+      });
+      return fallbackList;
+    }
+
+    return unique;
+  }, [clientSources, initialSources, animeId, malId, shikimoriId, episodeNumber, russianTitle, romajiTitle, englishTitle]);
+
+  // Selected source ID
+  const [selectedSourceId, setSelectedSourceId] = useState<string>(() => {
+    const hls = allSources.find((s) => s.isDirectHls);
+    if (hls) return hls.id;
+    const kodik = allSources.find((s) => s.provider === 'kodik');
+    if (kodik) return kodik.id;
+    return allSources[0]?.id || 'default';
+  });
+
+  // Client-side discovery on mount / episode change
+  useEffect(() => {
+    let isMounted = true;
+
+    // Check if initialSources already has HLS
+    const hasInitialHls = initialSources.some((s) => s.isDirectHls);
+    if (!hasInitialHls) {
+      StreamResolver.discoverClientHls({
+        episodeNumber,
+        titles: {
+          russian: russianTitle,
+          romaji: romajiTitle,
+          english: englishTitle,
+        },
+      }).then((match) => {
+        if (isMounted && match?.hlsUrl) {
+          const hlsTrack: VoiceoverTrack = {
+            id: `client-anilibria-${animeId}-${episodeNumber}`,
+            provider: 'anilibria',
+            teamName: 'KuroNami Direct (1080p HLS)',
+            type: 'dub',
+            language: 'ru',
+            qualities: match.qualities || ['1080p', '720p', '480p'],
+            streamUrl: match.hlsUrl,
+            isDirectHls: true,
+          };
+          setClientSources([hlsTrack]);
+          setSelectedSourceId(hlsTrack.id);
+          if (match.timecodes) {
+            setActiveTimecodes(match.timecodes);
+          }
+        }
+      });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [animeId, episodeNumber, russianTitle, romajiTitle, englishTitle, initialSources]);
+
+  // Sync selected source when allSources change
+  useEffect(() => {
+    if (allSources.length > 0) {
+      const match = allSources.find((s) => s.id === selectedSourceId);
+      if (!match) {
+        const hls = allSources.find((s) => s.isDirectHls);
+        const kodik = allSources.find((s) => s.provider === 'kodik');
+        setSelectedSourceId(hls?.id || kodik?.id || allSources[0].id);
+      }
+    }
+  }, [allSources, selectedSourceId]);
+
+  const activeSource = allSources.find((s) => s.id === selectedSourceId) || allSources[0];
   const isDirectHls = activeSource?.isDirectHls;
-  const isKinobox = activeSource?.isKinobox || activeSource?.provider === 'kinobox';
   const activeStreamUrl = activeSource?.streamUrl || url;
 
   // Initialize ArtPlayer for direct HLS (AniLibria)
   useEffect(() => {
-    if (!isDirectHls || isKinobox || !containerRef.current || !activeStreamUrl) return;
+    if (!isDirectHls || !containerRef.current || !activeStreamUrl) return;
 
     const art = new Artplayer({
       container: containerRef.current,
@@ -152,8 +239,8 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
           position: 'right',
           html: '<button class="px-3 py-1 bg-violet-600/90 hover:bg-violet-600 text-xs font-semibold rounded-lg backdrop-blur-md transition-all shadow-md">Пропустить интро (S)</button>',
           click: function () {
-            if (timecodes?.intro?.end && art.currentTime < timecodes.intro.end) {
-              art.currentTime = timecodes.intro.end;
+            if (activeTimecodes?.intro?.end && art.currentTime < activeTimecodes.intro.end) {
+              art.currentTime = activeTimecodes.intro.end;
               art.notice.show = 'Интро успешно пропущено';
             }
           },
@@ -177,8 +264,8 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       const cur = art.currentTime;
       const dur = art.duration || 1;
 
-      if (timecodes?.intro?.start !== undefined && timecodes?.intro?.end !== undefined) {
-        const inIntro = cur >= timecodes.intro.start && cur <= timecodes.intro.end;
+      if (activeTimecodes?.intro?.start !== undefined && activeTimecodes?.intro?.end !== undefined) {
+        const inIntro = cur >= activeTimecodes.intro.start && cur <= activeTimecodes.intro.end;
         const btn = (art.controls as any)['skip-intro-btn'];
         if (btn) {
           btn.style.display = inIntro ? 'inline-block' : 'none';
@@ -202,8 +289,8 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
       if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') {
-        if (timecodes?.intro?.end && art.currentTime < timecodes.intro.end) {
-          art.currentTime = timecodes.intro.end;
+        if (activeTimecodes?.intro?.end && art.currentTime < activeTimecodes.intro.end) {
+          art.currentTime = activeTimecodes.intro.end;
           art.notice.show = 'Интро успешно пропущено';
         }
       }
@@ -228,36 +315,48 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         art.destroy(false);
       }
     };
-  }, [activeStreamUrl, isDirectHls, isKinobox, animeId, episodeNumber]);
+  }, [activeStreamUrl, isDirectHls, animeId, episodeNumber, activeTimecodes]);
+
+  // Switch to next mirror helper
+  const switchToNextMirror = () => {
+    const currentIndex = allSources.findIndex((s) => s.id === selectedSourceId);
+    const nextIndex = (currentIndex + 1) % allSources.length;
+    const nextSource = allSources[nextIndex];
+    if (nextSource) {
+      setSelectedSourceId(nextSource.id);
+      setIframeKey((k) => k + 1);
+    }
+  };
 
   return (
     <div className="space-y-4">
       {/* 1. Main Player / CDN Switcher Navigation Bar */}
-      <div className="p-3 rounded-2xl bg-[#0E1017] border border-white/5 shadow-lg space-y-2">
+      <div className="p-3.5 rounded-2xl bg-[#0E1017] border border-white/5 shadow-xl space-y-3">
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-violet-400" />
-            <span>Выберите видеоплеер ({sources.length}):</span>
+            <span>Выберите видеоплеер ({allSources.length}):</span>
           </span>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-emerald-400 text-[11px] font-mono">
-              <ShieldCheck className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 text-emerald-400 text-[11px] font-mono bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+              <ShieldCheck className="w-3 h-3" />
               <span>Ad-Shield ON</span>
             </div>
             <button
               type="button"
               onClick={() => setIframeKey((prev) => prev + 1)}
-              title="Перезагрузить плеер"
-              className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+              title="Перезагрузить текущий плеер"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-mono transition-colors border border-white/5"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-3 h-3" />
+              <span>Обновить</span>
             </button>
           </div>
         </div>
 
         {/* Player Buttons Matrix */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {sources.map((s) => {
+          {allSources.map((s) => {
             const isSelected = s.id === selectedSourceId;
             const icon = PLAYER_ICONS[s.provider] || '🎬';
 
@@ -271,7 +370,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
                 }}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
                   isSelected
-                    ? 'bg-violet-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.6)] border border-violet-400 scale-[1.02]'
+                    ? 'bg-violet-600 text-white shadow-[0_0_18px_rgba(139,92,246,0.6)] border border-violet-400 scale-[1.02]'
                     : 'bg-[#141722] hover:bg-white/10 text-slate-300 border border-white/5 hover:border-white/15'
                 }`}
               >
@@ -282,9 +381,9 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
                     FHD 1080p
                   </span>
                 )}
-                {s.isKinobox && (
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-violet-400/20 text-violet-300 font-sans font-bold">
-                    Kodik / Alloha
+                {s.provider === 'kodik' && (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-400/20 text-purple-300 font-sans font-bold">
+                    Все озвучки
                   </span>
                 )}
               </button>
@@ -303,19 +402,6 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
 
         {isDirectHls ? (
           <div ref={containerRef} className="w-full h-full" />
-        ) : isKinobox ? (
-          <KinoboxPlayer
-            key={`kinobox-${animeId}-${episodeNumber}-${iframeKey}`}
-            animeId={animeId}
-            shikimoriId={shikimoriId}
-            malId={malId}
-            episodeNumber={episodeNumber}
-            title={title}
-            russianTitle={russianTitle}
-            englishTitle={englishTitle}
-            romajiTitle={romajiTitle}
-            onEnded={onEnded}
-          />
         ) : (
           <iframe
             key={`${activeSource?.iframeUrl || activeStreamUrl}-${iframeKey}`}
@@ -328,34 +414,25 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         )}
       </div>
 
-      {/* 3. Active Stream Information Bar & Instant Fallback */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-5 py-3 rounded-2xl bg-[#0E1017] border border-white/5 text-xs font-mono">
+      {/* 3. Active Stream Information Bar & Instant Fallback Controls */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-[#0E1017] border border-white/5 text-xs font-mono">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10B981]" />
           <span className="text-slate-300">
-            Активен: <strong className="text-white font-bold">{activeSource?.teamName}</strong> • Серия #{episodeNumber}
+            Активен плеер: <strong className="text-white font-bold">{activeSource?.teamName}</strong> • Серия #{episodeNumber}
           </span>
         </div>
 
-        {/* Quick fallback buttons */}
+        {/* Quick fallback switch button */}
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              const fallback =
-                sources.find((s) => s.isDirectHls) ||
-                sources.find((s) => s.provider === 'kodik') ||
-                sources.find((s) => s.provider === 'consumet') ||
-                sources[0];
-              if (fallback) {
-                setSelectedSourceId(fallback.id);
-                setIframeKey((prev) => prev + 1);
-              }
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-[11px] transition-colors"
+            onClick={switchToNextMirror}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600 text-violet-300 hover:text-white border border-violet-500/40 text-[11px] font-bold transition-all shadow-md"
           >
             <Zap className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Переключить на проверенный плеер</span>
+            <span>Переключить на следующее зеркало</span>
+            <ChevronRight className="w-3 h-3" />
           </button>
         </div>
       </div>
