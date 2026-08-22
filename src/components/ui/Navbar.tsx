@@ -173,7 +173,7 @@ export const Navbar: React.FC = () => {
             {currentUser ? (
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Link
-                  href="/profile"
+                  href={`/user/${currentUser.username}`}
                   className="flex items-center gap-2.5 p-1 pl-3 pr-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all text-xs font-medium text-white group"
                 >
                   <div className="flex flex-col items-end text-right hidden sm:flex">
@@ -250,8 +250,14 @@ export const Navbar: React.FC = () => {
                 transition={{ delay: NAV_LINKS.length * 0.05 }}
               >
                 <Link
-                  href="/profile"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  href={currentUser ? `/user/${currentUser.username}` : '#'}
+                  onClick={(e) => {
+                    setIsMobileMenuOpen(false);
+                    if (!currentUser) {
+                      e.preventDefault();
+                      setIsAuthModalOpen(true);
+                    }
+                  }}
                   className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-200"
                 >
                   <div className="flex items-center gap-3">

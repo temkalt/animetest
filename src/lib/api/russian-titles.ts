@@ -187,3 +187,9 @@ export function getKnownEpisodeCount(idOrMalId: string | number): number | null 
   const key = String(idOrMalId);
   return KNOWN_EPISODE_COUNTS[key] || null;
 }
+
+export function generateRussianGenreSynopsis(title: string, genres: string[], format?: string): string {
+  const formatStr = format === 'MOVIE' ? 'Полнометражное аниме' : format === 'OVA' ? 'OVA' : format === 'SPECIAL' ? 'Спешл' : 'Аниме';
+  const genresStr = genres && genres.length > 0 ? ` в жанре ${genres.map(g => g.toLowerCase()).join(', ')}` : '';
+  return `${formatStr} «${title}»${genresStr}. Подробное описание на русском языке в данный момент подготавливается. Смотрите все серии онлайн в высоком качестве с выбором озвучки.`;
+}

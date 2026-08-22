@@ -12,6 +12,7 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { CreateCollectionModal } from '@/components/collections/CreateCollectionModal';
 import { UserCollectionModal } from '@/components/collections/UserCollectionModal';
 import { BatchAnimeItem } from '@/app/api/anime/batch/route';
+import { userActivity } from '@/lib/auth/user-activity';
 import {
   User,
   Clock,
@@ -194,6 +195,62 @@ export default function ProfilePage() {
       : 'NOVICE OTAKU';
   const level = Math.max(1, Math.floor(totalSeconds / 1800) + (user?.level || 1) - 1);
   const xpProgress = Math.round(((totalSeconds % 1800) / 1800) * 100);
+
+  const averageScore = useMemo(() => {
+    const scores = Object.values(animeMap).map(m => m.score).filter(Boolean) as number[];
+    if (!scores.length) return 0;
+    return scores.reduce((a, b) => a + b, 0) / scores.length;
+  }, [animeMap]);
+
+  const genreStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    let total = 0;
+    
+    // Calculate from history
+    history.forEach(h => {
+      const meta = animeMap[h.animeId];
+      if (meta?.genres) {
+        meta.genres.forEach(g => {
+          counts[g] = (counts[g] || 0) + (h.isCompleted ? 3 : 1);
+          total += (h.isCompleted ? 3 : 1);
+        });
+      }
+    });
+
+    // Calculate from bookmarks
+    bookmarks.forEach(b => {
+      const meta = animeMap[b.animeId];
+      if (meta?.genres) {
+        meta.genres.forEach(g => {
+          counts[g] = (counts[g] || 0) + (b.isFavorite ? 2 : 1);
+          total += (b.isFavorite ? 2 : 1);
+        });
+      }
+    });
+
+    // Calculate from userActivity
+    const viewStats = userActivity.getAllViewStats();
+    viewStats.forEach(v => {
+      const meta = animeMap[v.id];
+      if (meta?.genres) {
+        meta.genres.forEach(g => {
+          counts[g] = (counts[g] || 0) + v.viewsCount;
+          total += v.viewsCount;
+        });
+      }
+    });
+
+    if (total === 0) return [];
+
+    return Object.entries(counts)
+      .map(([genre, count]) => ({
+        genre,
+        count,
+        value: Math.min(100, Math.round((count / total) * 100))
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 7);
+  }, [history, bookmarks, animeMap]);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -398,7 +455,13 @@ export default function ProfilePage() {
       {/* 3. Main Profile Content Tabs: History, Bookmarks, Collections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Radar Matrix Card */}
-        <GenreRadarChart className="h-full" />
+        <GenreRadarChart 
+          className="h-full" 
+          data={genreStats} 
+          totalWatched={groupedHistory.length} 
+          totalHours={parseFloat(totalHours)} 
+          averageScore={averageScore} 
+        />
 
         {/* History / Bookmarks / Collections Tab Panel */}
         <div className="lg:col-span-2 p-5 sm:p-6 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-5">

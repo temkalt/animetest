@@ -98,64 +98,62 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
         </div>
       </div>
 
-      {/* Preset Avatars Selection & Custom Avatar Link */}
+      {/* Preset Avatars Selection & Upload Actions */}
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs font-medium text-zinc-400">
           <span className="flex items-center gap-1.5">
             <ImageIcon className="w-3.5 h-3.5 text-zinc-500" />
-            <span>Выберите аватар или загрузите свой</span>
+            <span>Выберите аватар или загрузите своё фото</span>
           </span>
           <button
             type="button"
             onClick={() => setShowCustomInput(!showCustomInput)}
-            className="text-zinc-300 hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
+            className="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-2 transition-colors cursor-pointer"
           >
-            {showCustomInput ? 'Скрыть ссылку' : 'Свой URL / Файл'}
+            {showCustomInput ? 'Скрыть поле URL' : 'Вставить URL картинки'}
           </button>
         </div>
 
-        {/* Custom Avatar URL or Upload Drawer */}
+        {/* Direct Photo Upload Button */}
+        <label className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-200 hover:text-white border border-dashed border-zinc-700 hover:border-zinc-500 font-medium text-xs cursor-pointer transition-all">
+          <Upload className="w-4 h-4 text-zinc-400" />
+          <span>Загрузить фото с устройства</span>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+        </label>
+
+        {/* Optional Custom Image URL Drawer */}
         {showCustomInput && (
-          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-3">
+          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <LinkIcon className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <LinkIcon className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="url"
                   value={customUrlInput}
                   onChange={(e) => setCustomUrlInput(e.target.value)}
-                  placeholder="Вставьте ссылку на картинку"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
+                  placeholder="https://example.com/avatar.jpg"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleApplyCustomUrl}
                 disabled={!customUrlInput.trim()}
-                className="px-3 py-2 rounded-lg bg-zinc-100 text-zinc-900 hover:bg-white text-sm font-medium disabled:opacity-40 transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-zinc-200 text-zinc-900 hover:bg-white text-xs font-semibold disabled:opacity-40 transition-colors cursor-pointer"
               >
                 Применить
               </button>
             </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-zinc-800 text-xs text-zinc-400">
-              <span>Или загрузите файл:</span>
-              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 cursor-pointer transition-colors">
-                <Upload className="w-3.5 h-3.5" />
-                <span>Выбрать фото</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
           </div>
         )}
 
-        {/* Grid of Avatars */}
-        <div className="grid grid-cols-6 gap-3 p-2 rounded-lg bg-zinc-900 border border-zinc-800">
+        {/* Grid of Preset Avatars */}
+        <div className="grid grid-cols-6 gap-3 p-2.5 rounded-lg bg-zinc-900 border border-zinc-800">
           {AVATAR_PRESETS.map((av, idx) => {
             const isSelected = selectedAvatar === av.url;
             return (

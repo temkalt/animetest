@@ -33,6 +33,7 @@ interface VideoPlayerProps {
   episodeNumber: number;
   url: string;
   poster?: string;
+  coverImage?: string;
   title: string;
   russianTitle?: string | null;
   englishTitle?: string | null;
@@ -59,6 +60,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   kinopoiskId,
   episodeNumber,
   poster,
+  coverImage,
   title,
   russianTitle,
   englishTitle,
@@ -83,12 +85,12 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       userActivity.recordAnimeView({
         id: animeId,
         title: cleanTitle,
-        coverImage: poster || '',
+        coverImage: coverImage || poster || '',
         score: 0,
         format: 'TV'
       });
     }
-  }, [animeId, title, russianTitle, romajiTitle, poster]);
+  }, [animeId, title, russianTitle, romajiTitle, poster, coverImage]);
 
   // Dynamic Balancer Availability Probe
   const {

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Users, Eye, Star, ArrowRight, Play, Sparkles } from 'lucide-react';
+import { Users, Eye, Star, ArrowRight, Play, Sparkles, Tv } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { userActivity, AnimeViewStat } from '@/lib/auth/user-activity';
 
@@ -92,18 +92,19 @@ export const CommunityChoice: React.FC = () => {
                 href={`/anime/${anime.id}`}
                 className="group block"
               >
-                <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all">
+                <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all">
                   {anime.coverImage ? (
                     <Image
                       src={anime.coverImage}
                       alt={anime.title}
                       fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                      className="object-cover transition-transform duration-300"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-zinc-800 flex items-center justify-center">
-                      <span className="text-zinc-600 text-sm">Нет постера</span>
+                    <div className="absolute inset-0 bg-zinc-800 flex flex-col items-center justify-center p-3 text-center gap-2">
+                      <Tv className="w-6 h-6 text-zinc-600" />
+                      <span className="text-zinc-500 text-xs font-semibold line-clamp-2">{anime.title}</span>
                     </div>
                   )}
 

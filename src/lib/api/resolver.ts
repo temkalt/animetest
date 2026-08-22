@@ -1,6 +1,6 @@
 import { fetchAniListGraphQL, ANIME_DETAILS_QUERY, POPULAR_ANIME_QUERY, AIRING_SCHEDULE_QUERY } from './anilist';
 import { fetchShikimoriMetadata, fetchBatchShikimoriMetadata, fetchKinopoiskId, cleanSynopsis, ShikimoriBatchResult } from './shikimori';
-import { getKnownRussianTitle, getKnownRussianSynopsis, getKnownEpisodeCount } from './russian-titles';
+import { getKnownRussianTitle, getKnownRussianSynopsis, getKnownEpisodeCount, generateRussianGenreSynopsis } from './russian-titles';
 import { StreamAggregator } from './stream-aggregator';
 import {
   UnifiedAnime,
@@ -67,7 +67,7 @@ export class AnimeResolver {
           color: '#6366F1',
         },
         bannerImage: null,
-        synopsisRu: cleanSynopsis(s.description) || null,
+        synopsisRu: cleanSynopsis(s.description) || generateRussianGenreSynopsis(s.russian || s.name, [], (s.kind || 'TV').toUpperCase()),
         synopsisEn: '',
         score: s.score ? parseFloat(s.score) : 0,
         popularity: 100,
@@ -378,7 +378,7 @@ export class AnimeResolver {
             color: '#8B5CF6',
           },
           bannerImage: null,
-          synopsisRu: cleanSynopsis(shikiData.description) || null,
+          synopsisRu: cleanSynopsis(shikiData.description) || generateRussianGenreSynopsis(shikiData.russian || shikiData.name, [], (shikiData.kind || 'TV').toUpperCase()),
           synopsisEn: '',
           score: shikiData.score ? parseFloat(shikiData.score) : 0,
           popularity: 100,
@@ -479,7 +479,7 @@ export class AnimeResolver {
         color: media.coverImage?.color || '#8B5CF6',
       },
       bannerImage: media.bannerImage || null,
-      synopsisRu: knownRuSynopsis ? cleanSynopsis(knownRuSynopsis) : null,
+      synopsisRu: knownRuSynopsis ? cleanSynopsis(knownRuSynopsis) : generateRussianGenreSynopsis(knownRu || media.title?.romaji || 'Без названия', media.genres || [], media.format),
       synopsisEn: cleanSynopsis(media.description) || '',
       score: media.averageScore ? Number((media.averageScore / 10).toFixed(1)) : 0,
       popularity: media.popularity || 0,

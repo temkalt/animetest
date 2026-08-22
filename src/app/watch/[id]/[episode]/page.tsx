@@ -58,7 +58,8 @@ export default async function WatchPage({ params }: WatchProps) {
   const prevEp = epNumber > 1 ? epNumber - 1 : null;
   const nextEp = epNumber < totalEpisodes ? epNumber + 1 : null;
   const progressPercent = Math.min(100, Math.round((epNumber / totalEpisodes) * 100));
-  const posterImage = anime.bannerImage || anime.coverImage.original;
+  const verticalCover = anime.coverImage?.large || anime.coverImage?.original || anime.coverImage?.medium;
+  const horizontalBanner = anime.bannerImage || anime.coverImage?.original;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-2 sm:px-4 pb-12">
@@ -162,10 +163,10 @@ export default async function WatchPage({ params }: WatchProps) {
         <div className="absolute -inset-4 sm:-inset-6 bg-gradient-to-r from-indigo-600/25 via-purple-600/20 to-cyan-500/20 rounded-lg  opacity-50 -z-10 pointer-events-none transition-all duration-700 group-hover:opacity-75" />
 
         {/* Ambient Backdrop Poster Glow */}
-        {posterImage && (
+        {horizontalBanner && (
           <div className="absolute -inset-3 sm:-inset-5 opacity-20 filter  -z-10 overflow-hidden rounded-lg pointer-events-none">
             <Image
-              src={posterImage}
+              src={horizontalBanner}
               alt=""
               fill
               className="object-cover scale-110"
@@ -187,7 +188,8 @@ export default async function WatchPage({ params }: WatchProps) {
             russianTitle={anime.title.russian}
             englishTitle={anime.title.english}
             romajiTitle={anime.title.romaji}
-            poster={posterImage}
+            poster={horizontalBanner}
+            coverImage={verticalCover}
             timecodes={currentEpItem?.timecodes}
             sources={sources}
           />
@@ -327,7 +329,7 @@ export default async function WatchPage({ params }: WatchProps) {
           episodeId={`ep-${anime.id}-${epNumber}`}
           animeId={anime.id}
           animeTitle={title}
-          animeCover={posterImage || ''}
+          animeCover={verticalCover || horizontalBanner || ''}
           episodeNumber={epNumber}
         />
     </div>

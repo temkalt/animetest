@@ -13,27 +13,30 @@ interface SynopsisClampProps {
 export const SynopsisClamp: React.FC<SynopsisClampProps> = ({ synopsisRu, synopsisEn }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Clean BBCode and unwanted HTML tags from raw descriptions
   const cleanText = (text?: string | null) => {
     if (!text) return '';
     return text
-      .replace(/\[\/?(b|i|u|s|url|character|anime|manga|quote|spoiler|center)(=[^\]]*)?\]/gi, '')
+      .replace(/\[\/?(b|i|u|s|url|code|character|anime|manga|quote|spoiler|center|person|comment|topic|entry)(=[^\]]*)?\]/gi, '')
       .replace(/<[^>]+>/g, '')
       .replace(/&quot;/g, '"')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
-      .replace(/&#39;/g, "'")
+      .replace(/&#0?39;/g, "'")
+      .replace(/\(Source:[^)]+\)/gi, '')
+      .replace(/\[Written by MAL Rewrite\]/gi, '')
+      .replace(/Note:[^\n]+/gi, '')
       .trim();
   };
 
-  const rawDescription = synopsisRu || synopsisEn;
+  const hasRu = !!synopsisRu && synopsisRu.trim().length > 0;
+  const rawDescription = hasRu ? synopsisRu : synopsisEn;
   const cleanedDescription = cleanText(rawDescription);
 
   if (!cleanedDescription) {
     return (
       <div className="text-xs sm:text-sm text-zinc-400 font-sans italic">
-        Описание для данного тайтла временно подготавливается. Смотрите все серии в высоком разрешении 1080p с выбором студий озвучки.
+        Описание для данного тайтла временно подготавливается. Смотрите все серии онлайн в высоком качестве с выбором озвучки.
       </div>
     );
   }

@@ -49,7 +49,7 @@ export function cleanSynopsis(raw?: string | null): string {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/?[^>]+(>|$)/g, '')
     .replace(/\[(anime|manga|character|person|comment|topic|entry)=[^\]]+\](.*?)\[\/\1\]/gi, '$2')
-    .replace(/\[\/?(b|i|u|s|code|spoiler|quote)\]/gi, '')
+    .replace(/\[\/?(b|i|u|s|code|spoiler|url|quote)\]/gi, '')
     .replace(/\[[^\]]+\]/g, '')
     .replace(/&quot;/g, '"')
     .replace(/&#039;/g, "'")
@@ -57,6 +57,7 @@ export function cleanSynopsis(raw?: string | null): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/\(Source:[^)]+\)/gi, '')
+    .replace(/\[Written by MAL Rewrite\]/gi, '')
     .replace(/Note:[^\n]+/gi, '')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]+/g, ' ')
@@ -179,19 +180,54 @@ export async function fetchShikimoriMetadata(malId: number) {
       next: { revalidate: 86400 },
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) throw new Error('GraphQL fetch failed');
     const json = await res.json();
     const list = json.data?.animes;
+    
     if (list && list.length > 0) {
       const item = list[0];
       if (item.description) {
         item.description = cleanSynopsis(item.description);
       }
+      
+      if (!item.description || item.description.trim() === '') {
+        // Fallback to REST API
+        const restRes = await fetch(`https://shikimori.one/api/animes/${malId}`, {
+          headers: { 'User-Agent': 'KuroNamiAnimePortal/2.0' },
+          next: { revalidate: 86400 }
+        });
+        if (restRes.ok) {
+          const restJson = await restRes.json();
+          if (restJson.description) {
+            item.description = cleanSynopsis(restJson.description);
+          }
+        }
+      }
+      
       return item;
     }
-    return null;
+    throw new Error('Empty or invalid list from GraphQL');
   } catch (err) {
-    console.warn('[Shikimori API] Fetch failed:', err);
+    console.warn('[Shikimori API] Fetch failed, attempting REST fallback:', err);
+    try {
+      const restRes = await fetch(`https://shikimori.one/api/animes/${malId}`, {
+        headers: { 'User-Agent': 'KuroNamiAnimePortal/2.0' },
+        next: { revalidate: 86400 }
+      });
+      if (restRes.ok) {
+        const restJson = await restRes.json();
+        return {
+          id: String(restJson.id),
+          malId: String(restJson.mal_id || malId),
+          name: restJson.name,
+          russian: restJson.russian,
+          description: restJson.description ? cleanSynopsis(restJson.description) : null,
+          episodes: restJson.episodes
+        };
+      }
+    } catch (e) {
+      console.warn('[Shikimori API] REST fallback also failed:', e);
+    }
     return null;
   }
 }

@@ -37,6 +37,15 @@ class UserActivityManager {
   }) {
     if (typeof window === 'undefined') return;
 
+    let cleanCover = anime.coverImage?.trim() || '';
+    if (cleanCover && !cleanCover.startsWith('http')) {
+      cleanCover = '';
+    }
+    // Try to normalize known banner URLs if we still accidentally got one
+    if (cleanCover.includes('banner')) {
+      cleanCover = cleanCover.replace('banner', 'cover');
+    }
+
     try {
       const all = this.getAllViewStats();
       const existing = all.find((item) => item.id === anime.id);
@@ -45,14 +54,14 @@ class UserActivityManager {
         existing.viewsCount += 1;
         existing.lastViewedAt = new Date().toISOString();
         if (anime.title) existing.title = anime.title;
-        if (anime.coverImage) existing.coverImage = anime.coverImage;
+        if (cleanCover) existing.coverImage = cleanCover;
         if (anime.score !== undefined) existing.score = anime.score;
         if (anime.format) existing.format = anime.format;
       } else {
         all.push({
           id: anime.id,
           title: anime.title,
-          coverImage: anime.coverImage,
+          coverImage: cleanCover,
           score: anime.score || 0,
           format: anime.format || 'TV',
           viewsCount: 1,
