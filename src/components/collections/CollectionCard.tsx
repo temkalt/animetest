@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowRight, Eye, Layers } from 'lucide-react';
+import { ArrowRight, Eye, Layers, Heart } from 'lucide-react';
 import { EditorialCollection } from '@/data/collections';
 import { SPRINGS } from '@/lib/motion-presets';
 
@@ -19,32 +19,70 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
   onQuickView,
   index,
 }) => {
+  const [isLiked, setIsLiked] = useState(false);
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
+      whileHover={{ y: -4, scale: 1.015 }}
+      whileTap={{ scale: 0.985 }}
       transition={{ ...SPRINGS.snappy, delay: index * 0.05 }}
       className="group relative rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all duration-200 flex flex-col justify-between shadow-sm"
     >
       {/* Banner background layer */}
-      <div className="relative w-full h-52 sm:h-60 overflow-hidden">
-        {collection.banner ? (
+      <div className="relative w-full h-52 sm:h-60 overflow-hidden flex items-center justify-center bg-zinc-950">
+        {collection.banner && (
           <Image
             src={collection.banner}
             alt={collection.title}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover object-center filter group-hover:scale-105 transition-all duration-300 ease-out opacity-75 group-hover:opacity-90"
+            className="object-cover object-center opacity-30 blur-sm group-hover:opacity-40 transition-all duration-300"
           />
-        ) : (
-          <div className="absolute inset-0 bg-zinc-950" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/50 to-transparent" />
 
+        {/* Stacked Poster Fan-out */}
+        <div className="relative z-10 w-full h-full flex items-center justify-center pt-8">
+          {collection.posters.slice(0, 3).map((posterUrl, i) => {
+            const offsets = [
+              { rotate: -8, x: -30, y: 5 },
+              { rotate: 0, x: 0, y: -5 },
+              { rotate: 8, x: 30, y: 5 },
+            ];
+            const hoverOffsets = [
+              { rotate: -15, x: -50, y: -5 },
+              { rotate: 0, x: 0, y: -15 },
+              { rotate: 15, x: 50, y: -5 },
+            ];
+            const config = offsets[i];
+            const hoverConfig = hoverOffsets[i];
+
+            return (
+              <motion.div
+                key={i}
+                variants={{
+                  rest: { rotate: config.rotate, x: config.x, y: config.y, scale: 1 },
+                  hover: { rotate: hoverConfig.rotate, x: hoverConfig.x, y: hoverConfig.y, scale: 1.05 }
+                }}
+                initial="rest"
+                animate="rest"
+                whileHover="hover"
+                transition={SPRINGS.snappy}
+                className="absolute w-24 sm:w-28 aspect-[3/4] rounded-md overflow-hidden shadow-xl border border-zinc-700/50"
+                style={{ zIndex: i === 1 ? 10 : 5 }}
+              >
+                <Image src={posterUrl} alt="Poster" fill sizes="120px" className="object-cover" />
+              </motion.div>
+            );
+          })}
+        </div>
+
         {/* Top Floating Badges Bar */}
-        <div className="absolute top-3.5 inset-x-3.5 flex items-center justify-between z-20 gap-2">
+        <div className="absolute top-3.5 inset-x-3.5 flex items-center justify-between z-20 gap-2 pointer-events-none">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold tracking-widest uppercase bg-black/70 backdrop-blur-md text-zinc-200 border border-zinc-750">
               {collection.issueNumber}
@@ -54,10 +92,22 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-zinc-750 text-[11px] font-mono text-zinc-200">
-            <Layers className="w-3 h-3 text-zinc-400" />
-            <span className="font-bold">{collection.animeList.length}</span>
-            <span>тайтлов</span>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-zinc-750 text-[11px] font-mono text-zinc-200">
+              <Layers className="w-3 h-3 text-zinc-400" />
+              <span className="font-bold">{collection.animeList.length}</span>
+            </div>
+            <motion.button
+              whileTap={{ scale: 1.3 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+              onClick={(e) => {
+                e.preventDefault();
+                setIsLiked(!isLiked);
+              }}
+              className="p-1.5 rounded-md bg-black/70 backdrop-blur-md border border-zinc-750 text-zinc-400 hover:text-red-400 transition-colors flex items-center justify-center cursor-pointer"
+            >
+              <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+            </motion.button>
           </div>
         </div>
       </div>

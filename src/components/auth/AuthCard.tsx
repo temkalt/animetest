@@ -174,11 +174,18 @@ export const AuthCard: React.FC<AuthCardProps> = ({
               setError('');
               setMode('register');
             }}
-            className={`py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-              mode === 'register' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700' : 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900/50'
+            className={`relative py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              mode === 'register' ? 'text-zinc-950' : 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900/50'
             }`}
           >
-            <span className="flex items-center justify-center gap-2">
+            {mode === 'register' && (
+              <motion.div
+                layoutId="activeAuthTab"
+                className="absolute inset-0 bg-zinc-100 rounded-lg shadow-sm"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-2">
               <UserPlus className="w-4 h-4" />
               Регистрация
             </span>
@@ -190,11 +197,18 @@ export const AuthCard: React.FC<AuthCardProps> = ({
               setError('');
               setMode('login');
             }}
-            className={`py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-              mode === 'login' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700' : 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900/50'
+            className={`relative py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              mode === 'login' ? 'text-zinc-950' : 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900/50'
             }`}
           >
-            <span className="flex items-center justify-center gap-2">
+            {mode === 'login' && (
+              <motion.div
+                layoutId="activeAuthTab"
+                className="absolute inset-0 bg-zinc-100 rounded-lg shadow-sm"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-2">
               <KeyRound className="w-4 h-4" />
               Вход
             </span>
@@ -229,10 +243,10 @@ export const AuthCard: React.FC<AuthCardProps> = ({
             {mode === 'register' ? (
               <motion.div
                 key="register-fields"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
                 <AvatarSelector
@@ -297,10 +311,10 @@ export const AuthCard: React.FC<AuthCardProps> = ({
             ) : (
               <motion.div
                 key="login-fields"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
                 <CyberInput

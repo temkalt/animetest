@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Play, RotateCcw, Share2, Check, FolderPlus } from 'lucide-react';
 import { BookmarkQuickSelector } from './BookmarkQuickSelector';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
@@ -75,26 +76,30 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
   return (
     <div className="flex flex-wrap items-center gap-2.5 pt-2 relative z-30">
       {/* Primary Watch Action Button */}
-      <Link
-        href={`/watch/${animeId}/${resumeEp}`}
-        className="flex items-center gap-2 px-5 py-3 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-sans font-bold text-xs transition-all duration-200 border border-zinc-800 shadow-sm hover:scale-[1.02]"
-      >
-        <Play className="w-4 h-4 fill-zinc-950" />
-        <span>
-          {isResuming ? `Продолжить: ${resumeEp} серия` : 'Смотреть онлайн'}
-        </span>
-      </Link>
+      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+        <Link
+          href={`/watch/${animeId}/${resumeEp}`}
+          className="flex items-center gap-2 px-5 py-3 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-sans font-bold text-xs transition-colors duration-200 border border-zinc-800 shadow-sm"
+        >
+          <Play className="w-4 h-4 fill-zinc-950" />
+          <span>
+            {isResuming ? `Продолжить: ${resumeEp} серия` : 'Смотреть онлайн'}
+          </span>
+        </Link>
+      </motion.div>
 
       {/* Restart from episode 1 button if resuming */}
       {isResuming && (
-        <Link
-          href={`/watch/${animeId}/1`}
-          title="Смотреть с 1 серии"
-          className="flex items-center gap-1.5 px-3 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border border-zinc-700 text-xs font-mono transition-all"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">С 1 серии</span>
-        </Link>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Link
+            href={`/watch/${animeId}/1`}
+            title="Смотреть с 1 серии"
+            className="flex items-center gap-1.5 px-3 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border border-zinc-700 text-xs font-mono transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">С 1 серии</span>
+          </Link>
+        </motion.div>
       )}
 
       {/* Quick Bookmark Status Selector (with Favorite Heart) */}
@@ -120,11 +125,13 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
 
       {/* Share / Copy Link Button */}
       <div className="relative">
-        <button
+        <motion.button
           type="button"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={handleShare}
           title="Поделиться аниме"
-          className={`p-3 rounded-lg border text-xs font-medium transition-all duration-200 cursor-pointer ${
+          className={`p-3 rounded-lg border text-xs font-medium transition-colors duration-200 cursor-pointer ${
             copied
               ? 'bg-zinc-800 text-zinc-200 border-zinc-600'
               : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border-zinc-700'
@@ -132,7 +139,7 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
           aria-label="Поделиться"
         >
           {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
-        </button>
+        </motion.button>
 
         {copied && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-100 text-[10px] font-mono whitespace-nowrap shadow-md border border-zinc-700 animate-in fade-in zoom-in-95">

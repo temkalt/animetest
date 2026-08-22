@@ -686,13 +686,13 @@ const TimelineCard: React.FC<CardProps> = ({ node, stepNumber }) => {
   const FormatIcon = getFormatIcon(node.format);
 
   return (
-    <motion.div variants={staggerItemVariants} className="flex-shrink-0 w-72 md:w-auto">
+    <motion.div variants={staggerItemVariants} whileHover={{ scale: 1.02, x: 2 }} className="flex-shrink-0 w-72 md:w-auto">
       <Link
         href={`/anime/${node.id}`}
         className={`group relative block h-full p-3.5 rounded-lg border transition-all duration-300  ${
           node.isCurrent
-            ? 'bg-gradient-to-br from-cyan-950/40 via-[#101726]/90 to-[#0A0D15] border-zinc-800 -400/30 '
-            : 'bg-zinc-900 border-zinc-800 hover:border-zinc-800 hover:bg-zinc-800 hover:'
+            ? 'bg-zinc-800 border-zinc-700 '
+            : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800'
         }`}
       >
         {/* Futuristic Cyber Corner Accents for Current Item */}
@@ -802,13 +802,13 @@ const FranchiseNodeCard: React.FC<CardProps> = ({ node, compact }) => {
   const FormatIcon = getFormatIcon(node.format);
 
   return (
-    <motion.div variants={staggerItemVariants}>
+    <motion.div variants={staggerItemVariants} whileHover={{ scale: 1.02, x: 2 }}>
       <Link
         href={`/anime/${node.id}`}
         className={`group relative flex items-center gap-3 p-3 rounded-lg border transition-all duration-300  ${
           node.isCurrent
-            ? 'bg-gradient-to-r from-cyan-950/40 via-[#101726]/90 to-[#0A0D15] border-zinc-800 -400/30 '
-            : 'bg-zinc-900 border-zinc-800 hover:border-zinc-800 hover:bg-zinc-800 hover:'
+            ? 'bg-zinc-800 border-zinc-700'
+            : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800'
         }`}
       >
         {/* Poster Thumbnail */}

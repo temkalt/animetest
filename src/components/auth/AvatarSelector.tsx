@@ -159,13 +159,15 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           {AVATAR_PRESETS.map((av, idx) => {
             const isSelected = selectedAvatar === av.url;
             return (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.95 }}
                 key={idx}
                 type="button"
                 onClick={() => onSelect(av.url)}
-                className={`group relative aspect-square rounded-lg overflow-hidden transition-all duration-150 cursor-pointer ${
+                className={`group relative aspect-square rounded-lg overflow-hidden transition-colors duration-150 cursor-pointer ${
                   isSelected
-                    ? 'border-2 border-zinc-300 shadow-sm scale-105'
+                    ? 'border-0'
                     : 'border border-zinc-700 opacity-60 hover:opacity-100 hover:border-zinc-500'
                 }`}
                 title={av.name}
@@ -174,17 +176,24 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
                   src={av.url}
                   alt={av.name}
                   fill
-                  className="object-cover transition-transform duration-150 group-hover:scale-105"
+                  className="object-cover"
                   sizes="48px"
                 />
                 {isSelected && (
-                  <div className="absolute inset-0 bg-zinc-950/40 flex items-center justify-center">
-                    <div className="w-5 h-5 rounded-full bg-zinc-100 text-zinc-900 flex items-center justify-center shadow-sm">
-                      <Check className="w-3 h-3 stroke-[3]" />
+                  <>
+                    <motion.div
+                      layoutId="selectedAvatarRing"
+                      className="absolute inset-0 border-2 border-zinc-300 rounded-lg shadow-sm"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
+                    <div className="absolute inset-0 bg-zinc-950/40 flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-zinc-100 text-zinc-900 flex items-center justify-center shadow-sm">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </div>

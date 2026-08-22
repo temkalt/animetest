@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowUp } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const FOOTER_LINKS = [
   {
@@ -49,8 +50,8 @@ export const Footer: React.FC = () => {
               <h3 className='text-sm font-semibold text-zinc-100'>{col.title}</h3>
               <ul className='space-y-2'>
                 {col.links.map((link) => (
-                  <li key={link.label}>
-                    <Link href={link.href} className='text-sm text-zinc-400 hover:text-zinc-100 transition-colors'>
+                  <li key={link.label} className="group">
+                    <Link href={link.href} className='inline-block text-sm text-zinc-400 group-hover:text-zinc-100 group-hover:translate-x-1 transition-all duration-150'>
                       {link.label}
                     </Link>
                   </li>
@@ -66,14 +67,17 @@ export const Footer: React.FC = () => {
             <p className='text-sm font-medium text-zinc-300'>KuroNami</p>
             <p className='text-xs text-zinc-500'>© {new Date().getFullYear()} Все права защищены. Аниме-портал.</p>
           </div>
-          <button
+          <motion.button
             type='button'
             onClick={scrollToTop}
             aria-label='Вернуться наверх'
+            whileHover={{ y: -2, scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             className='p-2 rounded-lg border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 transition-colors cursor-pointer'
           >
             <ArrowUp className='w-4 h-4' />
-          </button>
+          </motion.button>
         </div>
       </div>
     </footer>

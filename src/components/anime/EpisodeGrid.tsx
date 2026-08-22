@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
   Play,
@@ -257,41 +258,53 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => setSelectedChunk(idx)}
-                      className={`relative group px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-2 shrink-0 ${
+                      className={`relative group px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-2 shrink-0 border ${
                         isSelected
-                          ? 'bg-gradient-to-r from-indigo-600/90 to-violet-600/90 text-zinc-100  border border-zinc-800'
-                          : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-800'
+                          ? 'text-zinc-100 border-zinc-700'
+                          : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border-zinc-800'
                       }`}
                     >
-                      {/* Active Indicator Neon LED */}
+                      {/* Animated Tab Background */}
                       {isSelected && (
-                        <span className="w-1.5 h-1.5 rounded-lg bg-zinc-800 " />
+                        <motion.div
+                          layoutId="activeEpChunk"
+                          className="absolute inset-0 bg-zinc-800 rounded-lg"
+                          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                        />
                       )}
 
-                      {/* Current Playing Indicator Pulse Pip (if not selected) */}
-                      {!isSelected && hasActiveEp && (
-                        <span className="relative flex h-2 w-2">
-                          <span className=" absolute inline-flex h-full w-full rounded-lg bg-zinc-800 opacity-75"></span>
-                          <span className="relative inline-flex rounded-lg h-2 w-2 bg-zinc-800"></span>
+                      {/* Content (Z-indexed above background) */}
+                      <div className="relative z-10 flex items-center gap-2">
+                        {/* Active Indicator Neon LED */}
+                        {isSelected && (
+                          <span className="w-1.5 h-1.5 rounded-lg bg-zinc-300" />
+                        )}
+
+                        {/* Current Playing Indicator Pulse Pip (if not selected) */}
+                        {!isSelected && hasActiveEp && (
+                          <span className="relative flex h-2 w-2">
+                            <span className=" absolute inline-flex h-full w-full rounded-lg bg-zinc-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-lg h-2 w-2 bg-zinc-500"></span>
+                          </span>
+                        )}
+
+                        <span>
+                          {cStart} – {cEnd}
                         </span>
-                      )}
 
-                      <span>
-                        {cStart} – {cEnd}
-                      </span>
-
-                      {/* Chunk watched count mini pill */}
-                      {chunkWatchedCount > 0 && (
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-lg font-mono ${
-                            isSelected
-                              ? 'bg-white/20 text-zinc-100'
-                              : 'bg-zinc-800 text-zinc-400 border border-zinc-800'
-                          }`}
-                        >
-                          {chunkWatchedCount}/{cEnd - cStart + 1}
-                        </span>
-                      )}
+                        {/* Chunk watched count mini pill */}
+                        {chunkWatchedCount > 0 && (
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-lg font-mono ${
+                              isSelected
+                                ? 'bg-zinc-700 text-zinc-100'
+                                : 'bg-zinc-800 text-zinc-400 border border-zinc-800'
+                            }`}
+                          >
+                            {chunkWatchedCount}/{cEnd - cStart + 1}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -324,33 +337,39 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
               : null;
 
           return (
-            <Link
+            <motion.a
               key={epNum}
               href={`/watch/${animeId}/${epNum}`}
-              className={`group relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-lg border transition-all duration-200 cursor-pointer overflow-hidden ${
+              whileHover={{ scale: 1.05 }}
+              onClick={(e) => {
+                e.preventDefault();
+                router.push(`/watch/${animeId}/${epNum}`);
+              }}
+              className={`group relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-lg border transition-colors duration-200 cursor-pointer overflow-hidden ${
                 isCurrent
-                  ? 'bg-gradient-to-b from-indigo-600/30 via-[#101426] to-[#0D101E] border-zinc-800  -400/50 scale-[1.03]'
+                  ? 'bg-zinc-800 border-zinc-700 text-zinc-100'
                   : isCompleted
-                  ? 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-800 text-zinc-200 hover:text-zinc-100'
-                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-800 text-zinc-300 hover:text-zinc-100'
+                  ? 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-700 text-zinc-200 hover:text-zinc-100'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-zinc-100'
               }`}
             >
-              {/* Corner Ambient Cyber Flare on Hover */}
-              <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-indigo-500/15 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              {isCurrent && (
+                <motion.div
+                  layoutId="activeEpIndicator"
+                  className="absolute inset-0 border-2 border-zinc-600 rounded-lg pointer-events-none"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
 
               {/* Status Header: Playing Pulse / Completed Check / Progress Pill */}
-              <div className="w-full flex items-center justify-between min-h-[14px] mb-1">
+              <div className="w-full flex items-center justify-between min-h-[14px] mb-1 z-10 relative">
                 {isCurrent ? (
-                  <span className="flex items-center gap-1 text-[9px] font-mono font-bold text-zinc-300 uppercase tracking-tight">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className=" absolute inline-flex h-full w-full rounded-lg bg-zinc-800 opacity-75"></span>
-                      <span className="relative inline-flex rounded-lg h-1.5 w-1.5 bg-zinc-800"></span>
-                    </span>
+                  <span className="flex items-center gap-1 text-[9px] font-mono font-bold text-zinc-100 uppercase tracking-tight">
                     <span>LIVE</span>
                   </span>
                 ) : isCompleted ? (
                   <span
-                    className="flex items-center justify-center w-4 h-4 rounded-lg bg-zinc-800 border border-zinc-800 text-zinc-400 "
+                    className="flex items-center justify-center w-4 h-4 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-400"
                     title="Просмотрено"
                   >
                     <Check className="w-2.5 h-2.5" />
@@ -365,16 +384,16 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
 
                 {/* Hover Play Icon reveal in top right */}
                 <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-75 group-hover:scale-100">
-                  <Play className="w-3 h-3 text-zinc-300 fill-cyan-300/40 drop-" />
+                  <Play className="w-3 h-3 text-zinc-300" />
                 </div>
               </div>
 
-              {/* Central Episode Number with Cyber Anime Typography */}
-              <div className="flex flex-col items-center justify-center my-0.5">
+              {/* Central Episode Number with Minimal Typography */}
+              <div className="flex flex-col items-center justify-center my-0.5 z-10 relative">
                 <span
                   className={`text-base sm:text-lg font-mono font-black tracking-tight transition-colors ${
                     isCurrent
-                      ? 'text-zinc-100 drop-'
+                      ? 'text-zinc-100'
                       : isCompleted
                       ? 'text-zinc-200 group-hover:text-zinc-100'
                       : 'text-zinc-300 group-hover:text-zinc-200'
@@ -387,8 +406,8 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                     isCurrent
                       ? 'text-zinc-300'
                       : isCompleted
-                      ? 'text-zinc-400/80 group-hover:text-zinc-300'
-                      : 'text-zinc-400 group-hover:text-zinc-300'
+                      ? 'text-zinc-500 group-hover:text-zinc-400'
+                      : 'text-zinc-500 group-hover:text-zinc-400'
                   }`}
                 >
                   Серия
@@ -397,19 +416,14 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
 
               {/* Bottom In-Progress Mini Bar Indicator */}
               {inProgressPercentage && (
-                <div className="w-full mt-1.5 h-1 bg-zinc-800 rounded-lg overflow-hidden">
+                <div className="w-full mt-1.5 h-1 bg-zinc-800 rounded-lg overflow-hidden z-10 relative">
                   <div
                     className="h-full bg-zinc-400 rounded-lg"
                     style={{ width: `${inProgressPercentage}%` }}
                   />
                 </div>
               )}
-
-              {/* Bottom Active Glow Accent Bar */}
-              {isCurrent && (
-                <div className="absolute bottom-0 inset-x-2 h-[2px] bg-gradient-to-r from-cyan-400 via-indigo-400 to-violet-400 " />
-              )}
-            </Link>
+            </motion.a>
           );
         })}
       </div>

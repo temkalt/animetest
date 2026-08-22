@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, 
   Flame, 
@@ -57,108 +58,127 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
         </div>
 
         {/* Tab Controls */}
-        <div className="flex items-center gap-4 border-b border-zinc-800 self-start sm:self-auto pb-1">
+        <div className="flex items-center gap-1 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setActiveTab('trending')}
-            className={`flex items-center gap-1.5 pb-2 text-sm font-medium transition-colors border-b-2 ${
+            className={`relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
               activeTab === 'trending'
-                ? 'text-white border-white'
-                : 'text-zinc-400 border-transparent hover:text-zinc-200'
+                ? 'text-white'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <Flame className="w-4 h-4" />
-            <span>В тренде</span>
+            {activeTab === 'trending' && (
+              <motion.div layoutId="activeRankedTab" className="absolute inset-0 bg-zinc-800 rounded-lg -z-10" transition={{ type: 'spring', stiffness: 500, damping: 35 }} />
+            )}
+            <Flame className="w-4 h-4 relative z-10" />
+            <span className="relative z-10">В тренде</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('top_rated')}
-            className={`flex items-center gap-1.5 pb-2 text-sm font-medium transition-colors border-b-2 ${
+            className={`relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
               activeTab === 'top_rated'
-                ? 'text-white border-white'
-                : 'text-zinc-400 border-transparent hover:text-zinc-200'
+                ? 'text-white'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <Star className="w-4 h-4" />
-            <span>Рейтинг</span>
+            {activeTab === 'top_rated' && (
+              <motion.div layoutId="activeRankedTab" className="absolute inset-0 bg-zinc-800 rounded-lg -z-10" transition={{ type: 'spring', stiffness: 500, damping: 35 }} />
+            )}
+            <Star className="w-4 h-4 relative z-10" />
+            <span className="relative z-10">Рейтинг</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('popular')}
-            className={`flex items-center gap-1.5 pb-2 text-sm font-medium transition-colors border-b-2 ${
+            className={`relative flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
               activeTab === 'popular'
-                ? 'text-white border-white'
-                : 'text-zinc-400 border-transparent hover:text-zinc-200'
+                ? 'text-white'
+                : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <TrendingUp className="w-4 h-4" />
-            <span>Популярное</span>
+            {activeTab === 'popular' && (
+              <motion.div layoutId="activeRankedTab" className="absolute inset-0 bg-zinc-800 rounded-lg -z-10" transition={{ type: 'spring', stiffness: 500, damping: 35 }} />
+            )}
+            <TrendingUp className="w-4 h-4 relative z-10" />
+            <span className="relative z-10">Популярное</span>
           </button>
         </div>
       </div>
 
       {/* Main List */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-2 sm:p-4">
-        <div className="flex flex-col gap-2">
-          {list.map((item, idx) => {
-            const rank = idx + 1;
-            const title = item.title.russian || item.title.english || item.title.romaji;
-            const cover = item.coverImage.medium || item.coverImage.original || '';
-            const isTop3 = rank <= 3;
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={activeTab} 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -10 }} 
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1], staggerChildren: 0.03 }}
+            className="flex flex-col gap-2"
+          >
+            {list.map((item, idx) => {
+              const rank = idx + 1;
+              const title = item.title.russian || item.title.english || item.title.romaji;
+              const cover = item.coverImage.medium || item.coverImage.original || '';
+              const isTop3 = rank <= 3;
 
-            return (
-              <Link
-                key={item.id}
-                href={`/anime/${item.id}`}
-                className="group flex items-center gap-4 p-2 rounded-lg hover:bg-zinc-800/50 hover:border-zinc-700 transition-colors border border-transparent"
-              >
-                {/* Numerical Rank */}
-                <div className="w-8 text-center flex-shrink-0">
-                  <span className={`text-lg font-mono ${isTop3 ? 'font-bold text-zinc-100' : 'text-zinc-500'}`}>
-                    {rank < 10 ? `0${rank}` : rank}
-                  </span>
-                </div>
+              return (
+                <motion.div key={item.id} whileHover={{ x: 3 }}>
+                  <Link
+                    href={`/anime/${item.id}`}
+                    className="group flex items-center gap-4 p-2 rounded-lg hover:bg-zinc-800/50 hover:border-zinc-700 transition-colors border border-transparent"
+                  >
+                    {/* Numerical Rank */}
+                    <div className="w-8 text-center flex-shrink-0">
+                      <span className={`text-lg font-mono ${isTop3 ? 'font-bold text-zinc-100' : 'text-zinc-500'}`}>
+                        {rank < 10 ? `0${rank}` : rank}
+                      </span>
+                    </div>
 
-                {/* Poster Thumbnail */}
-                <div className="relative w-12 h-16 rounded overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-800">
-                  {cover ? (
-                    <Image
-                      src={cover}
-                      alt={title}
-                      fill
-                      sizes="48px"
-                      className="object-cover"
-                    />
-                  ) : null}
-                </div>
+                    {/* Poster Thumbnail */}
+                    <div className="relative w-12 h-16 rounded overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-800">
+                      {cover ? (
+                        <Image
+                          src={cover}
+                          alt={title}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                        />
+                      ) : null}
+                    </div>
 
-                {/* Title & Metadata */}
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-zinc-100 truncate group-hover:text-white transition-colors">
-                    {title}
-                  </h4>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400 font-mono">
-                    <span>{item.format || 'TV'}</span>
-                    <span>•</span>
-                    <span>{item.seasonYear || '2026'}</span>
-                    <span className="hidden sm:inline">•</span>
-                    <span className="hidden sm:inline truncate">{item.genres?.[0] || 'Аниме'}</span>
-                  </div>
-                </div>
+                    {/* Title & Metadata */}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-zinc-100 truncate group-hover:text-white transition-colors">
+                        {title}
+                      </h4>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400 font-mono">
+                        <span>{item.format || 'TV'}</span>
+                        <span>•</span>
+                        <span>{item.seasonYear || '2026'}</span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="hidden sm:inline truncate">{item.genres?.[0] || 'Аниме'}</span>
+                      </div>
+                    </div>
 
-                {/* Score */}
-                <div className="flex items-center gap-1.5 flex-shrink-0 px-3">
-                  <Star className="w-4 h-4 text-zinc-400" />
-                  <span className="text-sm font-mono text-zinc-300">
-                    {item.score > 0 ? item.score.toFixed(1) : '8.5'}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                    {/* Score */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0 px-3">
+                      <Star className="w-4 h-4 text-zinc-400" />
+                      <span className="text-sm font-mono text-zinc-300">
+                        {item.score > 0 ? item.score.toFixed(1) : '—'}
+                      </span>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Footer Link */}

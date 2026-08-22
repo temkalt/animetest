@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, AlignLeft } from 'lucide-react';
 
+import { motion, AnimatePresence } from 'framer-motion';
+
 interface SynopsisClampProps {
   synopsisRu?: string | null;
   synopsisEn?: string | null;
@@ -40,20 +42,28 @@ export const SynopsisClamp: React.FC<SynopsisClampProps> = ({ synopsisRu, synops
 
   return (
     <div className="space-y-2">
-      <div className="relative">
-        <p
-          className={`text-xs sm:text-sm text-zinc-300 font-sans leading-relaxed transition-all duration-300 ${
-            !isExpanded && isLong ? 'line-clamp-3 overflow-hidden' : ''
-          }`}
-        >
+      <motion.div
+        initial={false}
+        animate={{ height: !isLong || isExpanded ? 'auto' : 80 }}
+        className="relative overflow-hidden"
+      >
+        <p className="text-xs sm:text-sm text-zinc-300 font-sans leading-relaxed">
           {cleanedDescription}
         </p>
 
         {/* Gradient fade overlay when collapsed */}
-        {!isExpanded && isLong && (
-          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[#0E1118] via-[#0E1118]/80 to-transparent pointer-events-none" />
-        )}
-      </div>
+        <AnimatePresence>
+          {!isExpanded && isLong && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent pointer-events-none"
+            />
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       {isLong && (
         <button

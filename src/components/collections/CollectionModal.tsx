@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { X, Play, Info, Star, ArrowRight } from 'lucide-react';
 import { EditorialCollection } from '@/data/collections';
 import { modalVariants } from '@/lib/motion-presets';
@@ -33,6 +33,19 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
 
   if (!collection) return null;
 
+  const staggerContainer: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.04, delayChildren: 0.1 }
+    }
+  };
+
+  const staggerItem: Variants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 400, damping: 30 } }
+  };
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
@@ -41,17 +54,18 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/80  transition-opacity"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm"
         />
 
         {/* Modal Window */}
         <motion.div
-          variants={modalVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="relative w-full max-w-4xl rounded-lg bg-[#0A0D14] border border-zinc-800 shadow-sm overflow-hidden z-10 my-8 max-h-[90vh] flex flex-col"
+          initial={{ opacity: 0, scale: 0.96, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 16 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          className="relative w-full max-w-4xl rounded-lg bg-[#0A0D14] border border-zinc-800 shadow-xl overflow-hidden z-10 my-8 max-h-[90vh] flex flex-col"
         >
           {/* Header with Banner Image */}
           <div className="relative h-44 sm:h-52 shrink-0 overflow-hidden">
@@ -68,7 +82,7 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-lg bg-black/60 hover:bg-white/20 border border-white/10 text-zinc-100 flex items-center justify-center  transition-all cursor-pointer"
+              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-lg bg-black/60 hover:bg-white/20 border border-white/10 text-zinc-100 flex items-center justify-center transition-all cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -99,11 +113,17 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
               {collection.editorialNote}
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            >
               {collection.animeList.map((anime) => (
-                <div
+                <motion.div
                   key={anime.id}
-                  className="group relative rounded-lg overflow-hidden bg-[#0F131D] border border-zinc-800 hover:border-zinc-800 p-3.5 flex gap-3.5 transition-all hover:bg-[#151A28]"
+                  variants={staggerItem}
+                  className="group relative rounded-lg overflow-hidden bg-[#0F131D] border border-zinc-800 hover:border-zinc-700 p-3.5 flex gap-3.5 transition-all hover:bg-[#151A28]"
                 >
                   {/* Poster Thumbnail */}
                   <div className="relative w-20 sm:w-24 aspect-[3/4] rounded-lg overflow-hidden shrink-0 border border-white/10">
@@ -161,7 +181,7 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
                         <Link
                           href={`/watch/${anime.id}/1`}
                           onClick={onClose}
-                          className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-800 text-zinc-100 shadow-sm transition-all"
+                          className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 shadow-sm transition-all"
                           title="Смотреть 1 серию"
                         >
                           <Play className="w-3.5 h-3.5 fill-white" />
@@ -169,7 +189,7 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
                         <Link
                           href={`/anime/${anime.id}`}
                           onClick={onClose}
-                          className="p-1.5 rounded-lg bg-zinc-800 hover:bg-white/20 text-zinc-300 transition-all"
+                          className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-all"
                           title="О тайтле"
                         >
                           <Info className="w-3.5 h-3.5" />
@@ -177,9 +197,9 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           {/* Footer Bar */}

@@ -84,6 +84,9 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
   const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
   const dropdownContainerRef = useRef<HTMLDivElement>(null);
 
+  // Advanced filters state
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
   // Genre filter search query inside genre popover
   const [genreSearch, setGenreSearch] = useState('');
 
@@ -285,21 +288,30 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             const isActive = isMatch && hasActiveFilters;
 
             return (
-              <button
+              <motion.button
                 key={preset.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={() => handleApplyPreset(preset)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer border ${
+                className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer border ${
                   isActive
-                    ? 'bg-zinc-100 text-zinc-950 font-semibold border-white shadow-sm'
+                    ? 'text-zinc-950 font-semibold border-white/0 shadow-sm'
                     : 'bg-zinc-900/90 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 hover:border-zinc-700'
                 }`}
               >
-                <span>{preset.icon}</span>
-                <span>{preset.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeCatalogPreset"
+                    className="absolute inset-0 bg-zinc-100 rounded-lg -z-10"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10">{preset.icon}</span>
+                <span className="relative z-10">{preset.label}</span>
                 {preset.badge && (
                   <span
-                    className={`px-1 py-0.2 text-[9px] font-mono font-bold rounded ${
+                    className={`relative z-10 px-1 py-0.2 text-[9px] font-mono font-bold rounded ${
                       isActive
                         ? 'bg-zinc-900 text-zinc-100'
                         : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
@@ -308,7 +320,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                     {preset.badge}
                   </span>
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </div>
@@ -331,16 +343,21 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
               />
 
+              <AnimatePresence>
               {searchInput.length > 0 && (
-                <button
+                <motion.button
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
                   type="button"
                   onClick={handleClearSearch}
                   className="p-1.5 text-zinc-400 hover:text-zinc-100 transition-colors mr-1 cursor-pointer"
                   title="Очистить"
                 >
                   <X className="w-3.5 h-3.5" />
-                </button>
+                </motion.button>
               )}
+              </AnimatePresence>
 
               <button
                 type="submit"
@@ -378,9 +395,9 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               <AnimatePresence>
                 {openDropdown === 'sort' && (
                   <motion.div
-                    initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
                     transition={SPRINGS.snappy}
                     className="absolute right-0 top-full mt-1.5 w-56 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 space-y-0.5"
                   >
@@ -452,11 +469,63 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 <ListFilter className="w-4 h-4" />
               </button>
             </div>
+            
+            {/* Advanced Filters Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                showAdvancedFilters
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600'
+                  : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
+              }`}
+            >
+              <Filter className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Фильтры</span>
+            </button>
           </div>
         </div>
 
+        {/* Quick Genre Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 pb-1">
+          {GENRE_ITEMS.slice(0, 9).map((genre) => {
+            if (!genre.value) return null; // Skip "All genres" which is often empty string
+            const isActive = activeParams.genre === genre.value;
+            return (
+              <button
+                key={genre.value}
+                onClick={() => updateFilters({ genre: isActive ? undefined : genre.value, page: 1 })}
+                className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer border ${
+                  isActive ? 'text-zinc-100 border-zinc-700/0' : 'bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeCatalogGenre"
+                    className="absolute inset-0 bg-zinc-800 rounded-lg -z-10"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <span>{genre.icon}</span>
+                  {genre.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
         {/* Row 2: Dropdown Filter Triggers (Grid of 5 Clean Selectors, NO horizontal scrollbars) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1 border-t border-zinc-800/80">
+        <AnimatePresence initial={false}>
+          {showAdvancedFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden"
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-2 border-t border-zinc-800/80">
           {/* 1. Genre Dropdown */}
           <div className={`relative ${openDropdown === 'genre' ? 'z-50' : 'z-10'}`}>
             <button
@@ -801,7 +870,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               )}
             </AnimatePresence>
           </div>
-        </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Active Filters Badges & Quick Reset */}
         {hasActiveFilters && (
@@ -1057,6 +1129,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
       ) : (
         /* Grid Views (Standard or Compact) */
         <motion.div
+          layout
           variants={{
             hidden: { opacity: 0 },
             show: {
@@ -1072,18 +1145,24 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
           }`}
         >
-          {initialAnimeList.map((anime) => (
-            <motion.div
-              key={anime.id}
-              variants={{
-                hidden: { opacity: 0, y: 8 },
-                show: { opacity: 1, y: 0 },
-              }}
-              transition={SPRINGS.snappy}
-            >
-              <AnimeCard anime={anime} />
-            </motion.div>
-          ))}
+          <AnimatePresence mode="popLayout">
+            {initialAnimeList.map((anime) => (
+              <motion.div
+                layout
+                key={anime.id}
+                variants={{
+                  hidden: { opacity: 0, y: 8, scale: 0.95 },
+                  show: { opacity: 1, y: 0, scale: 1 },
+                }}
+                initial="hidden"
+                animate="show"
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={SPRINGS.snappy}
+              >
+                <AnimeCard anime={anime} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
       )}
 

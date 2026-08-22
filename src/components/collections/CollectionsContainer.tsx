@@ -227,13 +227,20 @@ export const CollectionsContainer: React.FC = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`relative px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all duration-300 shrink-0 cursor-pointer flex items-center gap-2 ${
                     isActive
-                      ? 'text-zinc-100 bg-zinc-800'
+                      ? 'text-zinc-100'
                       : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
                   }`}
                 >
-                  <span>{tab.label}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeCollectionsTab"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                      className="absolute inset-0 bg-zinc-800 rounded-lg"
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono transition-colors ${
+                    className={`relative z-10 text-[10px] px-1.5 py-0.2 rounded-full font-mono transition-colors ${
                       isActive
                         ? 'bg-zinc-700 text-zinc-100'
                         : 'bg-zinc-800 text-zinc-400'

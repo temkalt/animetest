@@ -145,7 +145,7 @@ export const Navbar: React.FC = () => {
                       <motion.div
                         layoutId="activeNavIndicator"
                         className="absolute bottom-0 inset-x-3 h-[2px] bg-white rounded-full"
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                       />
                     )}
                   </Link>
@@ -171,27 +171,31 @@ export const Navbar: React.FC = () => {
 
             {/* Profile / Auth Button */}
             {currentUser ? (
-              <Link
-                href="/profile"
-                className="flex items-center gap-2.5 p-1 pl-3 pr-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all text-xs font-medium text-white group"
-              >
-                <div className="flex flex-col items-end text-right hidden sm:flex">
-                  <span className="max-w-[100px] truncate text-xs font-semibold leading-tight">{currentUser.name}</span>
-                  <span className="text-[9px] font-mono text-zinc-400 leading-tight">LVL {currentUser.level || 1}</span>
-                </div>
-                <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900 transition-colors">
-                  <Image src={currentUser.avatar} alt={currentUser.name} fill className="object-cover" />
-                </div>
-              </Link>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2.5 p-1 pl-3 pr-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all text-xs font-medium text-white group"
+                >
+                  <div className="flex flex-col items-end text-right hidden sm:flex">
+                    <span className="max-w-[100px] truncate text-xs font-semibold leading-tight">{currentUser.name}</span>
+                    <span className="text-[9px] font-mono text-zinc-400 leading-tight">LVL {currentUser.level || 1}</span>
+                  </div>
+                  <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900 transition-colors">
+                    <Image src={currentUser.avatar} alt={currentUser.name} fill className="object-cover" />
+                  </div>
+                </Link>
+              </motion.div>
             ) : (
-              <button
+              <motion.button
                 type="button"
                 onClick={() => setIsAuthModalOpen(true)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 text-xs font-medium transition-all cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Войти</span>
-              </button>
+              </motion.button>
             )}
 
             {/* Mobile Menu Toggle */}
@@ -213,38 +217,50 @@ export const Navbar: React.FC = () => {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.25 }}
               className="md:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-4 space-y-2 overflow-hidden"
             >
-              {NAV_LINKS.map((link) => {
+              {NAV_LINKS.map((link, i) => {
                 const Icon = link.icon;
                 return (
-                  <Link
+                  <motion.div
                     key={link.href}
-                    href={link.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-200"
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: i * 0.05 }}
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon className="w-4 h-4 text-zinc-100" />
-                      <span className="font-semibold">{link.label}</span>
-                    </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
-                  </Link>
+                    <Link
+                      href={link.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-4 h-4 text-zinc-100" />
+                        <span className="font-semibold">{link.label}</span>
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
+                    </Link>
+                  </motion.div>
                 );
               })}
               
-              <Link
-                href="/profile"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-200"
+              <motion.div
+                initial={{ x: -10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: NAV_LINKS.length * 0.05 }}
               >
-                <div className="flex items-center gap-3">
-                  <User className="w-4 h-4 text-zinc-100" />
-                  <span className="font-semibold">Личный профиль</span>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
-              </Link>
+                <Link
+                  href="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <User className="w-4 h-4 text-zinc-100" />
+                    <span className="font-semibold">Личный профиль</span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
+                </Link>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -253,12 +269,18 @@ export const Navbar: React.FC = () => {
       {/* Global Interactive Search Modal (Cmd+K) */}
       <AnimatePresence>
         {isSearchOpen && (
-          <div className="fixed inset-0 z-50 bg-zinc-950/80 backdrop-blur-sm flex items-start justify-center p-4 pt-12 sm:pt-20">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-zinc-950/80 backdrop-blur-sm flex items-start justify-center p-4 pt-12 sm:pt-20"
+          >
             <motion.div
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
+              initial={{ opacity: 0, scale: 0.96, y: -12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -12 }}
+              transition={{ type: 'spring', stiffness: 450, damping: 30 }}
               className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden flex flex-col max-h-[82vh] shadow-sm"
             >
               {/* Search Bar Input */}
@@ -327,8 +349,11 @@ export const Navbar: React.FC = () => {
                       : 0;
 
                     return (
-                      <div
+                      <motion.div
                         key={item.id}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.01 }}
                         onClick={() => handleSelectResult(item.id)}
                         className="flex items-center gap-3.5 p-2.5 rounded-lg hover:bg-zinc-900 border border-transparent hover:border-zinc-800 cursor-pointer transition-all group"
                       >
@@ -379,7 +404,7 @@ export const Navbar: React.FC = () => {
                         </div>
 
                         <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-300 group-hover:translate-x-1 transition-all shrink-0" />
-                      </div>
+                      </motion.div>
                     );
                   })
                 ) : searchQuery.trim().length >= 2 ? (
@@ -393,7 +418,7 @@ export const Navbar: React.FC = () => {
                 )}
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

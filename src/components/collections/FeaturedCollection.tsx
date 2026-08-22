@@ -33,15 +33,22 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
       className="relative w-full rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 transition-all duration-200 shadow-md"
     >
       {/* Cinematic Banner Layer */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src={collection.banner}
-          alt={collection.title}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center opacity-40 group-hover:opacity-50 transition-all duration-700 ease-out"
-        />
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <motion.div
+          animate={{ scale: isHovered ? 1.05 : 1, y: isHovered ? -10 : 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="absolute inset-0"
+        >
+          <Image
+            src={collection.banner}
+            alt={collection.title}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center opacity-40 transition-opacity duration-700"
+            style={{ opacity: isHovered ? 0.5 : 0.4 }}
+          />
+        </motion.div>
         <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/80 to-transparent" />
       </div>
 

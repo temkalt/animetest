@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Bookmark, Heart, Check, ChevronDown, Trash2, Eye, Clock, CheckCircle2, PauseCircle, XCircle, Sparkles } from 'lucide-react';
 import { syncManager } from '@/lib/dexie/sync';
 import { LocalBookmarkItem } from '@/lib/dexie/db';
@@ -203,50 +204,58 @@ export const BookmarkQuickSelector: React.FC<BookmarkQuickSelectorProps> = ({
         </button>
 
         {/* Dropdown Menu */}
-        {isOpen && (
-          <div className="absolute left-0 top-full mt-2 w-56 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-400 border-b border-zinc-800">
-              Списки просмотра
-            </div>
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              className="absolute left-0 top-full mt-2 w-56 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 space-y-1 origin-top-left"
+            >
+              <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-400 border-b border-zinc-800">
+                Списки просмотра
+              </div>
 
-            {STATUS_CONFIGS.map((config) => {
-              const Icon = config.icon;
-              const isSelected = bookmark?.status === config.id;
-              return (
-                <button
-                  key={config.id}
-                  type="button"
-                  onClick={() => handleSelectStatus(config.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all text-left cursor-pointer ${
-                    isSelected
-                      ? config.activeClass
-                      : 'text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>{config.label}</span>
-                  </div>
-                  {isSelected && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
-                </button>
-              );
-            })}
+              {STATUS_CONFIGS.map((config) => {
+                const Icon = config.icon;
+                const isSelected = bookmark?.status === config.id;
+                return (
+                  <button
+                    key={config.id}
+                    type="button"
+                    onClick={() => handleSelectStatus(config.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all text-left cursor-pointer ${
+                      isSelected
+                        ? config.activeClass
+                        : 'text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{config.label}</span>
+                    </div>
+                    {isSelected && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+                  </button>
+                );
+              })}
 
-            {bookmark && (
-              <>
-                <div className="border-t border-zinc-800 my-1" />
-                <button
-                  type="button"
-                  onClick={handleRemoveBookmark}
-                  className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300 transition-colors text-left cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Удалить из списка</span>
-                </button>
-              </>
-            )}
-          </div>
-        )}
+              {bookmark && (
+                <>
+                  <div className="border-t border-zinc-800 my-1" />
+                  <button
+                    type="button"
+                    onClick={handleRemoveBookmark}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300 transition-colors text-left cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Удалить из списка</span>
+                  </button>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Favorite Heart Toggle Button */}

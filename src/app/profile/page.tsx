@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GenreRadarChart } from '@/components/profile/GenreRadarChart';
 import { syncManager } from '@/lib/dexie/sync';
 import { LocalWatchProgress, LocalBookmarkItem } from '@/lib/dexie/db';
@@ -407,40 +408,67 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('history')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                className={`relative px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'history'
-                    ? 'bg-zinc-100 text-zinc-950 font-bold'
+                    ? 'text-zinc-950 font-bold'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                 }`}
               >
-                <Clock className="w-3.5 h-3.5" />
-                <span>История ({groupedHistory.length})</span>
+                {activeTab === 'history' && (
+                  <motion.div
+                    layoutId="activeProfileTab"
+                    className="absolute inset-0 bg-zinc-100 rounded-lg shadow-sm -z-0"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>История ({groupedHistory.length})</span>
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('bookmarks')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                className={`relative px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'bookmarks'
-                    ? 'bg-zinc-100 text-zinc-950 font-bold'
+                    ? 'text-zinc-950 font-bold'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                 }`}
               >
-                <Bookmark className="w-3.5 h-3.5" />
-                <span>Закладки ({bookmarks.length})</span>
+                {activeTab === 'bookmarks' && (
+                  <motion.div
+                    layoutId="activeProfileTab"
+                    className="absolute inset-0 bg-zinc-100 rounded-lg shadow-sm -z-0"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Bookmark className="w-3.5 h-3.5" />
+                  <span>Закладки ({bookmarks.length})</span>
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('collections')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                className={`relative px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'collections'
-                    ? 'bg-zinc-100 text-zinc-950 font-bold'
+                    ? 'text-zinc-950 font-bold'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                 }`}
               >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Коллекции ({userCollections.length})</span>
+                {activeTab === 'collections' && (
+                  <motion.div
+                    layoutId="activeProfileTab"
+                    className="absolute inset-0 bg-zinc-100 rounded-lg shadow-sm -z-0"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Коллекции ({userCollections.length})</span>
+                </span>
               </button>
             </div>
 

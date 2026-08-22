@@ -96,15 +96,18 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
                 key={d.id}
                 type="button"
                 onClick={() => setSelectedDay(d.id)}
-                className={`px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap ${
+                className={`relative px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap ${
                   isSelected
-                    ? 'bg-zinc-800 text-white font-medium'
+                    ? 'text-white font-medium'
                     : isToday
                     ? 'text-white font-bold'
                     : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
                 }`}
               >
-                {d.name}
+                {isSelected && (
+                  <motion.div layoutId="activeScheduleDay" className="absolute inset-0 bg-zinc-800 rounded-lg -z-10" transition={{ type: 'spring', stiffness: 500, damping: 35 }} />
+                )}
+                <span className="relative z-10">{d.name}</span>
               </button>
             );
           })}
@@ -139,58 +142,59 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
         ) : (
           <motion.div
             key={`grid-${selectedDay}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, staggerChildren: 0.03 }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
           >
             {itemsForDay.map((item) => (
-              <Link
-                key={`${item.id}-${item.episode}`}
-                href={`/anime/${item.id}`}
-                className="group flex gap-3 p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-colors"
-              >
-                {/* Thumbnail */}
-                <div className="relative w-16 h-24 rounded-md overflow-hidden flex-shrink-0 bg-zinc-800">
-                  {item.coverImage ? (
-                    <Image
-                      src={item.coverImage}
-                      alt={item.title}
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-600">
-                      <Film className="w-6 h-6" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0 py-1 flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-zinc-100 group-hover:text-white transition-colors line-clamp-2 leading-snug">
-                      {item.title}
-                    </h4>
-                    <div className="text-xs text-zinc-500 mt-1 truncate">
-                      {item.studio || 'Онгоинг сезона'}
-                    </div>
+              <motion.div key={`${item.id}-${item.episode}`} whileHover={{ y: -2 }}>
+                <Link
+                  href={`/anime/${item.id}`}
+                  className="group flex gap-3 p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-colors h-full"
+                >
+                  {/* Thumbnail */}
+                  <div className="relative w-16 h-24 rounded-md overflow-hidden flex-shrink-0 bg-zinc-800">
+                    {item.coverImage ? (
+                      <Image
+                        src={item.coverImage}
+                        alt={item.title}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                        <Film className="w-6 h-6" />
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="inline-flex items-center gap-1 text-xs font-mono text-zinc-400">
-                      <Clock className="w-3 h-3" />
-                      {item.timeStr || '18:00'}
-                    </span>
-                    <span className="text-zinc-600 text-xs">•</span>
-                    <span className="text-xs font-mono text-zinc-300">
-                      Эп. {item.episode}
-                    </span>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0 py-1 flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-zinc-100 group-hover:text-white transition-colors line-clamp-2 leading-snug">
+                        {item.title}
+                      </h4>
+                      <div className="text-xs text-zinc-500 mt-1 truncate">
+                        {item.studio || 'Онгоинг сезона'}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="inline-flex items-center gap-1 text-xs font-mono text-zinc-400">
+                        <Clock className="w-3 h-3" />
+                        {item.timeStr || '18:00'}
+                      </span>
+                      <span className="text-zinc-600 text-xs">•</span>
+                      <span className="text-xs font-mono text-zinc-300">
+                        Эп. {item.episode}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </motion.div>
             ))}
           </motion.div>
         )}
