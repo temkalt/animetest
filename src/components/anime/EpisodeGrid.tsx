@@ -116,15 +116,15 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
   return (
     <div className="space-y-4 select-none">
       {/* 1. Gaming HUD Control Header */}
-      <div className="p-3.5 sm:p-4 rounded-2xl bg-[#090C15]/90 border border-white/[0.08] backdrop-blur-xl shadow-2xl relative overflow-hidden">
+      <div className="p-3.5 sm:p-4 rounded-lg bg-zinc-900 border border-zinc-800  shadow-sm relative overflow-hidden">
         {/* Ambient Top Glow Line */}
         <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
 
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
           {/* Left: Info HUD & Stats */}
           <div className="flex items-center flex-wrap gap-2 sm:gap-3 text-xs font-mono">
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white/[0.04] border border-white/[0.06] text-zinc-300">
-              <Film className="w-3.5 h-3.5 text-indigo-400" />
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-zinc-800 border border-zinc-800 text-zinc-300">
+              <Film className="w-3.5 h-3.5 text-zinc-400" />
               <span>
                 Всего серий:{' '}
                 <strong className="text-white font-bold">{totalEpisodes}</strong>
@@ -132,25 +132,25 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
             </div>
 
             {totalWatchedCount > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 border border-zinc-800 text-zinc-300">
+                <Check className="w-3.5 h-3.5 text-zinc-400" />
                 <span>
                   Просмотрено: <strong>{totalWatchedCount}</strong>
                 </span>
-                <span className="text-[10px] text-emerald-400/70">
+                <span className="text-[10px] text-zinc-400/70">
                   ({Math.round((totalWatchedCount / totalEpisodes) * 100)}%)
                 </span>
               </div>
             )}
 
             {activeEpisode && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-indigo-300">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 border border-zinc-800 text-zinc-300">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                  <span className=" absolute inline-flex h-full w-full rounded-lg bg-zinc-800 opacity-75"></span>
+                  <span className="relative inline-flex rounded-lg h-2 w-2 bg-zinc-800"></span>
                 </span>
                 <span>
-                  Текущая: <strong className="text-white">#{activeEpisode}</strong>
+                  Текущая: <strong className="text-zinc-100">#{activeEpisode}</strong>
                 </span>
               </div>
             )}
@@ -160,7 +160,7 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <form onSubmit={handleJump} className="relative flex items-center group w-full sm:w-auto">
               <div className="relative flex items-center flex-1 sm:w-48">
-                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 pointer-events-none group-focus-within:text-cyan-400 transition-colors" />
+                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 pointer-events-none group-focus-within:text-zinc-400 transition-colors" />
                 <input
                   type="number"
                   min={1}
@@ -171,23 +171,23 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                     if (jumpError) setJumpError(false);
                   }}
                   placeholder={`№ (1–${totalEpisodes})`}
-                  className={`w-full pl-8 pr-8 py-1.5 rounded-xl bg-[#06080F] border text-xs font-mono text-white placeholder-zinc-500 focus:outline-none transition-all ${
+                  className={`w-full pl-8 pr-8 py-1.5 rounded-lg bg-zinc-950 border text-xs font-mono text-zinc-100 placeholder-zinc-500 focus:outline-none transition-all ${
                     jumpError
-                      ? 'border-rose-500 ring-2 ring-rose-500/30 text-rose-300'
-                      : 'border-white/[0.08] focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/20'
+                      ? 'border-zinc-800 -500/30 text-zinc-300'
+                      : 'border-zinc-800 focus:border-zinc-800 focus:ring-2 focus:ring-cyan-500/20'
                   }`}
                 />
-                <kbd className="absolute right-2.5 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono text-zinc-400 bg-white/[0.06] rounded border border-white/[0.08] pointer-events-none">
+                <kbd className="absolute right-2.5 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono text-zinc-400 bg-zinc-800 rounded border border-zinc-800 pointer-events-none">
                   ↵
                 </kbd>
               </div>
 
               <button
                 type="submit"
-                className="ml-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-mono font-semibold shadow-lg shadow-indigo-600/30 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                className="ml-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-zinc-100 text-xs font-mono font-semibold shadow-sm  active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
               >
                 <span>Перейти</span>
-                <CornerDownLeft className="w-3 h-3 text-indigo-200" />
+                <CornerDownLeft className="w-3 h-3 text-zinc-200" />
               </button>
             </form>
 
@@ -197,7 +197,7 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                 <button
                   type="button"
                   onClick={() => router.push(`/watch/${animeId}/1`)}
-                  className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  className="px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer"
                   title="Первая серия"
                 >
                   №1
@@ -205,7 +205,7 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                 <button
                   type="button"
                   onClick={() => router.push(`/watch/${animeId}/${totalEpisodes}`)}
-                  className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  className="px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer"
                   title="Последняя серия"
                 >
                   №{totalEpisodes}
@@ -217,13 +217,13 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
 
         {/* 2. 50-Episode Chunk Selector Tabs */}
         {totalChunks > 1 && (
-          <div className="mt-3 pt-3 border-t border-white/[0.06] relative">
+          <div className="mt-3 pt-3 border-t border-zinc-800 relative">
             <div className="flex items-center gap-1.5">
               {/* Left Scroll Button */}
               <button
                 type="button"
                 onClick={() => scrollChunks('left')}
-                className="p-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white transition-colors cursor-pointer shrink-0 hidden sm:flex items-center justify-center"
+                className="p-1 rounded-lg bg-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer shrink-0 hidden sm:flex items-center justify-center"
                 aria-label="Назад"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -257,22 +257,22 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => setSelectedChunk(idx)}
-                      className={`relative group px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-2 shrink-0 ${
+                      className={`relative group px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-2 shrink-0 ${
                         isSelected
-                          ? 'bg-gradient-to-r from-indigo-600/90 to-violet-600/90 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)] border border-indigo-400/50'
-                          : 'bg-[#06080F]/90 text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] border border-white/[0.06]'
+                          ? 'bg-gradient-to-r from-indigo-600/90 to-violet-600/90 text-zinc-100  border border-zinc-800'
+                          : 'bg-zinc-950 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-zinc-800'
                       }`}
                     >
                       {/* Active Indicator Neon LED */}
                       {isSelected && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_#06B6D4]" />
+                        <span className="w-1.5 h-1.5 rounded-lg bg-zinc-800 " />
                       )}
 
                       {/* Current Playing Indicator Pulse Pip (if not selected) */}
                       {!isSelected && hasActiveEp && (
                         <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                          <span className=" absolute inline-flex h-full w-full rounded-lg bg-zinc-800 opacity-75"></span>
+                          <span className="relative inline-flex rounded-lg h-2 w-2 bg-zinc-800"></span>
                         </span>
                       )}
 
@@ -283,10 +283,10 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                       {/* Chunk watched count mini pill */}
                       {chunkWatchedCount > 0 && (
                         <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                          className={`text-[10px] px-1.5 py-0.2 rounded-lg font-mono ${
                             isSelected
-                              ? 'bg-white/20 text-white'
-                              : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-white/20 text-zinc-100'
+                              : 'bg-zinc-800 text-zinc-400 border border-zinc-800'
                           }`}
                         >
                           {chunkWatchedCount}/{cEnd - cStart + 1}
@@ -301,7 +301,7 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
               <button
                 type="button"
                 onClick={() => scrollChunks('right')}
-                className="p-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white transition-colors cursor-pointer shrink-0 hidden sm:flex items-center justify-center"
+                className="p-1 rounded-lg bg-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer shrink-0 hidden sm:flex items-center justify-center"
                 aria-label="Вперед"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -327,12 +327,12 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
             <Link
               key={epNum}
               href={`/watch/${animeId}/${epNum}`}
-              className={`group relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden ${
+              className={`group relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-lg border transition-all duration-200 cursor-pointer overflow-hidden ${
                 isCurrent
-                  ? 'bg-gradient-to-b from-indigo-600/30 via-[#101426] to-[#0D101E] border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.35)] ring-1 ring-indigo-400/50 scale-[1.03]'
+                  ? 'bg-gradient-to-b from-indigo-600/30 via-[#101426] to-[#0D101E] border-zinc-800  -400/50 scale-[1.03]'
                   : isCompleted
-                  ? 'bg-[#080B13]/90 hover:bg-[#0E1322] border-emerald-500/20 hover:border-emerald-500/50 text-zinc-200 hover:text-white'
-                  : 'bg-[#080B13]/90 hover:bg-[#111627] border-white/[0.06] hover:border-indigo-500/40 text-zinc-300 hover:text-white'
+                  ? 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-800 text-zinc-200 hover:text-zinc-100'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-800 text-zinc-300 hover:text-zinc-100'
               }`}
             >
               {/* Corner Ambient Cyber Flare on Hover */}
@@ -341,22 +341,22 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
               {/* Status Header: Playing Pulse / Completed Check / Progress Pill */}
               <div className="w-full flex items-center justify-between min-h-[14px] mb-1">
                 {isCurrent ? (
-                  <span className="flex items-center gap-1 text-[9px] font-mono font-bold text-cyan-300 uppercase tracking-tight">
+                  <span className="flex items-center gap-1 text-[9px] font-mono font-bold text-zinc-300 uppercase tracking-tight">
                     <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-400"></span>
+                      <span className=" absolute inline-flex h-full w-full rounded-lg bg-zinc-800 opacity-75"></span>
+                      <span className="relative inline-flex rounded-lg h-1.5 w-1.5 bg-zinc-800"></span>
                     </span>
                     <span>LIVE</span>
                   </span>
                 ) : isCompleted ? (
                   <span
-                    className="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.2)]"
+                    className="flex items-center justify-center w-4 h-4 rounded-lg bg-zinc-800 border border-zinc-800 text-zinc-400 "
                     title="Просмотрено"
                   >
                     <Check className="w-2.5 h-2.5" />
                   </span>
                 ) : inProgressPercentage ? (
-                  <span className="text-[9px] font-mono text-cyan-400 font-medium">
+                  <span className="text-[9px] font-mono text-zinc-400 font-medium">
                     {inProgressPercentage}%
                   </span>
                 ) : (
@@ -365,7 +365,7 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
 
                 {/* Hover Play Icon reveal in top right */}
                 <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-75 group-hover:scale-100">
-                  <Play className="w-3 h-3 text-cyan-300 fill-cyan-300/40 drop-shadow-[0_0_6px_#06B6D4]" />
+                  <Play className="w-3 h-3 text-zinc-300 fill-cyan-300/40 drop-" />
                 </div>
               </div>
 
@@ -374,10 +374,10 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                 <span
                   className={`text-base sm:text-lg font-mono font-black tracking-tight transition-colors ${
                     isCurrent
-                      ? 'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]'
+                      ? 'text-zinc-100 drop-'
                       : isCompleted
-                      ? 'text-zinc-200 group-hover:text-white'
-                      : 'text-zinc-300 group-hover:text-cyan-200'
+                      ? 'text-zinc-200 group-hover:text-zinc-100'
+                      : 'text-zinc-300 group-hover:text-zinc-200'
                   }`}
                 >
                   {epNum}
@@ -385,9 +385,9 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                 <span
                   className={`text-[9px] uppercase tracking-wider font-mono font-semibold transition-colors ${
                     isCurrent
-                      ? 'text-indigo-300'
+                      ? 'text-zinc-300'
                       : isCompleted
-                      ? 'text-emerald-400/80 group-hover:text-emerald-300'
+                      ? 'text-zinc-400/80 group-hover:text-zinc-300'
                       : 'text-zinc-400 group-hover:text-zinc-300'
                   }`}
                 >
@@ -397,9 +397,9 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
 
               {/* Bottom In-Progress Mini Bar Indicator */}
               {inProgressPercentage && (
-                <div className="w-full mt-1.5 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="w-full mt-1.5 h-1 bg-zinc-800 rounded-lg overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full"
+                    className="h-full bg-zinc-400 rounded-lg"
                     style={{ width: `${inProgressPercentage}%` }}
                   />
                 </div>
@@ -407,7 +407,7 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
 
               {/* Bottom Active Glow Accent Bar */}
               {isCurrent && (
-                <div className="absolute bottom-0 inset-x-2 h-[2px] bg-gradient-to-r from-cyan-400 via-indigo-400 to-violet-400 shadow-[0_0_8px_#6366F1]" />
+                <div className="absolute bottom-0 inset-x-2 h-[2px] bg-gradient-to-r from-cyan-400 via-indigo-400 to-violet-400 " />
               )}
             </Link>
           );

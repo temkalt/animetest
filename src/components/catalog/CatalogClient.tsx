@@ -235,32 +235,32 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Top Header & Search Hero */}
-      <div className="relative rounded-3xl bg-gradient-to-b from-[#0F1422] via-[#0A0D15] to-[#06070A] border border-white/[0.08] p-6 sm:p-8 md:p-10 shadow-2xl overflow-hidden">
+      <div className="relative rounded-lg bg-zinc-950 border border-zinc-800 p-6 sm:p-8 md:p-10 shadow-sm overflow-hidden">
         {/* Glow ambient meshes */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
+        
+        
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Header Title & Badges */}
           <div className="space-y-2.5 max-w-xl">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-xs font-mono font-semibold backdrop-blur-md">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono font-semibold backdrop-blur-md">
+                <Sparkles className="w-3.5 h-3.5 text-white " />
                 <span>Каталог 2026</span>
               </span>
-              <span className="px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-xs font-mono">
+              <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 text-zinc-300 border border-cyan-500/20 text-xs font-mono">
                 Ultra HD 1080p
               </span>
               {isPending && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-mono animate-pulse">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-mono ">
                   <RotateCcw className="w-3 h-3 animate-spin" />
                   <span>Обновление...</span>
                 </span>
               )}
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display tracking-tight text-white">
-              Вселенная <span className="text-gradient-primary">Аниме</span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-sans tracking-tight text-white">
+              Вселенная <span className="text-white">Аниме</span>
             </h1>
             <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-sans">
               Исследуйте тысячи тайтлов с мгновенной фильтрацией по жанрам, сезонам, форматам и студиям.
@@ -270,8 +270,8 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           {/* Search Form with Modern Clear Button */}
           <div className="w-full lg:max-w-md">
             <form onSubmit={handleSearchSubmit} className="relative group">
-              <div className="relative flex items-center bg-[#090C14]/90 hover:bg-[#0C101B] focus-within:bg-[#0E1322] border border-white/[0.12] focus-within:border-indigo-500/80 focus-within:shadow-[0_0_25px_rgba(99,102,241,0.25)] rounded-2xl transition-all duration-300 p-1.5">
-                <Search className="w-4 h-4 text-zinc-400 ml-3 shrink-0 group-focus-within:text-indigo-400 transition-colors" />
+              <div className="relative flex items-center bg-zinc-950 hover:bg-zinc-900 focus-within:bg-zinc-900 border border-zinc-800 focus-within:border-zinc-700 shadow-sm rounded-lg transition-all duration-300 p-1.5">
+                <Search className="w-4 h-4 text-zinc-400 ml-3 shrink-0 group-focus-within:text-white transition-colors" />
 
                 <input
                   ref={searchInputRef}
@@ -287,7 +287,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   <button
                     type="button"
                     onClick={handleClearSearch}
-                    className="p-1.5 rounded-xl hover:bg-white/10 text-zinc-400 hover:text-white transition-all mr-1 cursor-pointer"
+                    className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-all mr-1 cursor-pointer"
                     title="Очистить поиск"
                   >
                     <X className="w-4 h-4" />
@@ -297,7 +297,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 {/* Submit Search Button */}
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 transition-all cursor-pointer shrink-0 flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 text-white text-xs sm:text-sm font-semibold shadow-sm text-zinc-900 transition-all cursor-pointer shrink-0 flex items-center gap-1.5"
                 >
                   <span>Найти</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -348,7 +348,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   key={preset.id}
                   type="button"
                   onClick={() => handleApplyPreset(preset)}
-                  className={`group inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                  className={`group inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                     isMatch && hasActiveFilters
                       ? 'bg-gradient-to-r from-indigo-600/30 to-violet-600/30 text-white border-indigo-500/60 shadow-lg shadow-indigo-500/20'
                       : `bg-gradient-to-r ${preset.color} bg-opacity-10 backdrop-blur-sm hover:scale-[1.02]`
@@ -369,7 +369,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
       </div>
 
       {/* Main Filter Toolbar Container */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-[#090C14]/90 border border-white/[0.08] shadow-xl space-y-4 backdrop-blur-xl">
+      <div className="p-4 sm:p-5 rounded-lg bg-zinc-950 border border-zinc-800 shadow-sm space-y-4 backdrop-blur-xl">
         {/* Row 1: Primary Controls (Genre Chips + Sort + Expand) */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Quick Genre Chips Bar */}
@@ -377,10 +377,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             <button
               type="button"
               onClick={() => updateFilters({ genre: undefined, page: 1 })}
-              className={`px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
                 !activeParams.genre
-                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
-                  : 'bg-[#0E121E] text-zinc-400 border-white/[0.08] hover:border-white/20 hover:text-white'
+                  ? 'bg-zinc-800 text-white border-zinc-700 shadow-sm'
+                  : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-white'
               }`}
             >
               Все жанры
@@ -398,10 +398,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                       page: 1,
                     })
                   }
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
                     isSelected
-                      ? 'bg-indigo-600/90 text-white border-indigo-400 shadow-md shadow-indigo-600/30'
-                      : 'bg-[#0E121E] text-zinc-400 border-white/[0.08] hover:border-white/20 hover:text-white'
+                      ? 'bg-zinc-800 text-white border-zinc-700 shadow-sm'
+                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-white'
                   }`}
                 >
                   <span>{g.icon}</span>
@@ -414,9 +414,9 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             <button
               type="button"
               onClick={() => setIsGenreExpandOpen(!isGenreExpandOpen)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
                 isGenreExpandOpen || (activeParams.genre && !quickGenres.some((q) => q.value === activeParams.genre))
-                  ? 'bg-violet-600/30 text-violet-300 border-violet-500/40'
+                  ? 'bg-zinc-800 text-zinc-300 border-zinc-700'
                   : 'bg-[#0E121E] text-zinc-400 border-white/[0.08] hover:text-white'
               }`}
             >
@@ -437,9 +437,9 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0E121E] hover:bg-[#131929] border border-white/[0.1] hover:border-white/20 text-xs font-medium text-white transition-all cursor-pointer shadow-sm"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0E121E] hover:bg-[#131929] border-zinc-800 hover:border-white/20 text-xs font-medium text-white transition-all cursor-pointer shadow-sm"
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-indigo-400" />
+                <ArrowUpDown className="w-3.5 h-3.5 text-white" />
                 <span className="text-zinc-400 font-normal">Сортировка:</span>
                 <span className="font-semibold text-white">{activeSortItem.label}</span>
                 <ChevronDown
@@ -456,7 +456,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={SPRINGS.snappy}
-                    className="absolute right-0 top-full mt-2 w-64 p-2 rounded-2xl glass-dropdown z-50 shadow-2xl border border-white/[0.12] space-y-1"
+                    className="absolute right-0 top-full mt-2 w-64 p-2 rounded-lg glass-dropdown z-50 shadow-2xl border border-white/[0.12] space-y-1"
                   >
                     <div className="px-2.5 py-1.5 text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
                       Порядок отображения
@@ -471,23 +471,23 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                             updateFilters({ sort: item.value, page: 1 });
                             setIsSortDropdownOpen(false);
                           }}
-                          className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
+                          className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-lg text-left transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                              ? 'bg-indigo-600/20 text-zinc-300 border border-indigo-500/30'
                               : 'hover:bg-white/[0.06] text-zinc-300 hover:text-white'
                           }`}
                         >
                           <div className="pt-0.5">
                             {item.value === 'POPULARITY_DESC' && <Flame className="w-3.5 h-3.5 text-amber-400" />}
                             {item.value === 'SCORE_DESC' && <Star className="w-3.5 h-3.5 text-yellow-400" />}
-                            {item.value === 'TRENDING_DESC' && <Zap className="w-3.5 h-3.5 text-indigo-400" />}
+                            {item.value === 'TRENDING_DESC' && <Zap className="w-3.5 h-3.5 text-white" />}
                             {item.value === 'START_DATE_DESC' && <Calendar className="w-3.5 h-3.5 text-cyan-400" />}
                             {item.value === 'FAVOURITES_DESC' && <Star className="w-3.5 h-3.5 text-rose-400" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-semibold flex items-center justify-between">
                               <span>{item.label}</span>
-                              {isSelected && <Check className="w-3.5 h-3.5 text-indigo-400" />}
+                              {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
                             </div>
                             <p className="text-[10px] text-zinc-500 line-clamp-1">
                               {item.description}
@@ -505,16 +505,16 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             <button
               type="button"
               onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
                 isAdvancedOpen || (activeFiltersCount > 0 && !activeParams.genre)
-                  ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 shadow-sm'
+                  ? 'bg-indigo-600/20 text-zinc-300 border-indigo-500/40 shadow-sm'
                   : 'bg-[#0E121E] hover:bg-[#131929] text-zinc-300 border-white/[0.1] hover:text-white'
               }`}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
+              <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
               <span>Параметры</span>
               {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-indigo-500 text-white text-[10px] font-mono font-bold">
+                <span className="px-1.5 py-0.2 rounded-lg bg-indigo-500 text-white text-[10px] font-mono font-bold">
                   {activeFiltersCount}
                 </span>
               )}
@@ -534,7 +534,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Compass className="w-3.5 h-3.5 text-indigo-400" />
+                  <Compass className="w-3.5 h-3.5 text-white" />
                   <span>Полный каталог жанров ({GENRE_ITEMS.length - 1}):</span>
                 </span>
 
@@ -545,7 +545,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                     value={genreSearch}
                     onChange={(e) => setGenreSearch(e.target.value)}
                     placeholder="Поиск по жанрам..."
-                    className="w-full bg-[#06080E] border border-white/[0.08] rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                    className="w-full bg-zinc-950 border-zinc-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
                   />
                   {genreSearch && (
                     <button
@@ -573,10 +573,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                         });
                         setIsGenreExpandOpen(false);
                       }}
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer border ${
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all cursor-pointer border ${
                         isSelected
-                          ? 'bg-indigo-600 text-white border-indigo-400 font-semibold shadow-md shadow-indigo-600/30'
-                          : 'bg-[#0A0D16] hover:bg-[#111726] text-zinc-300 hover:text-white border-white/[0.06]'
+                          ? 'bg-zinc-800 text-white border-zinc-700 shadow-sm'
+                          : 'bg-zinc-950 hover:bg-[#111726] text-zinc-300 hover:text-white border-white/[0.06]'
                       }`}
                     >
                       <div className="flex items-center gap-1.5 truncate">
@@ -608,7 +608,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block">
                     Статус релиза
                   </label>
-                  <div className="grid grid-cols-2 gap-1.5 bg-[#06080E] p-1 rounded-2xl border border-white/[0.08]">
+                  <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-lg border-zinc-800">
                     {STATUS_ITEMS.map((s) => {
                       const isSelected = (activeParams.status || '') === s.value;
                       return (
@@ -616,13 +616,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                           key={s.value || 'all'}
                           type="button"
                           onClick={() => updateFilters({ status: s.value || undefined, page: 1 })}
-                          className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                          className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-indigo-600 text-white font-semibold shadow-sm'
+                              ? 'bg-zinc-800 text-white font-semibold shadow-sm'
                               : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                           }`}
                         >
-                          {s.dotColor && <span className={`w-2 h-2 rounded-full ${s.dotColor}`} />}
+                          {s.dotColor && <span className={`w-2 h-2 rounded-lg ${s.dotColor}`} />}
                           <span className="truncate">{s.shortLabel || s.label}</span>
                         </button>
                       );
@@ -635,7 +635,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block">
                     Тип / Формат
                   </label>
-                  <div className="flex items-center gap-1 bg-[#06080E] p-1 rounded-2xl border border-white/[0.08] overflow-x-auto no-scrollbar">
+                  <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border-zinc-800 overflow-x-auto no-scrollbar">
                     {FORMAT_ITEMS.map((f) => {
                       const isSelected = (activeParams.format || '') === f.value;
                       return (
@@ -643,9 +643,9 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                           key={f.value || 'all'}
                           type="button"
                           onClick={() => updateFilters({ format: f.value || undefined, page: 1 })}
-                          className={`flex-1 min-w-[50px] px-2 py-1.5 rounded-xl text-xs font-medium transition-all text-center cursor-pointer ${
+                          className={`flex-1 min-w-[50px] px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center cursor-pointer ${
                             isSelected
-                              ? 'bg-indigo-600 text-white font-semibold shadow-sm'
+                              ? 'bg-zinc-800 text-white font-semibold shadow-sm'
                               : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                           }`}
                         >
@@ -661,7 +661,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block">
                     Сезон года
                   </label>
-                  <div className="flex items-center gap-1 bg-[#06080E] p-1 rounded-2xl border border-white/[0.08] overflow-x-auto no-scrollbar">
+                  <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border-zinc-800 overflow-x-auto no-scrollbar">
                     {SEASON_ITEMS.map((season) => {
                       const isSelected = (activeParams.season || '') === season.value;
                       return (
@@ -669,9 +669,9 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                           key={season.value || 'all'}
                           type="button"
                           onClick={() => updateFilters({ season: season.value || undefined, page: 1 })}
-                          className={`flex-1 min-w-[50px] flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-xs font-medium transition-all text-center cursor-pointer ${
+                          className={`flex-1 min-w-[50px] flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center cursor-pointer ${
                             isSelected
-                              ? 'bg-indigo-600 text-white font-semibold shadow-sm'
+                              ? 'bg-zinc-800 text-white font-semibold shadow-sm'
                               : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                           }`}
                         >
@@ -693,10 +693,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                       aria-label="Фильтр по году"
                       value={activeParams.year || ''}
                       onChange={(e) => updateFilters({ year: e.target.value || undefined, page: 1 })}
-                      className="w-full bg-[#06080E] text-xs text-zinc-200 border border-white/[0.08] rounded-2xl px-3.5 py-2 appearance-none focus:outline-none focus:border-indigo-500/60 cursor-pointer"
+                      className="w-full bg-zinc-950 text-xs text-zinc-200 border-zinc-800 rounded-lg px-3.5 py-2 appearance-none focus:outline-none focus:border-indigo-500/60 cursor-pointer"
                     >
                       {YEAR_ITEMS.map((y) => (
-                        <option key={y.value} value={y.value} className="bg-[#0A0D16] text-white">
+                        <option key={y.value} value={y.value} className="bg-zinc-950 text-white">
                           {y.label}
                         </option>
                       ))}
@@ -717,13 +717,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
               {/* Genre Pill */}
               {activeParams.genre && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-xs font-mono">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
                   <span>{activeGenreItem?.icon || '✨'}</span>
                   <span>{activeGenreItem?.label || activeParams.genre}</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ genre: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-indigo-500/30 text-indigo-300 hover:text-white transition-colors cursor-pointer"
+                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                     title="Удалить фильтр жанра"
                   >
                     <X className="w-3 h-3" />
@@ -733,15 +733,15 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
               {/* Status Pill */}
               {activeParams.status && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-mono">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
                   {activeStatusItem?.dotColor && (
-                    <span className={`w-2 h-2 rounded-full ${activeStatusItem.dotColor}`} />
+                    <span className={`w-2 h-2 rounded-lg ${activeStatusItem.dotColor}`} />
                   )}
                   <span>{activeStatusItem?.label || activeParams.status}</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ status: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-emerald-500/30 text-emerald-300 hover:text-white transition-colors cursor-pointer"
+                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                     title="Удалить фильтр статуса"
                   >
                     <X className="w-3 h-3" />
@@ -751,13 +751,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
               {/* Format Pill */}
               {activeParams.format && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-xs font-mono">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
                   <span>{activeFormatItem?.icon || '🎬'}</span>
                   <span>{activeFormatItem?.label || activeParams.format}</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ format: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-cyan-500/30 text-cyan-300 hover:text-white transition-colors cursor-pointer"
+                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                     title="Удалить фильтр формата"
                   >
                     <X className="w-3 h-3" />
@@ -767,13 +767,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
               {/* Season Pill */}
               {activeParams.season && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-sky-500/15 text-sky-300 border border-sky-500/30 text-xs font-mono">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
                   <span>{activeSeasonItem?.icon || '❄️'}</span>
                   <span>{activeSeasonItem?.label || activeParams.season}</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ season: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-sky-500/30 text-sky-300 hover:text-white transition-colors cursor-pointer"
+                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                     title="Удалить фильтр сезона"
                   >
                     <X className="w-3 h-3" />
@@ -783,13 +783,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
               {/* Year Pill */}
               {activeParams.year && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/30 text-xs font-mono">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
                   <Calendar className="w-3 h-3 text-purple-400" />
                   <span>{activeParams.year} год</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ year: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-purple-500/30 text-purple-300 hover:text-white transition-colors cursor-pointer"
+                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                     title="Удалить фильтр года"
                   >
                     <X className="w-3 h-3" />
@@ -799,7 +799,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
               {/* Search Query Pill */}
               {activeParams.search && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-mono">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-mono">
                   <Search className="w-3 h-3 text-amber-400" />
                   <span>«{activeParams.search}»</span>
                   <button
@@ -815,7 +815,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
               {/* Sort Pill (if custom) */}
               {activeParams.sort && activeParams.sort !== 'POPULARITY_DESC' && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-zinc-800 text-zinc-300 border border-white/10 text-xs font-mono">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-white/10 text-xs font-mono">
                   <ArrowUpDown className="w-3 h-3 text-zinc-400" />
                   <span>{activeSortItem.label}</span>
                   <button
@@ -834,7 +834,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             <button
               type="button"
               onClick={handleResetAll}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 hover:border-rose-500/40 text-xs font-mono font-medium transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 hover:border-rose-500/40 text-xs font-mono font-medium transition-all cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Сбросить всё ({activeFiltersCount})</span>
@@ -847,7 +847,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
       <div className="flex items-center justify-between gap-4 text-xs font-mono text-zinc-400 px-1">
         <div className="flex items-center gap-2">
           <span>Найдено:</span>
-          <span className="px-2.5 py-0.5 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-bold">
+          <span className="px-2.5 py-0.5 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold">
             {totalItems.toLocaleString('ru-RU')} тайтлов
           </span>
           <span className="hidden sm:inline text-zinc-600">•</span>
@@ -855,7 +855,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-[#090C14] p-1 rounded-xl border border-white/[0.08]">
+        <div className="flex items-center gap-1 bg-[#090C14] p-1 rounded-lg border-zinc-800">
           <button
             type="button"
             onClick={() => setViewMode('grid')}
@@ -901,16 +901,16 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="p-12 sm:p-16 rounded-3xl bg-[#090C14] border border-white/[0.08] text-center space-y-5 shadow-2xl relative overflow-hidden"
+          className="p-12 sm:p-16 rounded-lg bg-[#090C14] border-zinc-800 text-center space-y-5 shadow-2xl relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 via-transparent to-transparent pointer-events-none" />
 
-          <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto shadow-inner">
-            <Filter className="w-10 h-10 animate-pulse" />
+          <div className="w-20 h-20 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-white flex items-center justify-center mx-auto shadow-inner">
+            <Filter className="w-10 h-10 " />
           </div>
 
           <div className="space-y-2 max-w-md mx-auto">
-            <h3 className="text-xl font-bold font-display text-white">
+            <h3 className="text-xl font-bold font-sans text-white">
               Ничего не найдено
             </h3>
             <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-sans">
@@ -923,7 +923,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             <button
               type="button"
               onClick={handleResetAll}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer inline-flex items-center gap-2"
+              className="px-4 py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer inline-flex items-center gap-2"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Сбросить все фильтры</span>
@@ -931,21 +931,21 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             <button
               type="button"
               onClick={() => updateFilters({ genre: 'Action', page: 1 })}
-              className="px-3.5 py-2.5 rounded-xl bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium transition-colors cursor-pointer"
+              className="px-3.5 py-2.5 rounded-lg bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border-zinc-800 text-xs font-medium transition-colors cursor-pointer"
             >
               ⚔️ Экшен
             </button>
             <button
               type="button"
               onClick={() => updateFilters({ status: 'RELEASING', page: 1 })}
-              className="px-3.5 py-2.5 rounded-xl bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium transition-colors cursor-pointer"
+              className="px-3.5 py-2.5 rounded-lg bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border-zinc-800 text-xs font-medium transition-colors cursor-pointer"
             >
               ⚡ Онгоинги
             </button>
             <button
               type="button"
               onClick={() => updateFilters({ sort: 'SCORE_DESC', page: 1 })}
-              className="px-3.5 py-2.5 rounded-xl bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-medium transition-colors cursor-pointer"
+              className="px-3.5 py-2.5 rounded-lg bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border-zinc-800 text-xs font-medium transition-colors cursor-pointer"
             >
               🏆 Шедевры (9.0+)
             </button>
@@ -960,10 +960,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               <Link
                 key={anime.id}
                 href={`/anime/${anime.id}`}
-                className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-2xl bg-[#090C14] hover:bg-[#0E1322] border border-white/[0.08] hover:border-indigo-500/40 shadow-lg hover:shadow-indigo-500/10 transition-all duration-300"
+                className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-lg bg-[#090C14] hover:bg-[#0E1322] border-zinc-800 hover:border-indigo-500/40 shadow-lg hover:shadow-indigo-500/10 transition-all duration-300"
               >
                 {/* Poster Thumbnail */}
-                <div className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-xl overflow-hidden shrink-0 bg-[#06070A] border border-white/10">
+                <div className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden shrink-0 bg-[#06070A] border border-white/10">
                   {anime.coverImage.original && (
                     <Image
                       src={anime.coverImage.original}
@@ -984,20 +984,20 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 {/* Content */}
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400 flex-wrap">
-                    <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 font-semibold">
+                    <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-zinc-300 font-semibold">
                       {anime.format || 'TV'}
                     </span>
                     {anime.seasonYear && <span>{anime.seasonYear} г.</span>}
                     {anime.episodesTotal && <span>• {anime.episodesTotal} эп.</span>}
                     {anime.status === 'RELEASING' && (
                       <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="w-1.5 h-1.5 rounded-lg bg-emerald-400" />
                         Онгоинг
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-base sm:text-lg font-bold font-display text-white group-hover:text-indigo-300 transition-colors line-clamp-1">
+                  <h3 className="text-base sm:text-lg font-bold font-sans text-white group-hover:text-zinc-300 transition-colors line-clamp-1">
                     {title}
                   </h3>
 
@@ -1022,7 +1022,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 </div>
 
                 {/* Action CTA */}
-                <div className="hidden sm:flex items-center justify-center p-3 rounded-xl bg-indigo-600/10 group-hover:bg-indigo-600 text-indigo-400 group-hover:text-white transition-all shrink-0">
+                <div className="hidden sm:flex items-center justify-center p-3 rounded-lg bg-indigo-600/10 group-hover:bg-indigo-600 text-white group-hover:text-white transition-all shrink-0">
                   <Play className="w-5 h-5 ml-0.5 fill-current" />
                 </div>
               </Link>
@@ -1081,7 +1081,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   updateFilters({ page: 1 });
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="p-2 rounded-xl bg-[#090C14] hover:bg-[#121726] text-zinc-400 hover:text-white border border-white/[0.08] transition-all cursor-pointer"
+                className="p-2 rounded-lg bg-[#090C14] hover:bg-[#121726] text-zinc-400 hover:text-white border-zinc-800 transition-all cursor-pointer"
                 title="Первая страница"
               >
                 <ChevronsLeft className="w-4 h-4" />
@@ -1096,7 +1096,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 updateFilters({ page: Math.max(1, currentPage - 1) });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                 currentPage <= 1
                   ? 'opacity-40 pointer-events-none bg-[#090C14] border-white/[0.04] text-zinc-500'
                   : 'bg-[#090C14] hover:bg-[#121726] text-zinc-300 hover:text-white border-white/[0.08] hover:border-indigo-500/40'
@@ -1151,7 +1151,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                       updateFilters({ page: pageNum });
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className={`min-w-[36px] h-9 px-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer border ${
+                    className={`min-w-[36px] h-9 px-2.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border ${
                       isActive
                         ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-600/40 scale-105'
                         : 'bg-[#090C14] hover:bg-[#121726] text-zinc-400 hover:text-white border-white/[0.08] hover:border-white/20'
@@ -1171,7 +1171,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 updateFilters({ page: Math.min(totalPages, currentPage + 1) });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                 currentPage >= totalPages
                   ? 'opacity-40 pointer-events-none bg-[#090C14] border-white/[0.04] text-zinc-500'
                   : 'bg-[#090C14] hover:bg-[#121726] text-zinc-300 hover:text-white border-white/[0.08] hover:border-indigo-500/40'
@@ -1189,7 +1189,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   updateFilters({ page: totalPages });
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="p-2 rounded-xl bg-[#090C14] hover:bg-[#121726] text-zinc-400 hover:text-white border border-white/[0.08] transition-all cursor-pointer"
+                className="p-2 rounded-lg bg-[#090C14] hover:bg-[#121726] text-zinc-400 hover:text-white border-zinc-800 transition-all cursor-pointer"
                 title="Последняя страница"
               >
                 <ChevronsRight className="w-4 h-4" />
@@ -1207,11 +1207,11 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               value={jumpPageInput}
               onChange={(e) => setJumpPageInput(e.target.value)}
               placeholder={String(currentPage)}
-              className="w-14 bg-[#090C14] border border-white/[0.08] rounded-xl px-2 py-1.5 text-xs text-center text-white font-mono focus:outline-none focus:border-indigo-500/60"
+              className="w-14 bg-[#090C14] border-zinc-800 rounded-lg px-2 py-1.5 text-xs text-center text-white font-mono focus:outline-none focus:border-indigo-500/60"
             />
             <button
               type="submit"
-              className="px-2.5 py-1.5 rounded-xl bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-mono font-medium transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border-zinc-800 text-xs font-mono font-medium transition-colors cursor-pointer"
             >
               Перейти
             </button>

@@ -3,10 +3,14 @@
 import React, { useState } from 'react';
 import { MessageSquare, Clock, Send, EyeOff, Eye, ThumbsUp, Sparkles, Heart, AlertCircle } from 'lucide-react';
 import { EpisodeComment } from '@/types';
+import { authStore } from '@/lib/auth/user-store';
 
 interface TimecodeCommentsProps {
   episodeId: string;
   animeId: number;
+  animeTitle?: string;
+  animeCover?: string;
+  episodeNumber?: number;
   currentVideoTime?: number;
   initialComments?: EpisodeComment[];
 }
@@ -14,6 +18,9 @@ interface TimecodeCommentsProps {
 export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
   episodeId,
   animeId,
+  animeTitle = 'Аниме',
+  animeCover = '',
+  episodeNumber = 1,
   currentVideoTime = 0,
   initialComments = [],
 }) => {
@@ -34,11 +41,13 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
     e.preventDefault();
     if (!content.trim()) return;
 
+    const user = authStore.getUser();
     const newComment: EpisodeComment = {
       id: crypto.randomUUID(),
       episodeId,
-      userId: 'guest-user',
-      userName: 'Гость Отаку',
+      userId: user?.id || 'guest-user',
+      userName: user?.name || 'Гость Отаку',
+      userAvatar: user?.avatar,
       content: content.trim(),
       timecodeSeconds: attachTimecode ? Math.floor(currentVideoTime) : null,
       isSpoiler,
@@ -47,6 +56,23 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
     };
 
     setComments([newComment, ...comments]);
+
+    if (user) {
+      try {
+        authStore.addGlobalComment({
+          animeId,
+          animeTitle,
+          animeCover: animeCover || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&auto=format&fit=crop&q=80',
+          episodeNumber,
+          content: content.trim(),
+          timecodeSeconds: attachTimecode ? Math.floor(currentVideoTime) : null,
+          isSpoiler,
+        });
+      } catch (err) {
+        console.error('Error adding global comment:', err);
+      }
+    }
+
     setContent('');
     setAttachTimecode(false);
     setIsSpoiler(false);
@@ -67,24 +93,24 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
   };
 
   return (
-    <div className="p-6 sm:p-8 rounded-3xl bg-[#090C15]/90 border border-white/[0.08] backdrop-blur-2xl shadow-2xl space-y-6">
+    <div className="p-6 sm:p-8 rounded-lg bg-zinc-900 border border-zinc-800  shadow-sm space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+          <div className="w-8 h-8 rounded-lg bg-zinc-800 text-zinc-400 flex items-center justify-center border border-zinc-800">
             <MessageSquare className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-base font-bold font-display text-white">Таймкод-комментарии</h3>
+            <h3 className="text-base font-bold font-sans text-zinc-100">Таймкод-комментарии</h3>
             <p className="text-xs text-zinc-400 font-sans">Обсуждайте яркие моменты серии в реальном времени</p>
           </div>
         </div>
-        <span className="text-xs font-mono px-3 py-1 rounded-xl bg-white/[0.04] border border-white/[0.06] text-zinc-400">
+        <span className="text-xs font-mono px-3 py-1 rounded-lg bg-zinc-800 border border-zinc-800 text-zinc-400">
           {comments.length} сообщений
         </span>
       </div>
 
       {/* Input Form */}
-      <form onSubmit={handleAddComment} className="p-4 sm:p-5 rounded-2xl bg-[#06080F] border border-white/[0.06] space-y-3 shadow-inner">
+      <form onSubmit={handleAddComment} className="p-4 sm:p-5 rounded-lg bg-zinc-950 border border-zinc-800 space-y-3 shadow-inner">
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -92,15 +118,15 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
           className="w-full bg-transparent text-zinc-100 placeholder-zinc-500 text-xs font-sans focus:outline-none resize-none h-20 leading-relaxed"
         />
 
-        <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-white/[0.05]">
+        <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-zinc-800">
           <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
               onClick={() => setAttachTimecode(!attachTimecode)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                 attachTimecode
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06]'
+                  ? 'bg-zinc-800 text-zinc-300 border border-zinc-800 shadow-sm'
+                  : 'bg-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -112,16 +138,16 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
                 type="checkbox"
                 checked={isSpoiler}
                 onChange={(e) => setIsSpoiler(e.target.checked)}
-                className="rounded bg-white/10 border-white/20 text-rose-500 focus:ring-0 cursor-pointer"
+                className="rounded bg-white/10 border-white/20 text-zinc-500 focus:ring-0 cursor-pointer"
               />
-              <span className={isSpoiler ? 'text-rose-400 font-semibold' : ''}>Спойлер</span>
+              <span className={isSpoiler ? 'text-zinc-400 font-semibold' : ''}>Спойлер</span>
             </label>
           </div>
 
           <button
             type="submit"
             disabled={!content.trim()}
-            className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-40 text-white rounded-xl text-xs font-semibold font-display shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-100 rounded-lg text-xs font-semibold font-sans shadow-sm  transition-all cursor-pointer border border-zinc-700"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Опубликовать</span>
@@ -142,15 +168,15 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
             const isLiked = likedComments[c.id];
 
             return (
-              <div key={c.id} className="p-4 rounded-2xl bg-[#06080F]/80 border border-white/[0.06] space-y-2.5 hover:border-white/[0.12] transition-colors">
+              <div key={c.id} className="p-4 rounded-lg bg-zinc-950 border border-zinc-800 space-y-2.5 hover:border-zinc-800 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center text-white text-[11px] font-bold font-mono shadow-md">
+                    <div className="w-7 h-7 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-100 text-[11px] font-bold font-mono shadow-sm border border-zinc-700">
                       {c.userName.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white">{c.userName}</span>
+                        <span className="text-xs font-bold text-zinc-100">{c.userName}</span>
                         {c.timecodeSeconds !== null && c.timecodeSeconds !== undefined && (
                           <button
                             type="button"
@@ -158,7 +184,7 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
                               const video = document.querySelector('video');
                               if (video) video.currentTime = c.timecodeSeconds!;
                             }}
-                            className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono transition-all cursor-pointer"
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[10px] font-mono transition-all cursor-pointer"
                           >
                             <Clock className="w-3 h-3" />
                             <span>{formatSeconds(c.timecodeSeconds)}</span>
@@ -175,7 +201,7 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
                   <button
                     type="button"
                     onClick={() => toggleSpoiler(c.id)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 hover:bg-rose-500/15 text-xs font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="w-full py-2.5 px-4 rounded-lg bg-zinc-800 border border-zinc-800 text-zinc-300 hover:bg-zinc-800 text-xs font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   >
                     <EyeOff className="w-3.5 h-3.5" />
                     <span>Содержит спойлер (нажмите, чтобы открыть)</span>
@@ -191,11 +217,11 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
                     onClick={() => toggleLike(c.id)}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
                       isLiked
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]'
+                        ? 'bg-zinc-800 text-zinc-300 border border-zinc-800'
+                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
                     }`}
                   >
-                    <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-rose-400 text-rose-400' : ''}`} />
+                    <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-rose-400 text-zinc-400' : ''}`} />
                     <span>{c.likesCount || 0}</span>
                   </button>
                 </div>

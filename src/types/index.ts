@@ -222,14 +222,46 @@ export interface CatalogFilterParams {
   sort?: string[];
 }
 
+export interface UserCollection {
+  id: string;
+  userId: string;
+  username: string;
+  title: string;
+  description: string;
+  coverImage?: string;
+  isPublic: boolean;
+  animeIds: number[];
+  likesCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GlobalComment {
+  id: string;
+  animeId: number;
+  animeTitle: string;
+  animeCover: string;
+  episodeNumber?: number;
+  userId: string;
+  username: string;
+  userAvatar: string;
+  content: string;
+  timecodeSeconds?: number | null;
+  isSpoiler: boolean;
+  likesCount: number;
+  createdAt: string;
+}
+
 export interface UserProfile {
   id: string;
+  username: string; // unique slug
   name: string;
-  email: string;
+  email: string; // private, never displayed in public profile
   avatar: string;
   banner?: string;
   bio?: string;
   role: string;
   level: number;
   joinedAt: string;
+  collectionsCount?: number;
 }

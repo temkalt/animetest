@@ -99,28 +99,28 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
   const statusLabel: Record<string, { label: string; color: string; border: string; bg: string }> = {
     RELEASING: {
       label: 'Онгоинг',
-      color: 'text-emerald-400',
-      border: 'border-emerald-500/30',
-      bg: 'bg-emerald-500/10',
+      color: 'text-zinc-300',
+      border: 'border-zinc-700',
+      bg: 'bg-zinc-800',
     },
     FINISHED: {
       label: 'Вышел',
-      color: 'text-indigo-400',
-      border: 'border-indigo-500/30',
-      bg: 'bg-indigo-500/10',
+      color: 'text-zinc-300',
+      border: 'border-zinc-700',
+      bg: 'bg-zinc-800',
     },
     NOT_YET_RELEASED: {
       label: 'Анонс',
-      color: 'text-amber-400',
-      border: 'border-amber-500/30',
-      bg: 'bg-amber-500/10',
+      color: 'text-zinc-300',
+      border: 'border-zinc-700',
+      bg: 'bg-zinc-800',
     },
   };
 
   const currentStatus = statusLabel[anime.status] || statusLabel.FINISHED;
   const seasonString = formatSeason(anime.season, anime.seasonYear);
   const studioName = anime.studios && anime.studios.length > 0 ? anime.studios.join(', ') : 'Не указана';
-  const ratingValue = anime.score > 0 ? anime.score.toFixed(1) : '8.5';
+  const ratingValue = anime.score > 0 ? anime.score.toFixed(1) : '—';
   const durationStr = anime.durationMinutes ? `${anime.durationMinutes} мин / сер` : '24 мин / сер';
   const bannerBg = anime.bannerImage || anime.coverImage.original;
 
@@ -137,22 +137,9 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
       </div>
 
       {/* 1. Luxury Ambient Blurred Backdrop Banner & Hero Header */}
-      <div className="relative w-full rounded-3xl overflow-hidden bg-[#0A0D14] border border-white/[0.08] shadow-2xl shadow-black/80">
-        {/* Ambient Blurred Aura Layer */}
+      <div className="relative w-full rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 shadow-sm">
+        {/* High-res Banner Layer */}
         {bannerBg && (
-          <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-            {/* Super blurred ambient color glow */}
-            <div className="absolute -top-1/4 -left-1/4 w-[150%] h-[150%] opacity-35 filter blur-3xl scale-125 saturate-150">
-              <Image
-                src={bannerBg}
-                alt={title}
-                fill
-                priority
-                className="object-cover"
-              />
-            </div>
-
-            {/* High-res Banner Layer with Cinematic Lighting */}
             <div className="absolute inset-0 opacity-40 mix-blend-screen">
               <Image
                 src={bannerBg}
@@ -162,22 +149,15 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
                 className="object-cover object-top"
               />
             </div>
-
-            {/* Vignette Gradients & Fade Scrims */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14]/85 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0A0D14] via-[#0A0D14]/60 to-transparent" />
-            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0A0D14]/80 to-transparent" />
-          </div>
         )}
 
-        {/* Specular Top Line Highlight */}
-        <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent pointer-events-none" />
+        
 
         {/* Hero Content Section */}
         <div className="relative z-10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row gap-8 items-start">
           {/* Poster Column */}
           <div className="flex flex-col items-center gap-4 flex-shrink-0 w-full sm:w-64 md:w-64">
-            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border border-white/[0.12] bg-[#0E1118] group">
+            <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden shadow-sm border border border-zinc-800 bg-zinc-900 group">
               {anime.coverImage.original && (
                 <Image
                   src={anime.coverImage.original}
@@ -192,7 +172,7 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
               {/* Status Badge on Poster */}
               <div className="absolute top-3 left-3 flex flex-col gap-1.5">
                 <span
-                  className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider backdrop-blur-md border ${currentStatus.bg} ${currentStatus.color} ${currentStatus.border} shadow-lg`}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider backdrop-blur-md border ${currentStatus.bg} ${currentStatus.color} ${currentStatus.border} shadow-lg`}
                 >
                   {currentStatus.label}
                 </span>
@@ -200,15 +180,15 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
 
               {/* Rating Badge on Poster */}
               {anime.score > 0 && (
-                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/70 backdrop-blur-md border border-amber-500/30 text-amber-300 font-mono font-bold text-xs shadow-lg">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono font-bold text-xs shadow-lg">
+                  <Star className="w-3.5 h-3.5 fill-zinc-300 text-zinc-300" />
                   <span>{ratingValue}</span>
                 </div>
               )}
 
               {/* Quality Watermark */}
-              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/[0.08] text-[10px] font-mono text-zinc-300">
-                <span className="font-bold text-indigo-300">1080p FHD</span>
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-md border-zinc-800 text-[10px] font-mono text-zinc-300">
+                <span className="font-bold text-white">1080p FHD</span>
                 <span className="text-zinc-400">Мульти-озвучка</span>
               </div>
             </div>
@@ -218,16 +198,16 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
           <div className="flex-1 space-y-5">
             {/* Format & Status Badges */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3 py-1 rounded-xl bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
-                <Film className="w-3 h-3 text-indigo-400" />
+              <span className="px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
+                <Film className="w-3 h-3 text-zinc-300" />
                 <span>{formatType}</span>
               </span>
 
               <span
-                className={`px-3 py-1 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 border shadow-sm ${currentStatus.bg} ${currentStatus.color} ${currentStatus.border}`}
+                className={`px-3 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 border shadow-sm ${currentStatus.bg} ${currentStatus.color} ${currentStatus.border}`}
               >
                 {anime.status === 'RELEASING' ? (
-                  <Radio className="w-3 h-3 animate-pulse" />
+                  <Radio className="w-3 h-3 " />
                 ) : (
                   <CheckCircle2 className="w-3 h-3" />
                 )}
@@ -235,8 +215,8 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
               </span>
 
               {anime.popularity > 0 && (
-                <span className="px-3 py-1 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/20 text-xs font-mono flex items-center gap-1.5">
-                  <Flame className="w-3 h-3 text-rose-400" />
+                <span className="px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono flex items-center gap-1.5">
+                  <Flame className="w-3 h-3 text-zinc-300" />
                   <span>Популярно #{anime.popularity}</span>
                 </span>
               )}
@@ -244,7 +224,7 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
 
             {/* Title & Subtitles */}
             <div className="space-y-1.5">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-display text-white tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-sans text-white tracking-tight leading-tight">
                 {title}
               </h1>
 
@@ -261,20 +241,20 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
             {/* Glassmorphic Meta Stats Panel (Year, Studio, Episodes, Duration, Rating) */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-1">
               {/* Rating Metric */}
-              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-amber-500/30 transition-all flex flex-col justify-between">
+              <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all flex flex-col justify-between">
                 <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
-                  <Star className="w-3 h-3 text-amber-400" />
+                  <Star className="w-3 h-3 text-zinc-300" />
                   Рейтинг
                 </span>
-                <span className="text-sm font-bold font-mono text-amber-300 mt-1">
+                <span className="text-sm font-bold font-mono text-white mt-1">
                   {ratingValue} <span className="text-[10px] text-zinc-500">/ 10</span>
                 </span>
               </div>
 
               {/* Year & Season Metric */}
-              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-cyan-500/30 transition-all flex flex-col justify-between">
+              <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all flex flex-col justify-between">
                 <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-cyan-400" />
+                  <Calendar className="w-3 h-3 text-zinc-300" />
                   Сезон / Год
                 </span>
                 <span className="text-xs font-bold font-mono text-zinc-200 mt-1 truncate">
@@ -283,21 +263,21 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
               </div>
 
               {/* Episodes Metric */}
-              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-indigo-500/30 transition-all flex flex-col justify-between">
+              <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all flex flex-col justify-between">
                 <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
-                  <Layers className="w-3 h-3 text-indigo-400" />
+                  <Layers className="w-3 h-3 text-zinc-300" />
                   Эпизоды
                 </span>
-                <span className="text-xs font-bold font-mono text-indigo-300 mt-1">
+                <span className="text-xs font-bold font-mono text-white mt-1">
                   {anime.episodesAired ? `${anime.episodesAired} из ` : ''}
                   {episodesCount} эп.
                 </span>
               </div>
 
               {/* Duration Metric */}
-              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-rose-500/30 transition-all flex flex-col justify-between">
+              <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all flex flex-col justify-between">
                 <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-rose-400" />
+                  <Clock className="w-3 h-3 text-zinc-300" />
                   Длительность
                 </span>
                 <span className="text-xs font-bold font-mono text-zinc-200 mt-1 truncate">
@@ -306,9 +286,9 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
               </div>
 
               {/* Studio Metric */}
-              <div className="p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] hover:border-violet-500/30 transition-all flex flex-col justify-between col-span-2 sm:col-span-1">
+              <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all flex flex-col justify-between col-span-2 sm:col-span-1">
                 <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1">
-                  <Tv className="w-3 h-3 text-violet-400" />
+                  <Tv className="w-3 h-3 text-zinc-300" />
                   Студия
                 </span>
                 <span className="text-xs font-bold font-mono text-zinc-200 mt-1 truncate" title={studioName}>
@@ -326,7 +306,7 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
                     <Link
                       key={g}
                       href={`/catalog?genre=${encodeURIComponent(g)}`}
-                      className="px-3 py-1 rounded-xl bg-white/[0.04] hover:bg-indigo-500/20 text-zinc-300 hover:text-white border border-white/[0.08] hover:border-indigo-500/40 text-xs font-sans transition-all duration-200 shadow-sm"
+                      className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-indigo-500/20 text-zinc-300 hover:text-white border-zinc-800 hover:border-indigo-500/40 text-xs font-sans transition-all duration-200 shadow-sm"
                     >
                       {g}
                     </Link>
@@ -342,8 +322,8 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
 
             {/* Next Airing Episode Banner if Releasing */}
             {anime.nextAiringEpisode && (
-              <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center gap-3 text-xs font-mono text-indigo-300">
-                <Radio className="w-4 h-4 text-indigo-400 animate-pulse flex-shrink-0" />
+              <div className="p-3.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center gap-3 text-xs font-mono text-white">
+                <Radio className="w-4 h-4 text-zinc-300  flex-shrink-0" />
                 <div>
                   <strong>Следующая {anime.nextAiringEpisode.episode} серия</strong> выйдет{' '}
                   <span className="text-white font-semibold">
@@ -360,8 +340,8 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
 
             {/* Unreleased Anime Notice */}
             {anime.status === 'NOT_YET_RELEASED' && (
-              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 text-xs font-mono text-amber-300">
-                <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 text-xs font-mono text-white">
+                <AlertCircle className="w-4 h-4 text-zinc-300 flex-shrink-0" />
                 <span>
                   Тайтл находится в статусе «Анонс». Серии станут доступны сразу после официальной премьеры.
                 </span>
@@ -382,20 +362,20 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+            <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-zinc-300">
               <Film className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold font-display text-white">Список серий</h2>
+              <h2 className="text-xl font-bold font-sans text-white">Список серий</h2>
               <p className="text-xs font-mono text-zinc-400">Всего доступно {episodesCount} эпизодов</p>
             </div>
           </div>
-          <span className="px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-xs font-mono text-zinc-300">
+          <span className="px-3 py-1 rounded-full bg-white/[0.05] border-zinc-800 text-xs font-mono text-zinc-300">
             1080p / 720p
           </span>
         </div>
 
-        <div className="p-6 rounded-3xl bg-[#0A0D14] border border-white/[0.08] shadow-xl">
+        <div className="p-6 rounded-lg bg-zinc-900 border border-zinc-800 shadow-sm">
           <EpisodeGrid animeId={anime.id} totalEpisodes={episodesCount} />
         </div>
       </section>
@@ -404,11 +384,11 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
       {anime.relations && anime.relations.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400">
+            <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-zinc-300">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold font-display text-white">Хронология франшизы</h2>
+              <h2 className="text-xl font-bold font-sans text-white">Хронология франшизы</h2>
               <p className="text-xs font-mono text-zinc-400">Связанные сезоны, фильмы и ответвления</p>
             </div>
           </div>

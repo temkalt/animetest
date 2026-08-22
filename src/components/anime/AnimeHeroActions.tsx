@@ -70,7 +70,7 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
       {/* Primary Watch Action Button */}
       <Link
         href={`/watch/${animeId}/${resumeEp}`}
-        className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-display font-bold text-xs shadow-xl shadow-indigo-600/30 transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] border border-indigo-400/30 glow-primary"
+        className="flex items-center gap-2.5 px-6 py-3.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 font-sans font-bold text-xs transition-all duration-200 border border-zinc-800"
       >
         <Play className="w-4 h-4 fill-white" />
         <span>
@@ -83,7 +83,7 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
         <Link
           href={`/watch/${animeId}/1`}
           title="Смотреть с 1 серии"
-          className="flex items-center gap-1.5 px-3.5 py-3 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 hover:text-white border border-white/[0.1] text-xs font-mono transition-all backdrop-blur-xl"
+          className="flex items-center gap-1.5 px-3.5 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 text-xs font-mono transition-all "
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">С 1 серии</span>
@@ -99,18 +99,18 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
           type="button"
           onClick={handleShare}
           title="Поделиться аниме"
-          className={`p-3 rounded-2xl border text-xs font-medium transition-all duration-200 cursor-pointer backdrop-blur-xl ${
+          className={`p-3 rounded-lg border text-xs font-medium transition-all duration-200 cursor-pointer  ${
             copied
-              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-              : 'bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 hover:text-white border-white/[0.1]'
+              ? 'bg-zinc-800 text-zinc-300 border-zinc-800'
+              : 'bg-zinc-800 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border-zinc-800'
           }`}
           aria-label="Поделиться"
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+          {copied ? <Check className="w-4 h-4 text-zinc-400" /> : <Share2 className="w-4 h-4" />}
         </button>
 
         {copied && (
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-mono whitespace-nowrap shadow-lg animate-in fade-in zoom-in-95">
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-100 text-[10px] font-mono whitespace-nowrap shadow-sm animate-in fade-in zoom-in-95">
             Ссылка скопирована!
           </div>
         )}

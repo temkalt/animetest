@@ -1,44 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  /* Core Obsidian Dark Canvas */
-  --surface-void: #06070A;
-  --surface-substrate: #0A0D14;
-  --surface-plate: #0F131D;
-  --surface-elevated: #151A28;
-  --surface-highlight: #1C2336;
-  --surface-glass: rgba(10, 13, 20, 0.75);
-  --surface-glass-heavy: rgba(6, 7, 10, 0.94);
+  /* Minimalist Zinc Palette */
+  --surface-void: #09090b;
+  --surface-substrate: #0a0a0a;
+  --surface-plate: #18181b;
+  --surface-elevated: #27272a;
+  --surface-highlight: #3f3f46;
+  --surface-glass: rgba(24, 24, 27, 0.80);
+  --surface-glass-heavy: rgba(9, 9, 11, 0.95);
 
-  /* Primary Violet/Indigo Accent */
-  --accent-primary: #6366F1;
-  --accent-primary-hover: #4F46E5;
-  --accent-primary-glow: rgba(99, 102, 241, 0.35);
-  --accent-primary-dim: rgba(99, 102, 241, 0.12);
+  /* Zinc Accents */
+  --accent-pastel-white: #fafafa;
+  --accent-pastel-ivory: #e4e4e7;
+  --accent-pastel-sand: #d4d4d8;
+  --accent-pastel-slate: #a1a1aa;
+  --accent-pastel-muted: #71717a;
 
-  /* Secondary Accents */
-  --accent-cyan: #06B6D4;
-  --accent-cyan-glow: rgba(6, 182, 212, 0.35);
-  
-  --accent-rose: #F43F5E;
-  --accent-rose-glow: rgba(244, 63, 94, 0.35);
-
-  --accent-amber: #F59E0B;
-  --accent-amber-glow: rgba(245, 158, 11, 0.35);
-
-  --accent-emerald: #10B981;
-  --accent-emerald-glow: rgba(16, 185, 129, 0.35);
+  /* Refined Subtle Badges */
+  --badge-bg: rgba(255, 255, 255, 0.05);
+  --badge-border: rgba(255, 255, 255, 0.1);
+  --badge-text: #E4E4E8;
 
   /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Plus Jakarta Sans', var(--font-sans);
+  --font-display: var(--font-sans);
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Specular Borders */
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-medium: rgba(255, 255, 255, 0.12);
-  --border-active: rgba(99, 102, 241, 0.5);
+  /* Precise Specular Borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.16);
 }
 
 @theme {
@@ -49,111 +42,73 @@
   --color-surface-highlight: var(--surface-highlight);
   --color-surface-glass: var(--surface-glass);
 
-  --color-accent-primary: var(--accent-primary);
-  --color-accent-primary-hover: var(--accent-primary-hover);
-  --color-accent-cyan: var(--accent-cyan);
-  --color-accent-rose: var(--accent-rose);
-  --color-accent-amber: var(--accent-amber);
-  --color-accent-emerald: var(--accent-emerald);
+  --color-pastel-white: var(--accent-pastel-white);
+  --color-pastel-ivory: var(--accent-pastel-ivory);
+  --color-pastel-sand: var(--accent-pastel-sand);
+  --color-pastel-slate: var(--accent-pastel-slate);
+  --color-pastel-muted: var(--accent-pastel-muted);
 }
 
 body {
   background-color: var(--surface-void);
-  color: #F8FAFC;
+  color: #f4f4f5; /* zinc-100 */
   font-family: var(--font-sans);
   overflow-x: hidden;
+  letter-spacing: -0.01em;
 }
 
 h1, h2, h3, h4, .font-display {
   font-family: var(--font-display);
+  letter-spacing: -0.025em;
 }
 
 code, kbd, .font-mono {
   font-family: var(--font-mono);
 }
 
-/* Custom Minimalist Scrollbar */
+/* Minimalist Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: var(--surface-void);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1C2336;
+  background: #27272a; /* zinc-800 */
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #6366F1;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-/* Subtle Film Grain Noise Texture */
-.bg-noise {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
-}
+/* Removed bg-noise and bg-radial-mesh */
+.bg-noise { }
+.bg-radial-mesh { }
 
-/* Ambient Radial Mesh Background */
-.bg-radial-mesh {
-  background: 
-    radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(6, 182, 212, 0.07) 0%, transparent 45%),
-    radial-gradient(circle at 50% 80%, rgba(244, 63, 94, 0.06) 0%, transparent 50%);
-}
-
-/* Glassmorphism Styles */
+/* Clean Matte Glassmorphism */
 .glass-panel {
-  background: rgba(13, 17, 26, 0.7);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(24, 24, 27, 0.80); /* bg-zinc-900/80 */
+  backdrop-filter: blur(4px); /* backdrop-blur-sm */
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid #27272a; /* border zinc-800 */
 }
 
 .glass-panel-hover {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.15s ease-in-out;
 }
 .glass-panel-hover:hover {
-  background: rgba(18, 24, 38, 0.85);
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 12px 30px -10px rgba(99, 102, 241, 0.2);
+  background: rgba(39, 39, 42, 0.50); /* hover:bg-zinc-800/50 */
+  border-color: #3f3f46; /* hover:border-zinc-700 */
 }
 
 .glass-dropdown {
-  background-color: rgba(15, 19, 30, 0.95);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.9);
+  background-color: rgba(24, 24, 27, 0.95); /* bg-zinc-900/95 */
+  border: 1px solid #27272a; /* simple border */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* subtle shadow shadow-sm */
 }
 
-/* Glow Utilities */
-.glow-primary {
-  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
-}
-.glow-cyan {
-  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.4);
-}
-.glow-rose {
-  box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.4);
-}
-.glow-amber {
-  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.4);
-}
-
-/* Text Gradients */
+/* Restrained Minimalist Gradients */
 .text-gradient-primary {
-  background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 50%, #818CF8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.text-gradient-cyan {
-  background: linear-gradient(135deg, #FFFFFF 0%, #A5F3FC 50%, #06B6D4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.text-gradient-gold {
-  background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 70%, #D97706 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #d4d4d8 100%); /* white to zinc-300 */
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

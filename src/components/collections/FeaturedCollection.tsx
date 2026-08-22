@@ -46,11 +46,8 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full rounded-3xl overflow-hidden bg-[#0A0D14] border border-white/[0.12] shadow-2xl group transition-all duration-500"
+      className="relative w-full rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 transition-all duration-200"
     >
-      {/* Ambient background glow */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-rose-500/20 via-indigo-500/15 to-cyan-500/20 opacity-60 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none blur-2xl" />
-
       {/* Cinematic Banner Layer */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -59,11 +56,9 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center filter saturate-[1.15] brightness-[0.4] group-hover:scale-105 group-hover:brightness-[0.45] transition-all duration-700 ease-out"
+          className="object-cover object-center opacity-40 group-hover:opacity-50 transition-all duration-700 ease-out"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#06070A] via-[#06070A]/85 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#06070A] via-[#06070A]/40 to-transparent" />
-        <div className="absolute inset-0 bg-noise opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/80 to-transparent" />
       </div>
 
       {/* Main Content Layout (Grid on desktop, stacked on mobile) */}
@@ -72,35 +67,35 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
         <div className="flex-1 space-y-6 max-w-2xl">
           {/* Top Issue & Curator Badge */}
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 backdrop-blur-md text-[11px] font-mono font-bold tracking-wider">
-              <Flame className="w-3.5 h-3.5 text-rose-400" />
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-800 text-zinc-100 border border-zinc-700 text-[11px] font-mono font-bold tracking-wider">
+              <Flame className="w-3.5 h-3.5 text-zinc-400" />
               <span>ВЫБОР ГЛАВНОГО РЕДАКТОРА</span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.08] text-zinc-300 border border-white/10 backdrop-blur-md text-[11px] font-mono">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700 text-[11px] font-mono">
+              <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
               <span>{collection.issueNumber}</span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 backdrop-blur-md text-[11px] font-mono">
-              <Clock className="w-3.5 h-3.5 text-amber-400" />
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700 text-[11px] font-mono">
+              <Clock className="w-3.5 h-3.5 text-zinc-400" />
               <span>~{collection.estimatedHours} часов просмотра</span>
             </div>
           </div>
 
           {/* Japanese Subtitle & Editorial Title */}
           <div className="space-y-2">
-            <span className="text-xs font-mono tracking-widest text-zinc-400 uppercase block">
+            <span className="text-xs font-mono tracking-widest text-zinc-500 uppercase block">
               {collection.subtitleJp}
             </span>
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black font-display text-white tracking-tight leading-[1.1] text-gradient-primary">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold font-sans text-zinc-100 tracking-tight leading-[1.1]">
               {collection.title}
             </h2>
           </div>
 
           {/* Spotlight Quote */}
           {collection.spotlightQuote && (
-            <div className="p-3.5 rounded-2xl bg-white/[0.04] border-l-2 border-rose-500 backdrop-blur-md">
+            <div className="p-3.5 rounded-lg bg-zinc-800/50 border-l-2 border-zinc-500">
               <p className="text-xs sm:text-sm text-zinc-300 italic font-serif leading-relaxed">
                 {collection.spotlightQuote}
               </p>
@@ -108,14 +103,14 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
           )}
 
           {/* Editorial Note Description */}
-          <p className="text-xs sm:text-sm text-zinc-300/90 leading-relaxed max-w-xl font-sans">
+          <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-xl font-sans">
             {collection.editorialNote}
           </p>
 
           {/* Curator Profile Strip & Metrics */}
-          <div className="flex items-center justify-between gap-4 pt-2 border-t border-white/10 flex-wrap">
+          <div className="flex items-center justify-between gap-4 pt-2 border-t border-zinc-800 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-indigo-500/40 shadow-lg shrink-0">
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-zinc-700 shrink-0 bg-zinc-800">
                 <Image
                   src={collection.curator.avatar}
                   alt={collection.curator.name}
@@ -126,62 +121,52 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-bold text-white font-display">
+                  <span className="text-xs sm:text-sm font-bold text-zinc-100">
                     {collection.curator.name}
                   </span>
-                  <CheckCircle2 className="w-4 h-4 text-indigo-400 fill-indigo-500/20" />
+                  <CheckCircle2 className="w-4 h-4 text-zinc-400" />
                 </div>
-                <p className="text-[11px] text-zinc-400 font-mono">
+                <p className="text-[11px] text-zinc-500 font-mono">
                   {collection.curator.role}
                 </p>
               </div>
             </div>
 
-            {/* Like Counter with micro-animation */}
-            <motion.button
+            {/* Like Counter */}
+            <button
               type="button"
               onClick={handleLike}
-              whileTap={{ scale: 0.85 }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono font-bold backdrop-blur-md transition-all shadow-xl cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
                 isLiked
-                  ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40 shadow-rose-500/25'
-                  : 'bg-white/[0.06] text-zinc-300 border border-white/10 hover:text-white hover:bg-white/[0.12]'
+                  ? 'bg-zinc-800 text-white border border-zinc-700'
+                  : 'bg-zinc-900 text-zinc-300 border border-zinc-800 hover:text-white hover:bg-zinc-800'
               }`}
             >
-              <motion.div
-                animate={
-                  isLiked
-                    ? { scale: [1, 1.5, 0.9, 1.2, 1], rotate: [0, -15, 15, -5, 0] }
-                    : { scale: 1 }
-                }
-                transition={{ duration: 0.4 }}
-              >
-                <Heart
-                  className={`w-4 h-4 transition-colors ${
-                    isLiked ? 'fill-rose-500 text-rose-500' : 'text-zinc-400'
-                  }`}
-                />
-              </motion.div>
+              <Heart
+                className={`w-4 h-4 transition-colors ${
+                  isLiked ? 'fill-white text-white' : 'text-zinc-400'
+                }`}
+              />
               <span>{likesCount} сохранений</span>
-            </motion.button>
+            </button>
           </div>
 
           {/* Action CTAs */}
           <div className="flex items-center gap-3 pt-2">
             <Link
               href={collection.href}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-display font-bold text-xs sm:text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 px-6 py-3 rounded-md bg-white hover:bg-zinc-200 text-zinc-900 font-bold text-xs sm:text-sm transition-all"
             >
-              <Play className="w-4 h-4 fill-white" />
+              <Play className="w-4 h-4 fill-zinc-900" />
               <span>Смотреть антологию</span>
             </Link>
 
             <button
               type="button"
               onClick={() => onQuickView(collection)}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] text-zinc-200 border border-white/10 font-display font-semibold text-xs sm:text-sm backdrop-blur-md transition-all hover:scale-105 cursor-pointer active:scale-95"
+              className="flex items-center gap-2 px-5 py-3 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-semibold text-xs sm:text-sm transition-all cursor-pointer"
             >
-              <Eye className="w-4 h-4 text-indigo-300" />
+              <Eye className="w-4 h-4 text-zinc-400" />
               <span>Тайтлы коллекции ({collection.animeList.length})</span>
             </button>
           </div>
@@ -218,7 +203,7 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
                         }
                   }
                   transition={SPRINGS.snappy}
-                  className="absolute w-32 sm:w-40 aspect-[3/4] rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl shadow-black/90 bg-[#121622]"
+                  className="absolute w-32 sm:w-40 aspect-[3/4] rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950"
                   style={{ zIndex: config.zIndex }}
                 >
                   <Image
@@ -226,17 +211,17 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
                     alt="Anime Poster"
                     fill
                     sizes="160px"
-                    className="object-cover filter contrast-105"
+                    className="object-cover opacity-90"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-white/10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-transparent" />
 
                   {idx === 2 && (
-                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-2 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/15">
-                      <span className="text-[10px] font-mono font-bold text-amber-400 flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-amber-400" />
+                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-2 py-1 rounded-md bg-zinc-900/90 border border-zinc-800">
+                      <span className="text-[10px] font-mono font-bold text-zinc-200 flex items-center gap-1">
+                        <Star className="w-3 h-3 text-zinc-400" />
                         8.9
                       </span>
-                      <span className="text-[9px] font-mono text-zinc-300">1080P</span>
+                      <span className="text-[9px] font-mono text-zinc-400">1080P</span>
                     </div>
                   )}
                 </motion.div>

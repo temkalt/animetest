@@ -59,7 +59,7 @@ export const SynopsisClamp: React.FC<SynopsisClampProps> = ({ synopsisRu, synops
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer select-none group"
+          className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-zinc-400 hover:text-zinc-300 transition-colors cursor-pointer select-none group"
         >
           <span>{isExpanded ? 'Свернуть описание' : 'Читать полностью'}</span>
           {isExpanded ? (

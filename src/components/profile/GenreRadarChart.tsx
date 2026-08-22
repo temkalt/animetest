@@ -99,33 +99,33 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
 
   return (
     <div
-      className={`w-full relative flex flex-col items-center justify-between p-5 sm:p-6 rounded-3xl bg-[#090B10] border border-white/[0.08] shadow-[0_0_30px_rgba(6,182,212,0.05)] overflow-hidden select-none ${className}`}
+      className={`w-full relative flex flex-col items-center justify-between p-5 sm:p-6 rounded-lg bg-zinc-950 border border-zinc-800  overflow-hidden select-none ${className}`}
       style={{ maxWidth: size ? `${size + 80}px` : '100%' }}
     >
       {/* Background Cyber Glow & Corner Brackets */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-60 h-60 bg-cyan-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 w-60 h-60 bg-rose-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl" />
+        <div className="absolute -top-24 -left-24 w-60 h-60 bg-zinc-800 rounded-lg " />
+        <div className="absolute -bottom-24 -right-24 w-60 h-60 bg-zinc-800 rounded-lg " />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-zinc-800 rounded-lg " />
 
         {/* Tech Corner Crosshairs */}
-        <div className="absolute top-3 left-3 text-[9px] font-mono text-cyan-400/40">⌜ 001_RADAR</div>
-        <div className="absolute top-3 right-3 text-[9px] font-mono text-rose-400/40">GENRE_SYNC ⌝</div>
+        <div className="absolute top-3 left-3 text-[9px] font-mono text-zinc-400/40">⌜ 001_RADAR</div>
+        <div className="absolute top-3 right-3 text-[9px] font-mono text-zinc-400/40">GENRE_SYNC ⌝</div>
         <div className="absolute bottom-3 left-3 text-[9px] font-mono text-slate-500/40">⌞ AFFINITY_v2</div>
-        <div className="absolute bottom-3 right-3 text-[9px] font-mono text-indigo-400/40">8_AXIS ⌟</div>
+        <div className="absolute bottom-3 right-3 text-[9px] font-mono text-zinc-400/40">8_AXIS ⌟</div>
       </div>
 
       {/* Cyber HUD Header */}
       <div className="flex items-center justify-between w-full relative z-10 mb-2">
         <div className="flex items-center gap-2.5">
           <div className="relative flex items-center justify-center">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_#06B6D4]" />
-            <span className="absolute w-4 h-4 rounded-full border border-cyan-400/40 animate-ping" />
+            <span className="w-2.5 h-2.5 rounded-lg bg-zinc-800  " />
+            <span className="absolute w-4 h-4 rounded-lg border border-zinc-800 " />
           </div>
           <div>
-            <h3 className="text-xs sm:text-sm font-display font-extrabold text-white tracking-wider uppercase flex items-center gap-1.5">
+            <h3 className="text-xs sm:text-sm font-sans font-extrabold text-zinc-100 tracking-wider uppercase flex items-center gap-1.5">
               <span>Матрица предпочтений</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-800 font-mono">
                 CYBER
               </span>
             </h3>
@@ -135,8 +135,8 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08]">
-          <Activity className="w-3 h-3 text-cyan-400 animate-pulse" />
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 border border-zinc-800">
+          <Activity className="w-3 h-3 text-zinc-400 " />
           <span className="text-[10px] font-mono font-medium text-slate-300">
             {count}-Axis Matrix
           </span>
@@ -149,62 +149,14 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
           viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
           className="w-full h-full overflow-visible"
         >
-          <defs>
-            {/* Multi-stop Neon Linear Gradient */}
-            <linearGradient id="cyberRadarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.4" />
-              <stop offset="50%" stopColor="#6366F1" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.45" />
-            </linearGradient>
-
-            {/* Neon Border Gradient */}
-            <linearGradient id="cyberStrokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#22D3EE" />
-              <stop offset="50%" stopColor="#818CF8" />
-              <stop offset="100%" stopColor="#FB7185" />
-            </linearGradient>
-
-            {/* Radial Radar Core Glow */}
-            <radialGradient id="cyberRadarCenterGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.25" />
-              <stop offset="40%" stopColor="#6366F1" stopOpacity="0.12" />
-              <stop offset="85%" stopColor="#0E1017" stopOpacity="0" />
-            </radialGradient>
-
-            {/* Subtle Scanning Cone Gradient */}
-            <radialGradient id="radarSweepGrad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.3" />
-              <stop offset="70%" stopColor="#06B6D4" stopOpacity="0.05" />
-              <stop offset="100%" stopColor="#06B6D4" stopOpacity="0" />
-            </radialGradient>
-
-            {/* High-glow Neon Filter for Polygon */}
-            <filter id="neonRadarGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1" />
-              <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur2" />
-              <feMerge>
-                <feMergeNode in="blur2" />
-                <feMergeNode in="blur1" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-
-            {/* Vertex Point Glow Filter */}
-            <filter id="vertexPointGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="glow" />
-              <feMerge>
-                <feMergeNode in="glow" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
+          
 
           {/* Central Radial Atmosphere */}
           <circle
             cx={center}
             cy={center}
             r={radius}
-            fill="url(#cyberRadarCenterGlow)"
+            fill="none"
             className="pointer-events-none"
           />
 
@@ -220,7 +172,7 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
                 y1={center}
                 x2={center}
                 y2={center - radius}
-                stroke="url(#cyberStrokeGrad)"
+                stroke="#52525b"
                 strokeWidth="1.5"
                 strokeOpacity="0.35"
                 strokeDasharray="4 2"
@@ -229,7 +181,7 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
                 cx={center}
                 cy={center - radius * 0.7}
                 r={2}
-                fill="#06B6D4"
+                fill="#a1a1aa"
                 opacity={0.6}
               />
             </motion.g>
@@ -305,10 +257,10 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
           <motion.polygon
             points={polygonPointsString}
             fill="none"
-            stroke="url(#cyberStrokeGrad)"
+            stroke="#52525b"
             strokeWidth="6"
             strokeOpacity="0.3"
-            filter="url(#neonRadarGlow)"
+            
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -318,8 +270,8 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
           {/* Primary Data Area Polygon */}
           <motion.polygon
             points={polygonPointsString}
-            fill="url(#cyberRadarGrad)"
-            stroke="url(#cyberStrokeGrad)"
+            fill="#27272a"
+            stroke="#52525b"
             strokeWidth="2.2"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -337,7 +289,7 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
               y1={center}
               x2={activePoint.x}
               y2={activePoint.y}
-              stroke="#F43F5E"
+              stroke="#e4e4e7"
               strokeWidth="2"
               strokeDasharray="3 3"
               className="pointer-events-none"
@@ -349,8 +301,8 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
             const isHovered = hoveredIndex === i;
             // Distinct neon dot accents
             const isHigh = p.value >= 80;
-            const dotColor = isHigh ? '#F43F5E' : '#06B6D4';
-            const ringColor = isHigh ? '#FB7185' : '#38BDF8';
+            const dotColor = '#a1a1aa';
+            const ringColor = '#71717a';
 
             return (
               <g
@@ -369,7 +321,7 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
                     cy={p.y}
                     r={8}
                     fill="none"
-                    stroke={ringColor}
+                    stroke='#52525b'
                     strokeWidth="1.5"
                     initial={{ scale: 0.8, opacity: 0.8 }}
                     animate={{ scale: [1, 1.7, 1], opacity: [0.9, 0.2, 0.9] }}
@@ -382,10 +334,10 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
                   cx={p.x}
                   cy={p.y}
                   r={isHovered ? 5.5 : 4}
-                  fill={isHovered ? '#FFFFFF' : dotColor}
-                  stroke={isHovered ? dotColor : '#090B10'}
+                  fill={isHovered ? '#f4f4f5' : '#a1a1aa'}
+                  stroke={'#27272a'}
                   strokeWidth={2}
-                  filter={isHovered ? 'url(#vertexPointGlow)' : undefined}
+                  
                   whileHover={{ scale: 1.4 }}
                   transition={SPRINGS.snappy}
                 />
@@ -415,14 +367,14 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
                   y={genreY}
                   textAnchor={p.textAnchor}
                   dominantBaseline="middle"
-                  className={`text-[11px] font-display font-bold transition-all duration-200 ${
+                  className={`text-[11px] font-sans font-bold transition-all duration-200 ${
                     isHovered
                       ? 'fill-cyan-300 font-extrabold text-[12px]'
                       : isTop
                       ? 'fill-white font-extrabold'
                       : 'fill-slate-300'
                   }`}
-                  filter={isHovered ? 'drop-shadow(0 0 6px rgba(6,182,212,0.8))' : undefined}
+                  filter={isHovered ? '' : undefined}
                 >
                   {p.genre}
                 </text>
@@ -456,14 +408,14 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 4 }}
               transition={{ duration: 0.18 }}
-              className="absolute pointer-events-none z-20 flex flex-col items-center px-3 py-1.5 rounded-xl bg-[#0F131D]/90 border border-cyan-500/40 backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+              className="absolute pointer-events-none z-20 flex flex-col items-center px-3 py-1.5 rounded-lg bg-[#0F131D]/90 border border-zinc-800  "
             >
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                <span className="text-[11px] font-display font-extrabold text-white">
+                <span className="w-1.5 h-1.5 rounded-lg bg-zinc-800 " />
+                <span className="text-[11px] font-sans font-extrabold text-zinc-100">
                   {activePoint.genre}
                 </span>
-                <span className="text-[11px] font-mono font-bold text-cyan-300">
+                <span className="text-[11px] font-mono font-bold text-zinc-300">
                   [{activePoint.value}%]
                 </span>
               </div>
@@ -480,32 +432,32 @@ export const GenreRadarChart: React.FC<GenreRadarProps> = ({
       </div>
 
       {/* Cyber Footer Status Matrix Bar */}
-      <div className="w-full grid grid-cols-2 gap-3 pt-3 mt-1 border-t border-white/[0.07] relative z-10">
+      <div className="w-full grid grid-cols-2 gap-3 pt-3 mt-1 border-t border-zinc-800 relative z-10">
         {/* Dominant Genre Pill */}
-        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-          <div className="w-7 h-7 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center flex-shrink-0">
-            <Zap className="w-3.5 h-3.5 text-rose-400" />
+        <div className="flex items-center gap-2.5 p-2 rounded-lg bg-zinc-800 border border-zinc-800">
+          <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-800 flex items-center justify-center flex-shrink-0">
+            <Zap className="w-3.5 h-3.5 text-zinc-400" />
           </div>
           <div className="min-w-0">
             <div className="text-[9px] font-mono uppercase text-slate-400 tracking-wider">
               Фаворит
             </div>
-            <div className="text-xs font-display font-bold text-white truncate">
+            <div className="text-xs font-sans font-bold text-zinc-100 truncate">
               {topGenre ? `${topGenre.genre} (${topGenre.value}%)` : '—'}
             </div>
           </div>
         </div>
 
         {/* Avg Affinity Pill */}
-        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-          <div className="w-7 h-7 rounded-lg bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+        <div className="flex items-center gap-2.5 p-2 rounded-lg bg-zinc-800 border border-zinc-800">
+          <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-800 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
           </div>
           <div className="min-w-0">
             <div className="text-[9px] font-mono uppercase text-slate-400 tracking-wider">
               Аффинити
             </div>
-            <div className="text-xs font-display font-bold text-cyan-300 truncate">
+            <div className="text-xs font-sans font-bold text-zinc-300 truncate">
               {avgAffinity}% индекс
             </div>
           </div>

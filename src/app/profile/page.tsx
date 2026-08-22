@@ -77,16 +77,12 @@ export default function ProfilePage() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-16">
       {/* 1. Holographic Otaku Gamer Passport */}
-      <div className="relative rounded-3xl bg-[#090C15]/90 border border-white/[0.1] shadow-2xl p-6 sm:p-10 overflow-hidden backdrop-blur-2xl group">
-        {/* Ambient Corner Glow & Mesh */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-indigo-500/15 via-cyan-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
-
+      <div className="relative rounded-lg bg-zinc-900 border border-zinc-800 p-6 sm:p-10 overflow-hidden group">
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           {/* Avatar & User Details */}
           <div className="flex items-center gap-6">
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden p-[2px] bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 shadow-xl shadow-indigo-500/25 shrink-0">
-              <div className="relative w-full h-full rounded-[22px] overflow-hidden bg-[#070910]">
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-lg overflow-hidden border-2 border-zinc-700 shrink-0">
+              <div className="relative w-full h-full bg-[#070910]">
                 {user ? (
                   <Image src={user.avatar} alt={user.name} fill className="object-cover" />
                 ) : (
@@ -102,26 +98,26 @@ export default function ProfilePage() {
                 <h1 className="text-2xl sm:text-3xl font-black font-display text-white tracking-tight">
                   {user ? user.name : 'Гость Отаку'}
                 </h1>
-                <span className="px-3 py-1 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-mono font-bold tracking-wider">
+                <span className="px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono font-bold tracking-wider">
                   {rank}
                 </span>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-mono text-zinc-400">
-                <span>{user ? user.email : 'guest@kuronami.nexus'}</span>
+                <span>@{user ? user.username : 'guest'}</span>
                 <span>•</span>
-                <span className="text-cyan-400 font-bold">Уровень {level}</span>
+                <span className="text-zinc-100 font-bold">Уровень {level}</span>
               </div>
 
               {/* XP Progress Bar */}
               <div className="space-y-1 pt-1 max-w-xs">
                 <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
                   <span>XP Прогресс</span>
-                  <span className="text-indigo-300 font-bold">{xpProgress}% до след. уровня</span>
+                  <span className="text-zinc-100 font-bold">{xpProgress}% до след. уровня</span>
                 </div>
-                <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-400 rounded-full transition-all duration-500"
+                    className="h-full bg-zinc-400 rounded-full transition-all duration-500"
                     style={{ width: `${xpProgress}%` }}
                   />
                 </div>
@@ -133,17 +129,17 @@ export default function ProfilePage() {
 
           {/* Stats Metrics & Actions */}
           <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-            <div className="grid grid-cols-3 gap-6 sm:gap-8 border-t md:border-t-0 md:border-l border-white/[0.08] pt-4 md:pt-0 md:pl-8 text-center w-full sm:w-auto">
+            <div className="grid grid-cols-3 gap-6 sm:gap-8 border-t md:border-t-0 md:border-l border-zinc-800 pt-4 md:pt-0 md:pl-8 text-center w-full sm:w-auto">
               <div className="space-y-0.5">
-                <div className="text-xl sm:text-2xl font-black font-mono text-cyan-400">{totalHours}ч</div>
+                <div className="text-xl sm:text-2xl font-black font-mono text-zinc-100">{totalHours}ч</div>
                 <div className="text-[11px] text-zinc-400 font-sans">Просмотрено</div>
               </div>
               <div className="space-y-0.5">
-                <div className="text-xl sm:text-2xl font-black font-mono text-indigo-400">{history.length}</div>
+                <div className="text-xl sm:text-2xl font-black font-mono text-zinc-100">{history.length}</div>
                 <div className="text-[11px] text-zinc-400 font-sans">Серий начато</div>
               </div>
               <div className="space-y-0.5">
-                <div className="text-xl sm:text-2xl font-black font-mono text-emerald-400">{completedEpisodes}</div>
+                <div className="text-xl sm:text-2xl font-black font-mono text-zinc-100">{completedEpisodes}</div>
                 <div className="text-[11px] text-zinc-400 font-sans">Завершено</div>
               </div>
             </div>
@@ -153,7 +149,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(!isEditing)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 text-xs font-semibold border border-white/[0.08] transition-all cursor-pointer shadow-sm hover:scale-105"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition-all cursor-pointer shadow-sm hover:scale-105"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>Редактировать</span>
@@ -162,7 +158,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer hover:scale-105"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-zinc-900 hover:bg-zinc-200 text-xs font-semibold transition-all cursor-pointer hover:scale-105"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Войти в аккаунт</span>
@@ -174,7 +170,7 @@ export default function ProfilePage() {
 
         {/* Profile Edit Form Drawer */}
         {isEditing && (
-          <form onSubmit={handleSaveProfile} className="mt-8 pt-8 border-t border-white/[0.08] space-y-5 animate-in fade-in">
+          <form onSubmit={handleSaveProfile} className="mt-8 pt-8 border-t border-zinc-800 space-y-5 animate-in fade-in">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Имя / Никнейм</label>
@@ -182,7 +178,7 @@ export default function ProfilePage() {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-[#06080F] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500/60"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-xs text-white focus:outline-none focus:border-zinc-600"
                 />
               </div>
               <div className="space-y-1.5">
@@ -192,7 +188,7 @@ export default function ProfilePage() {
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
                   placeholder="Ваш любимый жанр или тайтл..."
-                  className="w-full bg-[#06080F] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500/60"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-xs text-white focus:outline-none focus:border-zinc-600"
                 />
               </div>
             </div>
@@ -205,10 +201,10 @@ export default function ProfilePage() {
                     key={idx}
                     type="button"
                     onClick={() => setEditAvatar(av)}
-                    className={`relative w-14 h-14 rounded-2xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
+                    className={`relative w-14 h-14 rounded-lg overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
                       editAvatar === av
-                        ? 'border-indigo-500 scale-105 shadow-lg shadow-indigo-500/40 ring-2 ring-indigo-500/20'
-                        : 'border-white/10 opacity-60 hover:opacity-100'
+                        ? 'border-zinc-400 scale-105'
+                        : 'border-zinc-700 opacity-60 hover:opacity-100'
                     }`}
                   >
                     <Image src={av} alt="Avatar" fill className="object-cover" />
@@ -220,14 +216,14 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
+                className="px-5 py-2 rounded-lg bg-white text-zinc-900 hover:bg-zinc-200 text-xs font-semibold transition-all cursor-pointer"
               >
                 Сохранить изменения
               </button>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-4 py-2 rounded-xl bg-white/[0.06] text-zinc-400 hover:text-white text-xs transition-all cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white text-xs transition-all cursor-pointer"
               >
                 Отмена
               </button>
@@ -243,17 +239,17 @@ export default function ProfilePage() {
           return (
             <div
               key={ach.id}
-              className={`p-4 rounded-2xl border transition-all flex items-center gap-3.5 ${
+              className={`p-4 rounded-lg border transition-all flex items-center gap-3.5 ${
                 ach.unlocked
-                  ? 'bg-[#090C15]/90 border-indigo-500/30 shadow-lg shadow-indigo-500/10'
-                  : 'bg-[#06080F]/60 border-white/[0.04] opacity-50'
+                  ? 'bg-zinc-900 border-zinc-700 shadow-sm'
+                  : 'bg-zinc-950 border-zinc-800 opacity-40'
               }`}
             >
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                   ach.unlocked
-                    ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/40'
-                    : 'bg-white/5 text-zinc-600'
+                    ? 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                    : 'bg-zinc-900 text-zinc-300'
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -273,16 +269,16 @@ export default function ProfilePage() {
         <GenreRadarChart className="h-full" />
 
         {/* History / Bookmarks Panel */}
-        <div className="lg:col-span-2 p-6 sm:p-8 rounded-3xl bg-[#090C15]/90 border border-white/[0.08] shadow-2xl backdrop-blur-2xl space-y-5">
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
+        <div className="lg:col-span-2 p-6 sm:p-8 rounded-lg bg-zinc-900 border border-zinc-800 space-y-5">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab('history')}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${
                   activeTab === 'history'
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                    ? 'bg-zinc-800 text-white'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
                 }`}
               >
                 <Clock className="w-3.5 h-3.5" />
@@ -291,10 +287,10 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('bookmarks')}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${
                   activeTab === 'bookmarks'
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                    ? 'bg-zinc-800 text-white'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
                 }`}
               >
                 <Bookmark className="w-3.5 h-3.5" />
@@ -310,7 +306,7 @@ export default function ProfilePage() {
                 <p>История просмотров пуста</p>
                 <Link
                   href="/catalog"
-                  className="inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold shadow-sm"
+                  className="inline-block px-4 py-2 rounded-lg bg-zinc-800 text-white text-xs font-semibold shadow-sm hover:bg-zinc-700"
                 >
                   Перейти в каталог →
                 </Link>
@@ -321,14 +317,14 @@ export default function ProfilePage() {
                   <Link
                     key={`${h.animeId}-${h.episodeNumber}`}
                     href={`/watch/${h.animeId}/${h.episodeNumber}`}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-[#06080F] border border-white/[0.05] hover:border-indigo-500/40 hover:bg-[#0E1220] transition-all group"
+                    className="flex items-center justify-between p-3.5 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition-all group"
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-mono font-bold text-xs">
+                      <div className="w-10 h-10 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 flex items-center justify-center font-mono font-bold text-xs">
                         #{h.episodeNumber}
                       </div>
                       <div className="space-y-0.5">
-                        <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">
+                        <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover:text-white transition-colors">
                           Аниме тайтл #{h.animeId}
                         </h4>
                         <span className="text-[10px] text-zinc-400 font-mono">
@@ -339,11 +335,11 @@ export default function ProfilePage() {
 
                     <div className="flex items-center gap-3">
                       {h.isCompleted && (
-                        <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10px] font-mono border border-emerald-500/30">
+                        <span className="px-2.5 py-0.5 rounded-lg bg-zinc-800 text-zinc-300 text-[10px] font-mono border border-zinc-700">
                           Завершено
                         </span>
                       )}
-                      <Play className="w-4 h-4 text-zinc-500 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+                      <Play className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 group-hover:translate-x-1 transition-all" />
                     </div>
                   </Link>
                 ))}
@@ -355,7 +351,7 @@ export default function ProfilePage() {
               <p>У вас пока нет сохраненных закладок</p>
               <Link
                 href="/catalog"
-                className="inline-block px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold shadow-sm"
+                className="inline-block px-4 py-2 rounded-lg bg-zinc-800 text-white text-xs font-semibold shadow-sm hover:bg-zinc-700"
               >
                 Выбрать в каталоге →
               </Link>
@@ -366,13 +362,13 @@ export default function ProfilePage() {
                 <Link
                   key={b.animeId}
                   href={`/anime/${b.animeId}`}
-                  className="p-3.5 rounded-2xl bg-[#06080F] border border-white/[0.05] hover:border-indigo-500/40 hover:bg-[#0E1220] transition-all flex items-center gap-3.5 group"
+                  className="p-3.5 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition-all flex items-center gap-3.5 group"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                  <div className="w-11 h-11 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 flex items-center justify-center font-mono font-bold text-xs shrink-0">
                     #{b.animeId}
                   </div>
                   <div className="min-w-0 flex-1 space-y-0.5">
-                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-indigo-300 transition-colors truncate">
+                    <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover:text-white transition-colors truncate">
                       Аниме тайтл #{b.animeId}
                     </h4>
                     <span className="text-[10px] text-zinc-400 font-mono block">

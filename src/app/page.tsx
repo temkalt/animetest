@@ -6,6 +6,7 @@ import { RankedTopList } from '@/components/home/RankedTopList';
 import { OngoingSchedule } from '@/components/home/OngoingSchedule';
 import { CuratedSpotlight } from '@/components/home/CuratedSpotlight';
 import { AnimeCard } from '@/components/anime/AnimeCard';
+import { RecentComments } from '@/components/home/RecentComments';
 import { 
   Flame, 
   Trophy, 
@@ -76,22 +77,14 @@ export default async function HomePage() {
 
       {/* 5. Popular Seasonal Ongoings Grid */}
       <section aria-label="Популярные онгоинги сезона" className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/[0.06]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.25)]">
-              <Flame className="w-4 h-4" />
-            </div>
+            <Flame className="w-5 h-5 text-zinc-400" />
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-bold font-display tracking-tight text-white">
-                  Популярные онгоинги сезона
-                </h2>
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-mono font-bold">
-                  <Radio className="w-3 h-3 animate-pulse text-rose-400" />
-                  В ЭФИРЕ
-                </span>
-              </div>
-              <p className="text-xs text-zinc-400 font-sans">
+              <h2 className="text-xl sm:text-2xl font-bold text-zinc-100">
+                Популярные онгоинги сезона
+              </h2>
+              <p className="text-xs text-zinc-400">
                 Свежие серии текущего сезона, выходящие прямо сейчас
               </p>
             </div>
@@ -99,7 +92,7 @@ export default async function HomePage() {
 
           <Link
             href="/catalog?status=RELEASING"
-            className="flex items-center gap-1.5 text-xs font-mono text-indigo-400 hover:text-indigo-300 transition-colors group self-start sm:self-auto bg-white/[0.03] hover:bg-white/[0.08] px-3 py-1.5 rounded-xl border border-white/[0.06]"
+            className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-zinc-100 transition-colors group self-start sm:self-auto px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-zinc-800/50"
           >
             <span>Все онгоинги</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -120,21 +113,14 @@ export default async function HomePage() {
 
       {/* 7. Cult Masterpieces of All Time Grid */}
       <section aria-label="Кураторские шедевры всех времён" className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/[0.06]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
-              <Star className="w-4 h-4 fill-amber-400" />
-            </div>
+            <Star className="w-5 h-5 text-zinc-400" />
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-bold font-display tracking-tight text-white">
-                  Культовые шедевры всех времён
-                </h2>
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold">
-                  SCORE 9.0+
-                </span>
-              </div>
-              <p className="text-xs text-zinc-400 font-sans">
+              <h2 className="text-xl sm:text-2xl font-bold text-zinc-100">
+                Культовые шедевры всех времён
+              </h2>
+              <p className="text-xs text-zinc-400">
                 Легендарные законченные сериалы и франшизы с наивысшим признанием
               </p>
             </div>
@@ -142,7 +128,7 @@ export default async function HomePage() {
 
           <Link
             href="/catalog?sort=SCORE_DESC"
-            className="flex items-center gap-1.5 text-xs font-mono text-indigo-400 hover:text-indigo-300 transition-colors group self-start sm:self-auto bg-white/[0.03] hover:bg-white/[0.08] px-3 py-1.5 rounded-xl border border-white/[0.06]"
+            className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-zinc-100 transition-colors group self-start sm:self-auto px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-zinc-800/50"
           >
             <span>В каталог шедевров</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -154,6 +140,11 @@ export default async function HomePage() {
             <AnimeCard key={anime.id} anime={anime} />
           ))}
         </div>
+      </section>
+
+      {/* 8. Recent Community Comments */}
+      <section aria-label="Последние комментарии сообщества">
+        <RecentComments />
       </section>
     </div>
   );
