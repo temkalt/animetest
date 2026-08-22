@@ -52,6 +52,7 @@ query GetPopularAnime(
         color
       }
       bannerImage
+      description(asHtml: false)
       genres
       averageScore
       popularity

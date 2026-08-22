@@ -13,7 +13,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   X,
-  SlidersHorizontal,
   ArrowUpDown,
   Sparkles,
   Flame,
@@ -23,19 +22,13 @@ import {
   Tv,
   RotateCcw,
   Check,
-  Compass,
   Grid,
   LayoutGrid,
   ListFilter,
   Play,
   ArrowRight,
-  Zap,
-  Sun,
-  Snowflake,
-  Flower2,
-  Leaf,
-  Layers,
   ChevronDown,
+  Layers,
 } from 'lucide-react';
 import { UnifiedAnime } from '@/types';
 import { AnimeCard } from '@/components/anime/AnimeCard';
@@ -71,6 +64,8 @@ interface CatalogClientProps {
   };
 }
 
+type DropdownType = 'genre' | 'status' | 'format' | 'season' | 'year' | 'sort' | null;
+
 export const CatalogClient: React.FC<CatalogClientProps> = ({
   initialAnimeList,
   pageInfo,
@@ -85,29 +80,30 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
   const [searchInput, setSearchInput] = useState(activeParams.search || '');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter drawer & dropdown states
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
-  const [isGenreExpandOpen, setIsGenreExpandOpen] = useState(false);
+  // Active open dropdown
+  const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
+  const dropdownContainerRef = useRef<HTMLDivElement>(null);
+
+  // Genre filter search query inside genre popover
   const [genreSearch, setGenreSearch] = useState('');
+
+  // View Mode
   const [viewMode, setViewMode] = useState<'grid' | 'compact' | 'list'>('grid');
   const [jumpPageInput, setJumpPageInput] = useState('');
-
-  const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync search input when activeParams.search changes externally
   useEffect(() => {
     setSearchInput(activeParams.search || '');
   }, [activeParams.search]);
 
-  // Close dropdown on outside click
+  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        sortDropdownRef.current &&
-        !sortDropdownRef.current.contains(e.target as Node)
+        dropdownContainerRef.current &&
+        !dropdownContainerRef.current.contains(e.target as Node)
       ) {
-        setIsSortDropdownOpen(false);
+        setOpenDropdown(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -157,7 +153,19 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
   };
 
   const handleApplyPreset = (preset: CatalogPreset) => {
-    // Replace all existing filter params with the preset's params
+    const isCurrent =
+      (!preset.params.genre || activeParams.genre === preset.params.genre) &&
+      (!preset.params.status || activeParams.status === preset.params.status) &&
+      (!preset.params.format || activeParams.format === preset.params.format) &&
+      (!preset.params.year || activeParams.year === preset.params.year) &&
+      (!preset.params.sort || activeParams.sort === preset.params.sort);
+
+    if (isCurrent && hasActiveFilters) {
+      // Toggle off -> reset
+      handleResetAll();
+      return;
+    }
+
     const current = new URLSearchParams();
     Object.entries(preset.params).forEach(([k, v]) => {
       if (v) current.set(k, v);
@@ -170,6 +178,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
   const handleResetAll = () => {
     setSearchInput('');
+    setOpenDropdown(null);
     startTransition(() => {
       router.push(pathname, { scroll: false });
     });
@@ -181,7 +190,12 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
     if (!isNaN(p) && p >= 1 && p <= totalPages) {
       updateFilters({ page: p });
       setJumpPageInput('');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const toggleDropdown = (name: DropdownType) => {
+    setOpenDropdown((prev) => (prev === name ? null : name));
   };
 
   const currentPage = activeParams.page || 1;
@@ -217,7 +231,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
     activeParams.sort && activeParams.sort !== 'POPULARITY_DESC' ? activeParams.sort : undefined,
   ].filter(Boolean).length;
 
-  // Filter genres in expandable dialog
+  // Filter genres in dropdown search
   const filteredGenres = GENRE_ITEMS.filter(
     (g) =>
       g.value !== '' &&
@@ -225,241 +239,153 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
         (g.en && g.en.toLowerCase().includes(genreSearch.toLowerCase())))
   );
 
-  // Top quick genre chips (first 8 prominent genres)
-  const quickGenres = GENRE_ITEMS.filter((g) =>
-    ['Action', 'Fantasy', 'Romance', 'Comedy', 'Drama', 'Sci-Fi', 'Horror', 'Mystery'].includes(
-      g.value
-    )
-  );
-
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Top Header & Search Hero */}
-      <div className="relative rounded-lg bg-zinc-950 border border-zinc-800 p-6 sm:p-8 md:p-10 shadow-sm overflow-hidden">
-        {/* Glow ambient meshes */}
-        
-        
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          {/* Header Title & Badges */}
-          <div className="space-y-2.5 max-w-xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono font-semibold backdrop-blur-md">
-                <Sparkles className="w-3.5 h-3.5 text-white " />
-                <span>Каталог 2026</span>
-              </span>
-              <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 text-zinc-300 border border-cyan-500/20 text-xs font-mono">
-                Ultra HD 1080p
-              </span>
+    <div className="space-y-6 sm:space-y-8" ref={dropdownContainerRef}>
+      {/* 1. Header & Presets Bar */}
+      <div className="space-y-4">
+        {/* Title Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-2 border-b border-zinc-800/80">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
+                Каталог аниме
+              </h1>
               {isPending && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-mono ">
-                  <RotateCcw className="w-3 h-3 animate-spin" />
-                  <span>Обновление...</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700">
+                  <RotateCcw className="w-3 h-3 animate-spin text-zinc-400" />
+                  <span>Поиск...</span>
                 </span>
               )}
             </div>
-
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-sans tracking-tight text-white">
-              Вселенная <span className="text-white">Аниме</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-sans">
-              Исследуйте тысячи тайтлов с мгновенной фильтрацией по жанрам, сезонам, форматам и студиям.
+            <p className="text-xs sm:text-sm text-zinc-400">
+              Поиск и удобная фильтрация по жанрам, сезонам, форматам и годам
             </p>
           </div>
 
-          {/* Search Form with Modern Clear Button */}
-          <div className="w-full lg:max-w-md">
-            <form onSubmit={handleSearchSubmit} className="relative group">
-              <div className="relative flex items-center bg-zinc-950 hover:bg-zinc-900 focus-within:bg-zinc-900 border border-zinc-800 focus-within:border-zinc-700 shadow-sm rounded-lg transition-all duration-300 p-1.5">
-                <Search className="w-4 h-4 text-zinc-400 ml-3 shrink-0 group-focus-within:text-white transition-colors" />
-
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Поиск по названию, студии..."
-                  className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none font-sans"
-                />
-
-                {/* Instant Clear Button */}
-                {searchInput.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-all mr-1 cursor-pointer"
-                    title="Очистить поиск"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-
-                {/* Submit Search Button */}
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 text-white text-xs sm:text-sm font-semibold shadow-sm text-zinc-900 transition-all cursor-pointer shrink-0 flex items-center gap-1.5"
-                >
-                  <span>Найти</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </form>
-
-            {/* Search shortcuts or popular suggestions */}
-            <div className="flex items-center gap-2 mt-2.5 text-[11px] text-zinc-500 overflow-x-auto no-scrollbar py-0.5">
-              <span className="font-mono shrink-0">Часто ищут:</span>
-              {['Solo Leveling', 'Клинок', 'Магическая битва', 'Берсерк', 'Наруто'].map((term) => (
-                <button
-                  key={term}
-                  type="button"
-                  onClick={() => {
-                    setSearchInput(term);
-                    updateFilters({ search: term, page: 1 });
-                  }}
-                  className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-white/[0.08] hover:text-zinc-300 text-zinc-400 transition-colors shrink-0 font-sans cursor-pointer"
-                >
-                  {term}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+            <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300">
+              {totalItems.toLocaleString('ru-RU')} тайтлов
+            </span>
           </div>
         </div>
 
-        {/* Quick Presets Bar */}
-        <div className="mt-6 pt-6 border-t border-white/[0.06] space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-amber-400" />
-              <span>Быстрые подборки 2026:</span>
-            </span>
-          </div>
+        {/* Quick Presets (Naturally wrapping flex pills - NO horizontal scrollbars) */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
+          <span className="text-xs font-mono text-zinc-500 mr-1 hidden sm:inline">
+            Подборки:
+          </span>
+          {CATALOG_PRESETS.map((preset) => {
+            const isMatch =
+              (!preset.params.genre || activeParams.genre === preset.params.genre) &&
+              (!preset.params.status || activeParams.status === preset.params.status) &&
+              (!preset.params.format || activeParams.format === preset.params.format) &&
+              (!preset.params.year || activeParams.year === preset.params.year) &&
+              (!preset.params.sort || activeParams.sort === preset.params.sort);
 
-          <div className="flex items-center gap-2.5 overflow-x-auto pb-2 no-scrollbar">
-            {CATALOG_PRESETS.map((preset) => {
-              const isMatch =
-                (!preset.params.genre || activeParams.genre === preset.params.genre) &&
-                (!preset.params.status || activeParams.status === preset.params.status) &&
-                (!preset.params.format || activeParams.format === preset.params.format) &&
-                (!preset.params.year || activeParams.year === preset.params.year) &&
-                (!preset.params.sort || activeParams.sort === preset.params.sort);
+            const isActive = isMatch && hasActiveFilters;
 
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => handleApplyPreset(preset)}
-                  className={`group inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
-                    isMatch && hasActiveFilters
-                      ? 'bg-gradient-to-r from-indigo-600/30 to-violet-600/30 text-white border-indigo-500/60 shadow-lg shadow-indigo-500/20'
-                      : `bg-gradient-to-r ${preset.color} bg-opacity-10 backdrop-blur-sm hover:scale-[1.02]`
-                  }`}
-                >
-                  <span className="text-sm">{preset.icon}</span>
-                  <span>{preset.label}</span>
-                  {preset.badge && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-black/40 border border-white/10 text-white">
-                      {preset.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => handleApplyPreset(preset)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer border ${
+                  isActive
+                    ? 'bg-zinc-100 text-zinc-950 font-semibold border-white shadow-sm'
+                    : 'bg-zinc-900/90 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100 hover:border-zinc-700'
+                }`}
+              >
+                <span>{preset.icon}</span>
+                <span>{preset.label}</span>
+                {preset.badge && (
+                  <span
+                    className={`px-1 py-0.2 text-[9px] font-mono font-bold rounded ${
+                      isActive
+                        ? 'bg-zinc-900 text-zinc-100'
+                        : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                    }`}
+                  >
+                    {preset.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Filter Toolbar Container */}
-      <div className="p-4 sm:p-5 rounded-lg bg-zinc-950 border border-zinc-800 shadow-sm space-y-4 backdrop-blur-xl">
-        {/* Row 1: Primary Controls (Genre Chips + Sort + Expand) */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Quick Genre Chips Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-1">
-            <button
-              type="button"
-              onClick={() => updateFilters({ genre: undefined, page: 1 })}
-              className={`px-3.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
-                !activeParams.genre
-                  ? 'bg-zinc-800 text-white border-zinc-700 shadow-sm'
-                  : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              Все жанры
-            </button>
-
-            {quickGenres.map((g) => {
-              const isSelected = activeParams.genre === g.value;
-              return (
-                <button
-                  key={g.value}
-                  type="button"
-                  onClick={() =>
-                    updateFilters({
-                      genre: isSelected ? undefined : g.value,
-                      page: 1,
-                    })
-                  }
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
-                    isSelected
-                      ? 'bg-zinc-800 text-white border-zinc-700 shadow-sm'
-                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-white'
-                  }`}
-                >
-                  <span>{g.icon}</span>
-                  <span>{g.label}</span>
-                </button>
-              );
-            })}
-
-            {/* Expand All Genres Button */}
-            <button
-              type="button"
-              onClick={() => setIsGenreExpandOpen(!isGenreExpandOpen)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer border ${
-                isGenreExpandOpen || (activeParams.genre && !quickGenres.some((q) => q.value === activeParams.genre))
-                  ? 'bg-zinc-800 text-zinc-300 border-zinc-700'
-                  : 'bg-[#0E121E] text-zinc-400 border-white/[0.08] hover:text-white'
-              }`}
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span>{activeGenreItem && !quickGenres.some((q) => q.value === activeParams.genre) ? activeGenreItem.label : 'Все 19+ жанров'}</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                  isGenreExpandOpen ? 'rotate-180' : ''
-                }`}
+      {/* 2. Unified Clean Filter Toolbar */}
+      <div className="p-3 sm:p-4 rounded-xl bg-zinc-900/70 border border-zinc-800 shadow-sm space-y-3 backdrop-blur-md">
+        {/* Row 1: Search + Sort Dropdown + View Toggle */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Search Input */}
+          <form onSubmit={handleSearchSubmit} className="flex-1 relative">
+            <div className="relative flex items-center bg-zinc-950 border border-zinc-800 focus-within:border-zinc-700 rounded-lg transition-colors">
+              <Search className="w-4 h-4 text-zinc-500 ml-3 shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Поиск по названию аниме..."
+                className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
               />
-            </button>
-          </div>
 
-          {/* Right: Sleek Sort Dropdown & Advanced Filters Toggle */}
-          <div className="flex items-center gap-2.5 self-end lg:self-auto shrink-0">
+              {searchInput.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="p-1.5 text-zinc-400 hover:text-zinc-100 transition-colors mr-1 cursor-pointer"
+                  title="Очистить"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              <button
+                type="submit"
+                className="px-3.5 py-1.5 mr-1 rounded-md bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+              >
+                Найти
+              </button>
+            </div>
+          </form>
+
+          {/* Sort Menu & View Switcher */}
+          <div className="flex items-center gap-2 shrink-0">
             {/* Custom Sort Dropdown */}
-            <div className="relative" ref={sortDropdownRef}>
+            <div className="relative flex-1 sm:flex-initial">
               <button
                 type="button"
-                onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0E121E] hover:bg-[#131929] border-zinc-800 hover:border-white/20 text-xs font-medium text-white transition-all cursor-pointer shadow-sm"
+                onClick={() => toggleDropdown('sort')}
+                className={`w-full inline-flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                  openDropdown === 'sort' || (activeParams.sort && activeParams.sort !== 'POPULARITY_DESC')
+                    ? 'bg-zinc-800 text-zinc-100 border-zinc-600'
+                    : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
+                }`}
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-white" />
-                <span className="text-zinc-400 font-normal">Сортировка:</span>
-                <span className="font-semibold text-white">{activeSortItem.label}</span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <span className="truncate">{activeSortItem.label}</span>
+                </div>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${
-                    isSortDropdownOpen ? 'rotate-180' : ''
+                  className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-150 ${
+                    openDropdown === 'sort' ? 'rotate-180' : ''
                   }`}
                 />
               </button>
 
               <AnimatePresence>
-                {isSortDropdownOpen && (
+                {openDropdown === 'sort' && (
                   <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    initial={{ opacity: 0, y: 4, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    exit={{ opacity: 0, y: 4, scale: 0.98 }}
                     transition={SPRINGS.snappy}
-                    className="absolute right-0 top-full mt-2 w-64 p-2 rounded-lg glass-dropdown z-50 shadow-2xl border border-white/[0.12] space-y-1"
+                    className="absolute right-0 top-full mt-1.5 w-56 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 space-y-0.5"
                   >
-                    <div className="px-2.5 py-1.5 text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
-                      Порядок отображения
+                    <div className="px-2.5 py-1 text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+                      Сортировка
                     </div>
                     {SORT_ITEMS.map((item) => {
                       const isSelected = activeSortItem.value === item.value;
@@ -469,30 +395,16 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                           type="button"
                           onClick={() => {
                             updateFilters({ sort: item.value, page: 1 });
-                            setIsSortDropdownOpen(false);
+                            setOpenDropdown(null);
                           }}
-                          className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-lg text-left transition-all cursor-pointer ${
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-left text-xs transition-colors cursor-pointer ${
                             isSelected
-                              ? 'bg-indigo-600/20 text-zinc-300 border border-indigo-500/30'
-                              : 'hover:bg-white/[0.06] text-zinc-300 hover:text-white'
+                              ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                              : 'text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100'
                           }`}
                         >
-                          <div className="pt-0.5">
-                            {item.value === 'POPULARITY_DESC' && <Flame className="w-3.5 h-3.5 text-amber-400" />}
-                            {item.value === 'SCORE_DESC' && <Star className="w-3.5 h-3.5 text-yellow-400" />}
-                            {item.value === 'TRENDING_DESC' && <Zap className="w-3.5 h-3.5 text-white" />}
-                            {item.value === 'START_DATE_DESC' && <Calendar className="w-3.5 h-3.5 text-cyan-400" />}
-                            {item.value === 'FAVOURITES_DESC' && <Star className="w-3.5 h-3.5 text-rose-400" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-semibold flex items-center justify-between">
-                              <span>{item.label}</span>
-                              {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                            </div>
-                            <p className="text-[10px] text-zinc-500 line-clamp-1">
-                              {item.description}
-                            </p>
-                          </div>
+                          <span>{item.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-zinc-100 shrink-0 ml-2" />}
                         </button>
                       );
                     })}
@@ -501,328 +413,503 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               </AnimatePresence>
             </div>
 
-            {/* Advanced Filters Drawer Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
-                isAdvancedOpen || (activeFiltersCount > 0 && !activeParams.genre)
-                  ? 'bg-indigo-600/20 text-zinc-300 border-indigo-500/40 shadow-sm'
-                  : 'bg-[#0E121E] hover:bg-[#131929] text-zinc-300 border-white/[0.1] hover:text-white'
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
-              <span>Параметры</span>
-              {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-lg bg-indigo-500 text-white text-[10px] font-mono font-bold">
-                  {activeFiltersCount}
-                </span>
-              )}
-            </button>
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-zinc-950 p-0.5 rounded-lg border border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                title="Сетка"
+                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                  viewMode === 'grid'
+                    ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <Grid className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('compact')}
+                title="Компактная сетка"
+                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                  viewMode === 'compact'
+                    ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                title="Список"
+                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                  viewMode === 'list'
+                    ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <ListFilter className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Expandable Genre Matrix */}
-        <AnimatePresence>
-          {isGenreExpandOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={SPRINGS.gentle}
-              className="overflow-hidden pt-3 border-t border-white/[0.06] space-y-3"
+        {/* Row 2: Dropdown Filter Triggers (Grid of 5 Clean Selectors, NO horizontal scrollbars) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1 border-t border-zinc-800/80">
+          {/* 1. Genre Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggleDropdown('genre')}
+              className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                openDropdown === 'genre' || activeParams.genre
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
+              }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Compass className="w-3.5 h-3.5 text-white" />
-                  <span>Полный каталог жанров ({GENRE_ITEMS.length - 1}):</span>
-                </span>
-
-                <div className="relative max-w-xs w-full">
-                  <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={genreSearch}
-                    onChange={(e) => setGenreSearch(e.target.value)}
-                    placeholder="Поиск по жанрам..."
-                    className="w-full bg-zinc-950 border-zinc-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
-                  />
-                  {genreSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setGenreSearch('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
+              <div className="flex items-center gap-1.5 truncate">
+                <span>{activeGenreItem?.icon || '🎭'}</span>
+                <span className="truncate">{activeGenreItem?.label || 'Все жанры'}</span>
               </div>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-150 ${
+                  openDropdown === 'genre' ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-56 overflow-y-auto pr-1">
-                {filteredGenres.map((g) => {
-                  const isSelected = activeParams.genre === g.value;
-                  return (
+            {/* Genre Popover */}
+            <AnimatePresence>
+              {openDropdown === 'genre' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                  transition={SPRINGS.snappy}
+                  className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 p-2.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 space-y-2"
+                >
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={genreSearch}
+                      onChange={(e) => setGenreSearch(e.target.value)}
+                      placeholder="Поиск по жанрам..."
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-md pl-8 pr-7 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+                    />
+                    {genreSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setGenreSearch('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-100"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto space-y-0.5 pr-0.5">
                     <button
-                      key={g.value}
                       type="button"
                       onClick={() => {
-                        updateFilters({
-                          genre: isSelected ? undefined : g.value,
-                          page: 1,
-                        });
-                        setIsGenreExpandOpen(false);
+                        updateFilters({ genre: undefined, page: 1 });
+                        setOpenDropdown(null);
                       }}
-                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all cursor-pointer border ${
-                        isSelected
-                          ? 'bg-zinc-800 text-white border-zinc-700 shadow-sm'
-                          : 'bg-zinc-950 hover:bg-[#111726] text-zinc-300 hover:text-white border-white/[0.06]'
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+                        !activeParams.genre
+                          ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                          : 'text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100'
                       }`}
                     >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span>{g.icon}</span>
-                        <span className="truncate">{g.label}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span>✨</span>
+                        <span>Все жанры</span>
                       </div>
-                      {isSelected && <Check className="w-3.5 h-3.5 shrink-0 text-white ml-1" />}
+                      {!activeParams.genre && <Check className="w-3.5 h-3.5 text-zinc-100" />}
                     </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        {/* Expandable Advanced Filter Panel (Status, Format, Season, Year) */}
-        <AnimatePresence>
-          {isAdvancedOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={SPRINGS.gentle}
-              className="overflow-hidden pt-4 border-t border-white/[0.06] space-y-4"
+                    {filteredGenres.map((g) => {
+                      const isSelected = activeParams.genre === g.value;
+                      return (
+                        <button
+                          key={g.value}
+                          type="button"
+                          onClick={() => {
+                            updateFilters({ genre: isSelected ? undefined : g.value, page: 1 });
+                            setOpenDropdown(null);
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                              : 'text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span>{g.icon}</span>
+                            <span className="truncate">{g.label}</span>
+                          </div>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-zinc-100 shrink-0 ml-1" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* 2. Status Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggleDropdown('status')}
+              className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                openDropdown === 'status' || activeParams.status
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
+              }`}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Status Selector */}
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block">
-                    Статус релиза
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-lg border-zinc-800">
-                    {STATUS_ITEMS.map((s) => {
-                      const isSelected = (activeParams.status || '') === s.value;
-                      return (
-                        <button
-                          key={s.value || 'all'}
-                          type="button"
-                          onClick={() => updateFilters({ status: s.value || undefined, page: 1 })}
-                          className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-zinc-800 text-white font-semibold shadow-sm'
-                              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
-                          }`}
-                        >
-                          {s.dotColor && <span className={`w-2 h-2 rounded-lg ${s.dotColor}`} />}
-                          <span className="truncate">{s.shortLabel || s.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Format Selector */}
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block">
-                    Тип / Формат
-                  </label>
-                  <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border-zinc-800 overflow-x-auto no-scrollbar">
-                    {FORMAT_ITEMS.map((f) => {
-                      const isSelected = (activeParams.format || '') === f.value;
-                      return (
-                        <button
-                          key={f.value || 'all'}
-                          type="button"
-                          onClick={() => updateFilters({ format: f.value || undefined, page: 1 })}
-                          className={`flex-1 min-w-[50px] px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center cursor-pointer ${
-                            isSelected
-                              ? 'bg-zinc-800 text-white font-semibold shadow-sm'
-                              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
-                          }`}
-                        >
-                          {f.shortLabel || f.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Season Selector */}
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block">
-                    Сезон года
-                  </label>
-                  <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border-zinc-800 overflow-x-auto no-scrollbar">
-                    {SEASON_ITEMS.map((season) => {
-                      const isSelected = (activeParams.season || '') === season.value;
-                      return (
-                        <button
-                          key={season.value || 'all'}
-                          type="button"
-                          onClick={() => updateFilters({ season: season.value || undefined, page: 1 })}
-                          className={`flex-1 min-w-[50px] flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center cursor-pointer ${
-                            isSelected
-                              ? 'bg-zinc-800 text-white font-semibold shadow-sm'
-                              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
-                          }`}
-                        >
-                          <span>{season.icon}</span>
-                          <span className="hidden sm:inline">{season.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Year Selector */}
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block">
-                    Год выпуска
-                  </label>
-                  <div className="relative">
-                    <select
-                      aria-label="Фильтр по году"
-                      value={activeParams.year || ''}
-                      onChange={(e) => updateFilters({ year: e.target.value || undefined, page: 1 })}
-                      className="w-full bg-zinc-950 text-xs text-zinc-200 border-zinc-800 rounded-lg px-3.5 py-2 appearance-none focus:outline-none focus:border-indigo-500/60 cursor-pointer"
-                    >
-                      {YEAR_ITEMS.map((y) => (
-                        <option key={y.value} value={y.value} className="bg-zinc-950 text-white">
-                          {y.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-3.5 h-3.5 text-zinc-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
-                </div>
+              <div className="flex items-center gap-1.5 truncate">
+                {activeStatusItem?.dotColor ? (
+                  <span className={`w-2 h-2 rounded-full ${activeStatusItem.dotColor}`} />
+                ) : (
+                  <span>🌐</span>
+                )}
+                <span className="truncate">{activeStatusItem?.shortLabel || 'Все статусы'}</span>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-150 ${
+                  openDropdown === 'status' ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
 
-        {/* Active Filter Badges Bar */}
+            <AnimatePresence>
+              {openDropdown === 'status' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                  transition={SPRINGS.snappy}
+                  className="absolute left-0 top-full mt-1.5 w-52 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 space-y-0.5"
+                >
+                  {STATUS_ITEMS.map((s) => {
+                    const isSelected = (activeParams.status || '') === s.value;
+                    return (
+                      <button
+                        key={s.value || 'all'}
+                        type="button"
+                        onClick={() => {
+                          updateFilters({ status: s.value || undefined, page: 1 });
+                          setOpenDropdown(null);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                            : 'text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          {s.dotColor && <span className={`w-2 h-2 rounded-full ${s.dotColor}`} />}
+                          <span className="truncate">{s.label}</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-zinc-100 shrink-0 ml-1" />}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* 3. Format Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggleDropdown('format')}
+              className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                openDropdown === 'format' || activeParams.format
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <span>{activeFormatItem?.icon || '🎬'}</span>
+                <span className="truncate">{activeFormatItem?.shortLabel || 'Все форматы'}</span>
+              </div>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-150 ${
+                  openDropdown === 'format' ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {openDropdown === 'format' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                  transition={SPRINGS.snappy}
+                  className="absolute left-0 top-full mt-1.5 w-52 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 space-y-0.5"
+                >
+                  {FORMAT_ITEMS.map((f) => {
+                    const isSelected = (activeParams.format || '') === f.value;
+                    return (
+                      <button
+                        key={f.value || 'all'}
+                        type="button"
+                        onClick={() => {
+                          updateFilters({ format: f.value || undefined, page: 1 });
+                          setOpenDropdown(null);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                            : 'text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <span>{f.icon}</span>
+                          <span className="truncate">{f.label}</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-zinc-100 shrink-0 ml-1" />}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* 4. Season Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggleDropdown('season')}
+              className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                openDropdown === 'season' || activeParams.season
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <span>{activeSeasonItem?.icon || '🗓️'}</span>
+                <span className="truncate">{activeSeasonItem?.label || 'Все сезоны'}</span>
+              </div>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-150 ${
+                  openDropdown === 'season' ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {openDropdown === 'season' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                  transition={SPRINGS.snappy}
+                  className="absolute left-0 sm:left-auto sm:right-0 lg:left-0 top-full mt-1.5 w-48 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 space-y-0.5"
+                >
+                  {SEASON_ITEMS.map((season) => {
+                    const isSelected = (activeParams.season || '') === season.value;
+                    return (
+                      <button
+                        key={season.value || 'all'}
+                        type="button"
+                        onClick={() => {
+                          updateFilters({ season: season.value || undefined, page: 1 });
+                          setOpenDropdown(null);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                            : 'text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{season.icon}</span>
+                          <span>{season.label}</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-zinc-100 shrink-0 ml-1" />}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* 5. Year Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggleDropdown('year')}
+              className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                openDropdown === 'year' || activeParams.year
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <Calendar className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span className="truncate">
+                  {activeParams.year ? `${activeParams.year} год` : 'Все годы'}
+                </span>
+              </div>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-150 ${
+                  openDropdown === 'year' ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {openDropdown === 'year' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                  transition={SPRINGS.snappy}
+                  className="absolute right-0 top-full mt-1.5 w-48 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 max-h-60 overflow-y-auto space-y-0.5"
+                >
+                  {YEAR_ITEMS.map((y) => {
+                    const isSelected = (activeParams.year || '') === y.value;
+                    return (
+                      <button
+                        key={y.value || 'all'}
+                        type="button"
+                        onClick={() => {
+                          updateFilters({ year: y.value || undefined, page: 1 });
+                          setOpenDropdown(null);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                            : 'text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100'
+                        }`}
+                      >
+                        <span>{y.label}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-zinc-100 shrink-0 ml-1" />}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Active Filters Badges & Quick Reset */}
         {hasActiveFilters && (
-          <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between flex-wrap gap-2.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-mono text-zinc-400">Активные фильтры:</span>
+          <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-mono text-zinc-500">Фильтры:</span>
 
-              {/* Genre Pill */}
+              {/* Genre Chip */}
               {activeParams.genre && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
-                  <span>{activeGenreItem?.icon || '✨'}</span>
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs">
+                  <span>{activeGenreItem?.icon || '🎭'}</span>
                   <span>{activeGenreItem?.label || activeParams.genre}</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ genre: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                    title="Удалить фильтр жанра"
+                    className="p-0.5 text-zinc-400 hover:text-zinc-100 cursor-pointer ml-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               )}
 
-              {/* Status Pill */}
+              {/* Status Chip */}
               {activeParams.status && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs">
                   {activeStatusItem?.dotColor && (
-                    <span className={`w-2 h-2 rounded-lg ${activeStatusItem.dotColor}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${activeStatusItem.dotColor}`} />
                   )}
-                  <span>{activeStatusItem?.label || activeParams.status}</span>
+                  <span>{activeStatusItem?.shortLabel || activeParams.status}</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ status: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                    title="Удалить фильтр статуса"
+                    className="p-0.5 text-zinc-400 hover:text-zinc-100 cursor-pointer ml-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               )}
 
-              {/* Format Pill */}
+              {/* Format Chip */}
               {activeParams.format && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs">
                   <span>{activeFormatItem?.icon || '🎬'}</span>
-                  <span>{activeFormatItem?.label || activeParams.format}</span>
+                  <span>{activeFormatItem?.shortLabel || activeParams.format}</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ format: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                    title="Удалить фильтр формата"
+                    className="p-0.5 text-zinc-400 hover:text-zinc-100 cursor-pointer ml-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               )}
 
-              {/* Season Pill */}
+              {/* Season Chip */}
               {activeParams.season && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
-                  <span>{activeSeasonItem?.icon || '❄️'}</span>
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs">
+                  <span>{activeSeasonItem?.icon || '🗓️'}</span>
                   <span>{activeSeasonItem?.label || activeParams.season}</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ season: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                    title="Удалить фильтр сезона"
+                    className="p-0.5 text-zinc-400 hover:text-zinc-100 cursor-pointer ml-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               )}
 
-              {/* Year Pill */}
+              {/* Year Chip */}
               {activeParams.year && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-mono">
-                  <Calendar className="w-3 h-3 text-purple-400" />
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs">
+                  <Calendar className="w-3 h-3 text-zinc-400" />
                   <span>{activeParams.year} год</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ year: undefined, page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-zinc-700/50 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                    title="Удалить фильтр года"
+                    className="p-0.5 text-zinc-400 hover:text-zinc-100 cursor-pointer ml-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               )}
 
-              {/* Search Query Pill */}
+              {/* Search Query Chip */}
               {activeParams.search && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-mono">
-                  <Search className="w-3 h-3 text-amber-400" />
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs">
+                  <Search className="w-3 h-3 text-zinc-400" />
                   <span>«{activeParams.search}»</span>
                   <button
                     type="button"
                     onClick={handleClearSearch}
-                    className="p-0.5 rounded-md hover:bg-amber-500/30 text-amber-300 hover:text-white transition-colors cursor-pointer"
-                    title="Очистить поисковый запрос"
+                    className="p-0.5 text-zinc-400 hover:text-zinc-100 cursor-pointer ml-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               )}
 
-              {/* Sort Pill (if custom) */}
+              {/* Sort Chip */}
               {activeParams.sort && activeParams.sort !== 'POPULARITY_DESC' && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-800 text-zinc-300 border border-white/10 text-xs font-mono">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs">
                   <ArrowUpDown className="w-3 h-3 text-zinc-400" />
                   <span>{activeSortItem.label}</span>
                   <button
                     type="button"
                     onClick={() => updateFilters({ sort: 'POPULARITY_DESC', page: 1 })}
-                    className="p-0.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                    title="Сбросить сортировку"
+                    className="p-0.5 text-zinc-400 hover:text-zinc-100 cursor-pointer ml-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -830,11 +917,11 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               )}
             </div>
 
-            {/* Reset All Button */}
+            {/* Reset All Action */}
             <button
               type="button"
               onClick={handleResetAll}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 hover:border-rose-500/40 text-xs font-mono font-medium transition-all cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Сбросить всё ({activeFiltersCount})</span>
@@ -843,111 +930,49 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
         )}
       </div>
 
-      {/* Catalog Status Bar & View Density Controls */}
-      <div className="flex items-center justify-between gap-4 text-xs font-mono text-zinc-400 px-1">
-        <div className="flex items-center gap-2">
-          <span>Найдено:</span>
-          <span className="px-2.5 py-0.5 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold">
-            {totalItems.toLocaleString('ru-RU')} тайтлов
-          </span>
-          <span className="hidden sm:inline text-zinc-600">•</span>
-          <span className="hidden sm:inline">Страница {currentPage} из {totalPages}</span>
-        </div>
-
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-[#090C14] p-1 rounded-lg border-zinc-800">
-          <button
-            type="button"
-            onClick={() => setViewMode('grid')}
-            title="Стандартная сетка"
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              viewMode === 'grid'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            <Grid className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('compact')}
-            title="Компактная сетка"
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              viewMode === 'compact'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('list')}
-            title="Список с описанием"
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              viewMode === 'list'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            <ListFilter className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Grid of Results / List of Results / Empty State */}
+      {/* 3. Results Section */}
       {initialAnimeList.length === 0 ? (
         /* Empty State */
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="p-12 sm:p-16 rounded-lg bg-[#090C14] border-zinc-800 text-center space-y-5 shadow-2xl relative overflow-hidden"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-10 sm:p-14 rounded-xl bg-zinc-900/50 border border-zinc-800 text-center space-y-4 shadow-sm"
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 via-transparent to-transparent pointer-events-none" />
-
-          <div className="w-20 h-20 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-white flex items-center justify-center mx-auto shadow-inner">
-            <Filter className="w-10 h-10 " />
+          <div className="w-14 h-14 rounded-xl bg-zinc-800/80 border border-zinc-700 text-zinc-400 flex items-center justify-center mx-auto">
+            <Filter className="w-6 h-6" />
           </div>
 
-          <div className="space-y-2 max-w-md mx-auto">
-            <h3 className="text-xl font-bold font-sans text-white">
-              Ничего не найдено
+          <div className="space-y-1.5 max-w-sm mx-auto">
+            <h3 className="text-lg font-bold text-zinc-100">
+              По вашему запросу ничего не найдено
             </h3>
-            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-sans">
-              По выбранным параметрам фильтрации аниме не найдено. Попробуйте смягчить критерии поиска или воспользуйтесь готовыми подборками.
+            <p className="text-xs text-zinc-400">
+              Попробуйте сбросить некоторые фильтры или выбрать популярный жанр
             </p>
           </div>
 
-          {/* Quick suggestions chips */}
-          <div className="pt-2 flex items-center justify-center gap-2 flex-wrap max-w-lg mx-auto">
+          <div className="pt-2 flex items-center justify-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={handleResetAll}
-              className="px-4 py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer inline-flex items-center gap-2"
+              className="px-3.5 py-2 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Сбросить все фильтры</span>
+              <span>Сбросить фильтры</span>
             </button>
             <button
               type="button"
               onClick={() => updateFilters({ genre: 'Action', page: 1 })}
-              className="px-3.5 py-2.5 rounded-lg bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border-zinc-800 text-xs font-medium transition-colors cursor-pointer"
+              className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-xs font-medium transition-colors cursor-pointer"
             >
               ⚔️ Экшен
             </button>
             <button
               type="button"
               onClick={() => updateFilters({ status: 'RELEASING', page: 1 })}
-              className="px-3.5 py-2.5 rounded-lg bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border-zinc-800 text-xs font-medium transition-colors cursor-pointer"
+              className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-xs font-medium transition-colors cursor-pointer"
             >
               ⚡ Онгоинги
-            </button>
-            <button
-              type="button"
-              onClick={() => updateFilters({ sort: 'SCORE_DESC', page: 1 })}
-              className="px-3.5 py-2.5 rounded-lg bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border-zinc-800 text-xs font-medium transition-colors cursor-pointer"
-            >
-              🏆 Шедевры (9.0+)
             </button>
           </div>
         </motion.div>
@@ -960,22 +985,22 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               <Link
                 key={anime.id}
                 href={`/anime/${anime.id}`}
-                className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-lg bg-[#090C14] hover:bg-[#0E1322] border-zinc-800 hover:border-indigo-500/40 shadow-lg hover:shadow-indigo-500/10 transition-all duration-300"
+                className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/60 border border-zinc-800 hover:border-zinc-700 transition-all duration-200"
               >
                 {/* Poster Thumbnail */}
-                <div className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden shrink-0 bg-[#06070A] border border-white/10">
+                <div className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden shrink-0 bg-zinc-950 border border-zinc-800">
                   {anime.coverImage.original && (
                     <Image
                       src={anime.coverImage.original}
                       alt={title}
                       fill
                       sizes="96px"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="object-cover group-hover:scale-105 transition-transform duration-200"
                     />
                   )}
                   {anime.score > 0 && (
-                    <div className="absolute top-1.5 left-1.5 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm text-[10px] font-mono font-bold text-amber-400 border border-amber-500/30">
-                      <Star className="w-2.5 h-2.5 fill-amber-400" />
+                    <div className="absolute top-1.5 left-1.5 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-zinc-900/90 text-[10px] font-mono font-bold text-zinc-100 border border-zinc-700">
+                      <Star className="w-2.5 h-2.5 fill-zinc-100" />
                       <span>{anime.score.toFixed(1)}</span>
                     </div>
                   )}
@@ -984,20 +1009,20 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 {/* Content */}
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400 flex-wrap">
-                    <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-zinc-300 font-semibold">
+                    <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 font-semibold border border-zinc-700">
                       {anime.format || 'TV'}
                     </span>
                     {anime.seasonYear && <span>{anime.seasonYear} г.</span>}
                     {anime.episodesTotal && <span>• {anime.episodesTotal} эп.</span>}
                     {anime.status === 'RELEASING' && (
                       <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-lg bg-emerald-400" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                         Онгоинг
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-base sm:text-lg font-bold font-sans text-white group-hover:text-zinc-300 transition-colors line-clamp-1">
+                  <h3 className="text-base font-bold text-zinc-100 group-hover:text-white transition-colors line-clamp-1">
                     {title}
                   </h3>
 
@@ -1006,7 +1031,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                       {anime.genres.slice(0, 4).map((genre) => (
                         <span
                           key={genre}
-                          className="px-2 py-0.5 rounded-md bg-white/[0.04] text-[10px] font-mono text-zinc-400"
+                          className="px-2 py-0.5 rounded bg-zinc-800/80 text-[10px] font-mono text-zinc-400 border border-zinc-800"
                         >
                           {genre}
                         </span>
@@ -1015,15 +1040,15 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   )}
 
                   {anime.synopsisEn && (
-                    <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed font-sans">
+                    <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
                       {anime.synopsisEn.replace(/<[^>]*>?/gm, '')}
                     </p>
                   )}
                 </div>
 
                 {/* Action CTA */}
-                <div className="hidden sm:flex items-center justify-center p-3 rounded-lg bg-indigo-600/10 group-hover:bg-indigo-600 text-white group-hover:text-white transition-all shrink-0">
-                  <Play className="w-5 h-5 ml-0.5 fill-current" />
+                <div className="hidden sm:flex items-center justify-center p-2.5 rounded-lg bg-zinc-800 group-hover:bg-zinc-700 text-zinc-300 group-hover:text-white transition-colors shrink-0">
+                  <Play className="w-4 h-4 ml-0.5 fill-current" />
                 </div>
               </Link>
             );
@@ -1036,7 +1061,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             hidden: { opacity: 0 },
             show: {
               opacity: 1,
-              transition: { staggerChildren: 0.03 },
+              transition: { staggerChildren: 0.02 },
             },
           }}
           initial="hidden"
@@ -1051,8 +1076,8 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             <motion.div
               key={anime.id}
               variants={{
-                hidden: { opacity: 0, y: 12, scale: 0.97 },
-                show: { opacity: 1, y: 0, scale: 1 },
+                hidden: { opacity: 0, y: 8 },
+                show: { opacity: 1, y: 0 },
               }}
               transition={SPRINGS.snappy}
             >
@@ -1062,17 +1087,15 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
         </motion.div>
       )}
 
-      {/* 2026 Beautiful Pagination Controls */}
+      {/* 4. Pagination */}
       {totalPages > 1 && (
-        <div className="pt-8 pb-4 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Results Summary */}
-          <div className="text-xs font-mono text-zinc-400 text-center sm:text-left">
-            Показано <span className="text-white font-bold">{(currentPage - 1) * 36 + 1}–{Math.min(currentPage * 36, totalItems)}</span> из{' '}
-            <span className="text-white font-bold">{totalItems.toLocaleString('ru-RU')}</span> тайтлов
+        <div className="pt-6 pb-2 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-xs font-mono text-zinc-500 text-center sm:text-left">
+            Страница <span className="text-zinc-200 font-bold">{currentPage}</span> из{' '}
+            <span className="text-zinc-200 font-bold">{totalPages}</span>
           </div>
 
-          {/* Navigation Controls */}
-          <div className="flex items-center gap-1.5 flex-wrap justify-center">
+          <div className="flex items-center gap-1 flex-wrap justify-center">
             {/* First Page */}
             {currentPage > 2 && (
               <button
@@ -1081,7 +1104,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   updateFilters({ page: 1 });
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="p-2 rounded-lg bg-[#090C14] hover:bg-[#121726] text-zinc-400 hover:text-white border-zinc-800 transition-all cursor-pointer"
+                className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 transition-colors cursor-pointer"
                 title="Первая страница"
               >
                 <ChevronsLeft className="w-4 h-4" />
@@ -1096,21 +1119,20 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 updateFilters({ page: Math.max(1, currentPage - 1) });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
                 currentPage <= 1
-                  ? 'opacity-40 pointer-events-none bg-[#090C14] border-white/[0.04] text-zinc-500'
-                  : 'bg-[#090C14] hover:bg-[#121726] text-zinc-300 hover:text-white border-white/[0.08] hover:border-indigo-500/40'
+                  ? 'opacity-40 pointer-events-none bg-zinc-900 border-zinc-800 text-zinc-600'
+                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border-zinc-800'
               }`}
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Назад</span>
             </button>
 
-            {/* Page Number Pills Window */}
+            {/* Page Number Pills */}
             {(() => {
               const pages: (number | string)[] = [];
-              const delta = 2; // window of +/- 2 around current
-
+              const delta = 2;
               const left = Math.max(1, currentPage - delta);
               const right = Math.min(totalPages, currentPage + delta);
 
@@ -1133,7 +1155,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   return (
                     <span
                       key={`ellipsis-${idx}`}
-                      className="px-2 py-2 text-xs font-mono text-zinc-500"
+                      className="px-1.5 py-1 text-xs font-mono text-zinc-600"
                     >
                       ...
                     </span>
@@ -1151,10 +1173,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                       updateFilters({ page: pageNum });
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className={`min-w-[36px] h-9 px-2.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer border ${
+                    className={`min-w-[32px] h-8 px-2 rounded-lg text-xs font-mono font-bold transition-colors cursor-pointer border ${
                       isActive
-                        ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-600/40 scale-105'
-                        : 'bg-[#090C14] hover:bg-[#121726] text-zinc-400 hover:text-white border-white/[0.08] hover:border-white/20'
+                        ? 'bg-zinc-100 text-zinc-950 border-white shadow-sm'
+                        : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border-zinc-800'
                     }`}
                   >
                     {pageNum}
@@ -1171,14 +1193,14 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 updateFilters({ page: Math.min(totalPages, currentPage + 1) });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
                 currentPage >= totalPages
-                  ? 'opacity-40 pointer-events-none bg-[#090C14] border-white/[0.04] text-zinc-500'
-                  : 'bg-[#090C14] hover:bg-[#121726] text-zinc-300 hover:text-white border-white/[0.08] hover:border-indigo-500/40'
+                  ? 'opacity-40 pointer-events-none bg-zinc-900 border-zinc-800 text-zinc-600'
+                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border-zinc-800'
               }`}
             >
               <span className="hidden sm:inline">Вперёд</span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
 
             {/* Last Page */}
@@ -1189,7 +1211,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   updateFilters({ page: totalPages });
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="p-2 rounded-lg bg-[#090C14] hover:bg-[#121726] text-zinc-400 hover:text-white border-zinc-800 transition-all cursor-pointer"
+                className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 transition-colors cursor-pointer"
                 title="Последняя страница"
               >
                 <ChevronsRight className="w-4 h-4" />
@@ -1197,7 +1219,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
             )}
           </div>
 
-          {/* Quick Page Jump Form */}
+          {/* Quick Page Jump */}
           <form onSubmit={handleJumpPage} className="flex items-center gap-1.5">
             <span className="text-xs font-mono text-zinc-500">Стр:</span>
             <input
@@ -1207,13 +1229,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               value={jumpPageInput}
               onChange={(e) => setJumpPageInput(e.target.value)}
               placeholder={String(currentPage)}
-              className="w-14 bg-[#090C14] border-zinc-800 rounded-lg px-2 py-1.5 text-xs text-center text-white font-mono focus:outline-none focus:border-indigo-500/60"
+              className="w-12 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-xs text-center text-zinc-100 font-mono focus:outline-none focus:border-zinc-600"
             />
             <button
               type="submit"
-              className="px-2.5 py-1.5 rounded-lg bg-[#0E121E] hover:bg-[#151D2F] text-zinc-300 hover:text-white border-zinc-800 text-xs font-mono font-medium transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-mono font-medium transition-colors cursor-pointer"
             >
-              Перейти
+              ОК
             </button>
           </form>
         </div>

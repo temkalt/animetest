@@ -66,7 +66,7 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
   const isResuming = Boolean(lastProgress && resumeEp > 1);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 pt-2">
+    <div className="flex flex-wrap items-center gap-3 pt-2 relative z-30">
       {/* Primary Watch Action Button */}
       <Link
         href={`/watch/${animeId}/${resumeEp}`}

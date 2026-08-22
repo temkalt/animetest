@@ -93,6 +93,30 @@ export class AnimeResolver {
     }
   }
 
+  static async getTrending(page = 1, perPage = 20, season?: string, seasonYear?: number): Promise<UnifiedAnime[]> {
+    try {
+      const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
+        page,
+        perPage,
+        season,
+        seasonYear,
+        sort: ['TRENDING_DESC', 'POPULARITY_DESC'],
+      });
+
+      const list = data?.Page?.media || [];
+      if (list.length > 0) {
+        const malIds = list.map((m: any) => m.idMal).filter(Boolean);
+        const ruMap = await fetchBatchShikimoriTitles(malIds);
+        return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+      }
+    } catch (err) {
+      console.warn('[AnimeResolver] getTrending AniList failed, using Shikimori fallback:', err);
+    }
+
+    const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['TRENDING_DESC'] });
+    return fallback.items;
+  }
+
   static async getPopular(page = 1, perPage = 20, season?: string, seasonYear?: number): Promise<UnifiedAnime[]> {
     try {
       const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
@@ -100,6 +124,7 @@ export class AnimeResolver {
         perPage,
         season,
         seasonYear,
+        sort: ['POPULARITY_DESC'],
       });
 
       const list = data?.Page?.media || [];
@@ -113,6 +138,28 @@ export class AnimeResolver {
     }
 
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['POPULARITY_DESC'] });
+    return fallback.items;
+  }
+
+  static async getTopRated(page = 1, perPage = 20): Promise<UnifiedAnime[]> {
+    try {
+      const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
+        page,
+        perPage,
+        sort: ['SCORE_DESC'],
+      });
+
+      const list = data?.Page?.media || [];
+      if (list.length > 0) {
+        const malIds = list.map((m: any) => m.idMal).filter(Boolean);
+        const ruMap = await fetchBatchShikimoriTitles(malIds);
+        return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+      }
+    } catch (err) {
+      console.warn('[AnimeResolver] getTopRated AniList failed, using Shikimori fallback:', err);
+    }
+
+    const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['SCORE_DESC'] });
     return fallback.items;
   }
 

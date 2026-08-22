@@ -182,7 +182,7 @@ export const BookmarkQuickSelector: React.FC<BookmarkQuickSelectorProps> = ({ an
 
         {/* Dropdown Menu */}
         {isOpen && (
-          <div className="absolute left-0 top-full mt-2 w-56 p-1.5 rounded-lg bg-zinc-900  border border-zinc-800 shadow-sm shadow-black/80 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute left-0 top-full mt-2 w-56 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
             <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-400 border-b border-zinc-800">
               Списки просмотра
             </div>

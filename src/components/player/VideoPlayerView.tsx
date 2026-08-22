@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 import { syncManager } from '@/lib/dexie/sync';
+import { userActivity } from '@/lib/auth/user-activity';
 import { EpisodeTimecodes, VoiceoverTrack } from '@/types';
 import { useBalancerProbe } from '@/lib/balancer/client/use-balancer-probe';
 import { BalancerId } from '@/types/balancer';
@@ -75,6 +76,19 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
   const [showHotkeys, setShowHotkeys] = useState<boolean>(false);
 
   const effectiveShikimoriId = shikimoriId || malId || animeId;
+
+  useEffect(() => {
+    if (animeId) {
+      const cleanTitle = russianTitle || romajiTitle || (title ? title.split('—')[0].trim() : 'Аниме');
+      userActivity.recordAnimeView({
+        id: animeId,
+        title: cleanTitle,
+        coverImage: poster || '',
+        score: 0,
+        format: 'TV'
+      });
+    }
+  }, [animeId, title, russianTitle, romajiTitle, poster]);
 
   // Dynamic Balancer Availability Probe
   const {

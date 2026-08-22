@@ -7,6 +7,7 @@ import { OngoingSchedule } from '@/components/home/OngoingSchedule';
 import { CuratedSpotlight } from '@/components/home/CuratedSpotlight';
 import { AnimeCard } from '@/components/anime/AnimeCard';
 import { RecentComments } from '@/components/home/RecentComments';
+import { CommunityChoice } from '@/components/home/CommunityChoice';
 import { 
   Flame, 
   Trophy, 
@@ -26,27 +27,29 @@ export default async function HomePage() {
   const [
     trendingList,
     topRatedResult,
+    popularList,
     ongoingResult,
     scheduleData,
   ] = await Promise.all([
-    AnimeResolver.getPopular(1, 24).catch(() => []),
-    AnimeResolver.searchCatalog({ sort: ['SCORE_DESC'], perPage: 16 }).catch(() => ({ items: [], pageInfo: { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false } })),
-    AnimeResolver.searchCatalog({ status: 'RELEASING', sort: ['POPULARITY_DESC'], perPage: 16 }).catch(() => ({ items: [], pageInfo: { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false } })),
+    AnimeResolver.getTrending(1, 24).catch(() => []),
+    AnimeResolver.getTopRated(1, 16).catch(() => []),
+    AnimeResolver.getPopular(1, 16).catch(() => []),
+    AnimeResolver.searchCatalog({ status: 'RELEASING', sort: ['TRENDING_DESC', 'POPULARITY_DESC'], perPage: 16 }).catch(() => ({ items: [], pageInfo: { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false } })),
     AnimeResolver.getAiringSchedule().catch(() => ({})),
   ]);
 
   // Slices & fallback normalization
   const heroItems = trendingList.length > 0 ? trendingList.slice(0, 6) : ongoingResult.items.slice(0, 6);
   const rankedTrending = trendingList.length > 0 ? trendingList.slice(0, 10) : ongoingResult.items.slice(0, 10);
-  const rankedTopRated = topRatedResult.items.length > 0 ? topRatedResult.items.slice(0, 10) : trendingList.slice(0, 10);
-  const rankedPopular = trendingList.length > 0 ? trendingList.slice(0, 10) : ongoingResult.items.slice(0, 10);
+  const rankedTopRated = topRatedResult.length > 0 ? topRatedResult.slice(0, 10) : trendingList.slice(0, 10);
+  const rankedPopular = popularList.length > 0 ? popularList.slice(0, 10) : ongoingResult.items.slice(0, 10);
 
   const seasonalOngoings = ongoingResult.items.length > 0 
     ? ongoingResult.items.slice(0, 8) 
     : trendingList.slice(0, 8);
 
-  const cultMasterpieces = topRatedResult.items.length > 0 
-    ? topRatedResult.items.slice(0, 8) 
+  const cultMasterpieces = topRatedResult.length > 0 
+    ? topRatedResult.slice(0, 8) 
     : trendingList.slice(8, 16);
 
   return (
@@ -69,6 +72,9 @@ export default async function HomePage() {
           popularItems={rankedPopular}
         />
       </section>
+
+      {/* Community Choice Section */}
+      <CommunityChoice />
 
       {/* 4. Interactive Ongoing Weekly Airing Schedule */}
       <section aria-label="Расписание выхода серий недели">

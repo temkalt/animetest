@@ -137,18 +137,18 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
       </div>
 
       {/* 1. Luxury Ambient Blurred Backdrop Banner & Hero Header */}
-      <div className="relative w-full rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 shadow-sm">
+      <div className="relative z-20 w-full rounded-lg bg-zinc-900 border border-zinc-800 shadow-sm">
         {/* High-res Banner Layer */}
         {bannerBg && (
-            <div className="absolute inset-0 opacity-40 mix-blend-screen">
-              <Image
-                src={bannerBg}
-                alt={title}
-                fill
-                priority
-                className="object-cover object-top"
-              />
-            </div>
+          <div className="absolute inset-0 rounded-lg overflow-hidden opacity-40 mix-blend-screen pointer-events-none">
+            <Image
+              src={bannerBg}
+              alt={title}
+              fill
+              priority
+              className="object-cover object-top"
+            />
+          </div>
         )}
 
         
