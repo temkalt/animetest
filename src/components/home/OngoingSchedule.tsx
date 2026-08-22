@@ -60,7 +60,7 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
     setTodayDay(currentDay);
   }, []);
 
-  const itemsForDay = scheduleData[selectedDay] || [];
+  const itemsForDay = scheduleData[selectedDay] || (scheduleData as any)[String(selectedDay)] || [];
   const currentDayInfo = DAYS.find((d) => d.id === selectedDay) || DAYS[0];
   const isSelectedToday = selectedDay === todayDay;
 

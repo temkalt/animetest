@@ -544,9 +544,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
         {/* Real-time Taste Profile Card */}
         <GenreRadarChart 
           className="h-full" 
-          history={history}
-          bookmarks={bookmarks}
-          animeMap={animeMap}
+          data={genreStats}
+          totalWatched={groupedHistory.length}
+          totalHours={totalHours}
+          averageScore={averageScore}
         />
 
         {/* History / Bookmarks / Collections Tab Panel */}

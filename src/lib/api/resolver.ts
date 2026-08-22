@@ -51,7 +51,7 @@ export class AnimeResolver {
           romaji: s.name,
           english: null,
           native: null,
-          russian: s.russian || s.name,
+          russian: s.russian || getKnownRussianTitle(s.id) || getKnownRussianTitle(s.name) || s.name,
         },
         synonyms: [],
         format: (s.kind || 'TV').toUpperCase(),
@@ -207,17 +207,33 @@ export class AnimeResolver {
 
   static async getAiringSchedule(): Promise<WeeklySchedule> {
     try {
-      const now = Math.floor(Date.now() / 1000);
-      const startOfWeek = now - (now % 86400) - new Date().getDay() * 86400;
+      const now = new Date();
+      const dayOfWeek = now.getDay(); // 0 = Sun, 1 = Mon...
+      const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceMonday, 0, 0, 0);
+      const startOfWeek = Math.floor(monday.getTime() / 1000);
       const endOfWeek = startOfWeek + 7 * 86400;
 
-      const data: any = await fetchAniListGraphQL(AIRING_SCHEDULE_QUERY, {
-        airingAtGreater: startOfWeek,
-        airingAtLesser: endOfWeek,
-        perPage: 50,
-      });
+      const [page1Data, page2Data]: any = await Promise.all([
+        fetchAniListGraphQL(AIRING_SCHEDULE_QUERY, {
+          page: 1,
+          airingAt_greater: startOfWeek,
+          airingAt_lesser: endOfWeek,
+          perPage: 50,
+        }).catch(() => null),
+        fetchAniListGraphQL(AIRING_SCHEDULE_QUERY, {
+          page: 2,
+          airingAt_greater: startOfWeek,
+          airingAt_lesser: endOfWeek,
+          perPage: 50,
+        }).catch(() => null),
+      ]);
 
-      const list = data?.Page?.airingSchedules || [];
+      const list = [
+        ...(page1Data?.Page?.airingSchedules || []),
+        ...(page2Data?.Page?.airingSchedules || []),
+      ];
+
       const malIds = list.map((s: any) => s.media?.idMal).filter(Boolean);
       const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
 
@@ -235,26 +251,35 @@ export class AnimeResolver {
         const media = item.media;
         if (!media) continue;
 
-        const date = new Date(item.airingAt * 1000);
-        const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
+        const moscowTime = item.airingAt * 1000 + 3 * 3600 * 1000;
+        const moscowDate = new Date(moscowTime);
+        const dayOfWeekItem = moscowDate.getUTCDay() === 0 ? 7 : moscowDate.getUTCDay();
 
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const hours = moscowDate.getUTCHours().toString().padStart(2, '0');
+        const minutes = moscowDate.getUTCMinutes().toString().padStart(2, '0');
 
         const ruMeta = media.idMal ? ruMetaMap.get(media.idMal) : undefined;
+        const slug = (media.title?.romaji || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const ruTitle = ruMeta?.russian ||
           getKnownRussianTitle(media.id) ||
-          (media.idMal ? getKnownRussianTitle(media.idMal) : null);
+          (media.idMal ? getKnownRussianTitle(media.idMal) : null) ||
+          getKnownRussianTitle(slug) ||
+          (media.title?.english ? getKnownRussianTitle(media.title.english) : null) ||
+          (media.title?.romaji ? getKnownRussianTitle(media.title.romaji) : null);
 
-        schedule[dayOfWeek].push({
+        if (!schedule[dayOfWeekItem]) {
+          schedule[dayOfWeekItem] = [];
+        }
+
+        schedule[dayOfWeekItem].push({
           id: media.id,
-          title: ruTitle || media.title?.romaji || media.title?.english || 'Untitled',
+          title: ruTitle || media.title?.romaji || media.title?.english || 'Без названия',
           episode: item.episode,
           airingAt: item.airingAt,
-          timeStr: `${hours}:${minutes}`,
+          timeStr: `${hours}:${minutes} МСК`,
           coverImage: media.coverImage?.large || media.coverImage?.medium || '',
           format: media.format || 'TV',
-          studio: media.studios?.nodes?.[0]?.name || 'Studio',
+          studio: media.studios?.nodes?.[0]?.name || 'Студия',
         });
       }
 
@@ -362,7 +387,7 @@ export class AnimeResolver {
             romaji: shikiData.name,
             english: null,
             native: null,
-            russian: shikiData.russian || shikiData.name,
+            russian: shikiData.russian || getKnownRussianTitle(anilistId) || getKnownRussianTitle(shikiData.name) || shikiData.name,
           },
           synonyms: [],
           format: (shikiData.kind || 'TV').toUpperCase(),
@@ -429,7 +454,10 @@ export class AnimeResolver {
     const knownRu = ruMeta?.russian ||
       getKnownRussianTitle(media.id) ||
       (media.idMal ? getKnownRussianTitle(media.idMal) : null) ||
-      getKnownRussianTitle(slug);
+      getKnownRussianTitle(slug) ||
+      (media.title?.english ? getKnownRussianTitle(media.title.english) : null) ||
+      (media.title?.romaji ? getKnownRussianTitle(media.title.romaji) : null) ||
+      (media.title?.userPreferred ? getKnownRussianTitle(media.title.userPreferred) : null);
 
     const knownRuSynopsis = ruMeta?.description ||
       getKnownRussianSynopsis(media.id) ||

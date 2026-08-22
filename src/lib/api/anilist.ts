@@ -147,8 +147,8 @@ query GetAnimeDetails($id: Int, $idMal: Int) {
 `;
 
 export const AIRING_SCHEDULE_QUERY = `
-query GetAiringSchedule($airingAt_greater: Int, $airingAt_lesser: Int, $perPage: Int) {
-  Page(page: 1, perPage: $perPage) {
+query GetAiringSchedule($page: Int, $airingAt_greater: Int, $airingAt_lesser: Int, $perPage: Int) {
+  Page(page: $page, perPage: $perPage) {
     airingSchedules(
       airingAt_greater: $airingAt_greater,
       airingAt_lesser: $airingAt_lesser,

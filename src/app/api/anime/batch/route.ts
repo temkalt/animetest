@@ -81,10 +81,15 @@ export async function POST(req: NextRequest) {
     const itemsMap: Record<number, BatchAnimeItem> = {};
 
     for (const m of mediaList) {
+      const slug = (m.title?.romaji || `anime-${m.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const ruTitle =
         (m.idMal ? ruMap.get(m.idMal) : null) ||
         getKnownRussianTitle(m.id) ||
         (m.idMal ? getKnownRussianTitle(m.idMal) : null) ||
+        getKnownRussianTitle(slug) ||
+        (m.title?.english ? getKnownRussianTitle(m.title.english) : null) ||
+        (m.title?.romaji ? getKnownRussianTitle(m.title.romaji) : null) ||
+        (m.title?.userPreferred ? getKnownRussianTitle(m.title.userPreferred) : null) ||
         m.title?.english ||
         m.title?.romaji;
 

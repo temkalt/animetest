@@ -41,6 +41,7 @@ export const KNOWN_RUSSIAN_TITLES: Record<string, string> = {
 
   'sousou-no-frieren': 'Провожающая в последний путь Фрирен',
   'frieren-beyond-journeys-end': 'Провожающая в последний путь Фрирен',
+  'frieren': 'Провожающая в последний путь Фрирен',
   '154587': 'Провожающая в последний путь Фрирен',
 
   'solo-leveling': 'Поднятие уровня в одиночку',
@@ -236,9 +237,24 @@ export const KNOWN_EPISODE_COUNTS: Record<string, number> = {
   '223': 153,    // Dragon Ball
 };
 
-export function getKnownRussianTitle(idOrSlug: string | number): string | null {
+let normalizedTitlesMap: Record<string, string> | null = null;
+
+export function getKnownRussianTitle(idOrSlug: string | number | null | undefined): string | null {
+  if (!idOrSlug) return null;
   const key = String(idOrSlug).toLowerCase().trim();
-  return KNOWN_RUSSIAN_TITLES[key] || null;
+  if (KNOWN_RUSSIAN_TITLES[key]) return KNOWN_RUSSIAN_TITLES[key];
+
+  const normKey = key.replace(/[\W_]+/g, '');
+  if (!normKey) return null;
+
+  if (!normalizedTitlesMap) {
+    normalizedTitlesMap = {};
+    for (const [k, v] of Object.entries(KNOWN_RUSSIAN_TITLES)) {
+      normalizedTitlesMap[k.toLowerCase().replace(/[\W_]+/g, '')] = v;
+    }
+  }
+
+  return normalizedTitlesMap[normKey] || null;
 }
 
 export function getKnownRussianSynopsis(idOrSlug: string | number): string | null {
