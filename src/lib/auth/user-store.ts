@@ -27,35 +27,34 @@ class AuthStore {
       const savedUser = localStorage.getItem('kuronami_current_user');
       if (savedUser) {
         try {
-          this.currentUser = JSON.parse(savedUser);
+          const u = JSON.parse(savedUser);
+          if (u && typeof u === 'object') {
+            if (!u.username && u.name) {
+              u.username = this.normalizeUsername(u.name) || 'kuronami';
+            }
+            if (!u.name && u.username) {
+              u.name = u.username;
+            }
+            this.currentUser = u;
+          }
         } catch {
           this.currentUser = null;
         }
       }
 
-      // Clean up legacy mock collections
-      const savedCollections = localStorage.getItem('kuronami_collections');
-      if (savedCollections) {
-        try {
-          const parsed = JSON.parse(savedCollections);
-          if (Array.isArray(parsed)) {
-            const realUserCollections = parsed.filter((c: any) => !c.id?.startsWith('col_sakuga') && !c.id?.startsWith('col_dark') && !c.id?.startsWith('col_cyber'));
-            localStorage.setItem('kuronami_collections', JSON.stringify(realUserCollections));
-          }
-        } catch {}
-      }
-
-      // Clean up legacy mock comments
-      const savedComments = localStorage.getItem('kuronami_comments');
-      if (savedComments) {
-        try {
-          const parsed = JSON.parse(savedComments);
-          if (Array.isArray(parsed)) {
-            const realUserComments = parsed.filter((c: any) => !c.id?.startsWith('comm_'));
-            localStorage.setItem('kuronami_comments', JSON.stringify(realUserComments));
-          }
-        } catch {}
-      }
+      // Sync across browser tabs in real-time
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'kuronami_comments') {
+          this.notifyComments();
+        } else if (e.key === 'kuronami_collections') {
+          this.notifyCollections();
+        } else if (e.key === 'kuronami_current_user') {
+          try {
+            this.currentUser = e.newValue ? JSON.parse(e.newValue) : null;
+            this.notifyUser();
+          } catch {}
+        }
+      });
     }
   }
 
@@ -66,7 +65,19 @@ class AuthStore {
       const saved = localStorage.getItem('kuronami_current_user');
       if (saved) {
         try {
-          this.currentUser = JSON.parse(saved);
+          const u = JSON.parse(saved);
+          if (u && typeof u === 'object') {
+            if (!u.username && u.name) {
+              u.username = this.normalizeUsername(u.name) || 'kuronami';
+            }
+            if (!u.name && u.username) {
+              u.name = u.username;
+            }
+            if (!u.avatar) {
+              u.avatar = DEFAULT_AVATARS[0];
+            }
+            this.currentUser = u;
+          }
         } catch {
           this.currentUser = null;
         }
@@ -93,6 +104,7 @@ class AuthStore {
 
   // Normalize username (lowercase, alphanumeric + underscore, min 2 chars)
   normalizeUsername(raw: string): string {
+    if (!raw) return '';
     return raw
       .trim()
       .toLowerCase()
@@ -213,32 +225,51 @@ class AuthStore {
 
   // Public Profile retrieval (Guarantees EMAIL IS NEVER EXPOSED)
   getPublicProfile(username: string): Omit<UserProfile, 'email'> | null {
-    const clean = this.normalizeUsername(username);
+    if (!username || username === 'undefined' || username === 'null') {
+      const current = this.getUser();
+      if (current) {
+        const { email: _email, ...safeProfile } = current;
+        return safeProfile;
+      }
+      return {
+        id: 'usr_kuronami',
+        username: 'kuronami',
+        name: 'KuroNami',
+        avatar: DEFAULT_AVATARS[0],
+        bio: 'Участник аниме-сообщества KuroNami.',
+        role: 'Отаку',
+        level: 1,
+        joinedAt: '2026-08-01',
+        collectionsCount: 0,
+      };
+    }
+
+    const clean = this.normalizeUsername(decodeURIComponent(username));
     if (!clean) return null;
 
-    if (this.currentUser && this.currentUser.username === clean) {
+    if (this.currentUser && (this.currentUser.username === clean || this.normalizeUsername(this.currentUser.name) === clean)) {
       const { email: _email, ...safeProfile } = this.currentUser;
       return safeProfile;
     }
 
     const allUsers = this.getAllRegisteredUsers();
-    const user = allUsers.find((u) => u.username === clean);
+    const user = allUsers.find((u) => u.username === clean || this.normalizeUsername(u.name) === clean);
     if (user) {
       const { email: _email, ...safeProfile } = user;
       return safeProfile;
     }
 
-    // Default mock user profile if pre-seeded
+    // Dynamic public profile for comment author
     return {
       id: `usr_${clean}`,
       username: clean,
-      name: clean.replace(/_/g, ' ').toUpperCase(),
+      name: clean.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
       avatar: DEFAULT_AVATARS[0],
       bio: 'Участник аниме-сообщества KuroNami.',
       role: 'Отаку',
-      level: 3,
+      level: 1,
       joinedAt: '2026-08-01',
-      collectionsCount: 2,
+      collectionsCount: 0,
     };
   }
 
@@ -257,7 +288,7 @@ class AuthStore {
   getUserCollections(usernameOrUserId: string): UserCollection[] {
     const all = this.getAllCollections();
     const clean = this.normalizeUsername(usernameOrUserId);
-    return all.filter((c) => c.userId === usernameOrUserId || c.username === clean);
+    return all.filter((c) => c.userId === usernameOrUserId || c.username === clean || c.username === usernameOrUserId);
   }
 
   getPublicCollections(): UserCollection[] {
@@ -402,19 +433,31 @@ class AuthStore {
     content: string;
     timecodeSeconds?: number | null;
     isSpoiler?: boolean;
+    author?: {
+      id?: string;
+      username?: string;
+      name?: string;
+      avatar?: string;
+    };
   }): GlobalComment {
     const user = this.getUser();
-    if (!user) throw new Error('Для публикации комментария необходимо войти в аккаунт');
+    const resolvedUsername =
+      params.author?.username ||
+      user?.username ||
+      (user?.name ? this.normalizeUsername(user.name) : '') ||
+      'kuronami';
+    const resolvedUserId = params.author?.id || user?.id || `usr_${Date.now()}`;
+    const resolvedAvatar = params.author?.avatar || user?.avatar || DEFAULT_AVATARS[0];
 
     const newComment: GlobalComment = {
-      id: `comm_${Date.now()}`,
+      id: `comment_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       animeId: params.animeId,
       animeTitle: params.animeTitle,
       animeCover: params.animeCover,
       episodeNumber: params.episodeNumber,
-      userId: user.id,
-      username: user.username,
-      userAvatar: user.avatar,
+      userId: resolvedUserId,
+      username: resolvedUsername,
+      userAvatar: resolvedAvatar,
       content: params.content.trim(),
       timecodeSeconds: params.timecodeSeconds,
       isSpoiler: Boolean(params.isSpoiler),
@@ -424,7 +467,7 @@ class AuthStore {
 
     let all = this.getRecentComments(100);
     all.unshift(newComment);
-    if (all.length > 50) all = all.slice(0, 50);
+    if (all.length > 100) all = all.slice(0, 100);
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('kuronami_comments', JSON.stringify(all));
