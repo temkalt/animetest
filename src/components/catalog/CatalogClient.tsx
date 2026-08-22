@@ -470,26 +470,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               </button>
             </div>
             
-            {/* Advanced Filters Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
-                showAdvancedFilters
-                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600'
-                  : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
-              }`}
-            >
-              <Filter className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">Фильтры</span>
-            </button>
           </div>
         </div>
 
         {/* Quick Genre Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 pb-1">
+        <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
           {GENRE_ITEMS.slice(0, 9).map((genre) => {
-            if (!genre.value) return null; // Skip "All genres" which is often empty string
+            if (!genre.value) return null;
             const isActive = activeParams.genre === genre.value;
             return (
               <button
@@ -511,29 +498,20 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   {genre.label}
                 </span>
               </button>
-            )
+            );
           })}
         </div>
 
-        {/* Row 2: Dropdown Filter Triggers (Grid of 5 Clean Selectors, NO horizontal scrollbars) */}
-        <AnimatePresence initial={false}>
-          {showAdvancedFilters && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-2 border-t border-zinc-800/80">
+        {/* Row 2: 5 Core Filter Selectors (Always visible, clean floating popovers without clipping) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-2 border-t border-zinc-800/80 relative z-30">
           {/* 1. Genre Dropdown */}
-          <div className={`relative ${openDropdown === 'genre' ? 'z-50' : 'z-10'}`}>
+          <div className={`relative ${openDropdown === 'genre' ? 'z-50' : 'z-20'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('genre')}
               className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                 openDropdown === 'genre' || activeParams.genre
-                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold shadow-sm'
                   : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
               }`}
             >
@@ -629,13 +607,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </div>
 
           {/* 2. Status Dropdown */}
-          <div className={`relative ${openDropdown === 'status' ? 'z-50' : 'z-10'}`}>
+          <div className={`relative ${openDropdown === 'status' ? 'z-50' : 'z-20'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('status')}
               className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                 openDropdown === 'status' || activeParams.status
-                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold shadow-sm'
                   : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
               }`}
             >
@@ -693,13 +671,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </div>
 
           {/* 3. Format Dropdown */}
-          <div className={`relative ${openDropdown === 'format' ? 'z-50' : 'z-10'}`}>
+          <div className={`relative ${openDropdown === 'format' ? 'z-50' : 'z-20'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('format')}
               className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                 openDropdown === 'format' || activeParams.format
-                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold shadow-sm'
                   : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
               }`}
             >
@@ -753,13 +731,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </div>
 
           {/* 4. Season Dropdown */}
-          <div className={`relative ${openDropdown === 'season' ? 'z-50' : 'z-10'}`}>
+          <div className={`relative ${openDropdown === 'season' ? 'z-50' : 'z-20'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('season')}
               className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                 openDropdown === 'season' || activeParams.season
-                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold shadow-sm'
                   : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
               }`}
             >
@@ -813,13 +791,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </div>
 
           {/* 5. Year Dropdown */}
-          <div className={`relative ${openDropdown === 'year' ? 'z-50' : 'z-10'}`}>
+          <div className={`relative ${openDropdown === 'year' ? 'z-50' : 'z-20'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('year')}
               className={`w-full inline-flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                 openDropdown === 'year' || activeParams.year
-                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold'
+                  ? 'bg-zinc-800 text-zinc-100 border-zinc-600 font-semibold shadow-sm'
                   : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-100 hover:border-zinc-700'
               }`}
             >
@@ -870,10 +848,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               )}
             </AnimatePresence>
           </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </div>
 
         {/* Active Filters Badges & Quick Reset */}
         {hasActiveFilters && (

@@ -4,12 +4,14 @@ import { UserProfile, UserCollection, GlobalComment } from '@/types';
 export type { UserProfile, UserCollection, GlobalComment };
 
 export const DEFAULT_AVATARS = [
-  'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200&auto=format&fit=crop&q=80',
+  'https://s4.anilist.co/file/anilistcdn/character/large/b40-8B3c861v79Vf.png',
+  'https://s4.anilist.co/file/anilistcdn/character/large/b88344-9w4Rk5t5aC4g.png',
+  'https://s4.anilist.co/file/anilistcdn/character/large/b137079-yNqW4qR28H2l.jpg',
+  'https://s4.anilist.co/file/anilistcdn/character/large/b124381-8j2p1v0Q2K2p.png',
+  'https://s4.anilist.co/file/anilistcdn/character/large/b85425-Q19c5rB8Rk6H.png',
+  'https://s4.anilist.co/file/anilistcdn/character/large/b182261-p3Gz7zOq6H5N.jpg',
+  'https://s4.anilist.co/file/anilistcdn/character/large/b127497-2T3wLzO6r4gA.png',
+  'https://s4.anilist.co/file/anilistcdn/character/large/b142478-4oHq7pYt7K1e.jpg',
 ];
 
 // Empty defaults - collections and comments are created strictly by real users
@@ -102,21 +104,48 @@ class AuthStore {
     this.userListeners.forEach((l) => l(this.currentUser));
   }
 
-  // Normalize username (lowercase, alphanumeric + underscore, min 2 chars)
+  // Transliterate Cyrillic to Latin for clean handles
+  private transliterate(text: string): string {
+    const map: Record<string, string> = {
+      а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh',
+      з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o',
+      п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts',
+      ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya'
+    };
+    return text.split('').map((char) => map[char.toLowerCase()] || char).join('');
+  }
+
+  // Normalize username (lowercase, alphanumeric + underscore, max 24 chars)
   normalizeUsername(raw: string): string {
     if (!raw) return '';
-    return raw
-      .trim()
-      .toLowerCase()
+    const transliterated = this.transliterate(raw.trim().toLowerCase());
+    return transliterated
       .replace(/\s+/g, '_')
-      .replace(/[^a-z0-9_]/g, '');
+      .replace(/[^a-z0-9_]/g, '')
+      .slice(0, 24);
   }
 
   isUsernameTaken(username: string, excludeUserId?: string): boolean {
     const clean = this.normalizeUsername(username);
     if (!clean) return true;
+
+    // Check reserved system handles
+    const reserved = ['admin', 'administrator', 'system', 'root', 'support', 'bot', 'moderator'];
+    if (reserved.includes(clean)) return true;
+
     const users = this.getAllRegisteredUsers();
-    return users.some((u) => u.username === clean && u.id !== excludeUserId);
+    return users.some(
+      (u) =>
+        (this.normalizeUsername(u.username) === clean || (u.name && this.normalizeUsername(u.name) === clean)) &&
+        u.id !== excludeUserId
+    );
+  }
+
+  isEmailTaken(email: string, excludeUserId?: string): boolean {
+    const clean = email.trim().toLowerCase();
+    if (!clean) return true;
+    const users = this.getAllRegisteredUsers();
+    return users.some((u) => u.email?.toLowerCase() === clean && u.id !== excludeUserId);
   }
 
   register(params: {
@@ -131,6 +160,10 @@ class AuthStore {
 
     if (this.isUsernameTaken(cleanUsername)) {
       throw new Error(`Никнейм @${cleanUsername} уже занят. Пожалуйста, выберите другой.`);
+    }
+
+    if (this.isEmailTaken(cleanEmail)) {
+      throw new Error(`Пользователь с email ${cleanEmail} уже зарегистрирован.`);
     }
 
     const newUser: UserProfile = {
