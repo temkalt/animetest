@@ -165,6 +165,9 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
                     fill
                     sizes="160px"
                     className="object-cover opacity-90"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg';
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-transparent" />
 

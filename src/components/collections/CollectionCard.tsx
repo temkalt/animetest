@@ -14,6 +14,23 @@ interface CollectionCardProps {
   index: number;
 }
 
+const DEFAULT_FALLBACK_POSTER = 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg';
+
+const SafePosterImage: React.FC<{ src: string; alt: string }> = ({ src, alt }) => {
+  const [imgSrc, setImgSrc] = useState(src || DEFAULT_FALLBACK_POSTER);
+
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      fill
+      sizes="120px"
+      className="object-cover"
+      onError={() => setImgSrc(DEFAULT_FALLBACK_POSTER)}
+    />
+  );
+};
+
 export const CollectionCard: React.FC<CollectionCardProps> = ({
   collection,
   onQuickView,
@@ -72,10 +89,10 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
                 animate="rest"
                 whileHover="hover"
                 transition={SPRINGS.snappy}
-                className="absolute w-24 sm:w-28 aspect-[3/4] rounded-md overflow-hidden shadow-xl border border-zinc-700/50"
+                className="absolute w-24 sm:w-28 aspect-[3/4] rounded-md overflow-hidden shadow-xl border border-zinc-700/50 bg-zinc-800"
                 style={{ zIndex: i === 1 ? 10 : 5 }}
               >
-                <Image src={posterUrl} alt="Poster" fill sizes="120px" className="object-cover" />
+                <SafePosterImage src={posterUrl} alt="Poster" />
               </motion.div>
             );
           })}

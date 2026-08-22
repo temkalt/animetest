@@ -126,16 +126,19 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
                   className="group relative rounded-lg overflow-hidden bg-[#0F131D] border border-zinc-800 hover:border-zinc-700 p-3.5 flex gap-3.5 transition-all hover:bg-[#151A28]"
                 >
                   {/* Poster Thumbnail */}
-                  <div className="relative w-20 sm:w-24 aspect-[3/4] rounded-lg overflow-hidden shrink-0 border border-white/10">
+                  <div className="relative w-20 sm:w-24 aspect-[3/4] rounded-lg overflow-hidden shrink-0 border border-white/10 bg-zinc-900">
                     <Image
-                      src={anime.cover}
+                      src={anime.cover || 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg'}
                       alt={anime.title}
                       fill
                       sizes="96px"
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg';
+                      }}
                     />
-                    <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-black/70  text-[9px] font-mono font-bold text-zinc-400 flex items-center gap-0.5">
-                      <Star className="w-2.5 h-2.5 fill-amber-400" />
+                    <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-mono font-bold text-zinc-300 flex items-center gap-0.5">
+                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                       {anime.score.toFixed(1)}
                     </div>
                   </div>
