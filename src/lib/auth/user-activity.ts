@@ -1,5 +1,7 @@
 'use client';
 
+import { realtimeHub } from '@/lib/utils/realtime';
+
 export interface AnimeViewStat {
   id: number;
   title: string;
@@ -12,6 +14,15 @@ export interface AnimeViewStat {
 
 class UserActivityManager {
   private listeners: Array<(stats: AnimeViewStat[]) => void> = [];
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      realtimeHub.on('views_updated', () => {
+        const data = this.getMostWatched();
+        this.listeners.forEach((l) => l(data));
+      });
+    }
+  }
 
   getAllViewStats(): AnimeViewStat[] {
     if (typeof window === 'undefined') return [];
@@ -87,6 +98,7 @@ class UserActivityManager {
   private notifyListeners() {
     const data = this.getMostWatched();
     this.listeners.forEach((l) => l(data));
+    realtimeHub.emit('views_updated');
   }
 }
 

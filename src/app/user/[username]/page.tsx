@@ -14,6 +14,7 @@ import { CreateCollectionModal } from '@/components/collections/CreateCollection
 import { UserCollectionModal } from '@/components/collections/UserCollectionModal';
 import { BatchAnimeItem } from '@/app/api/anime/batch/route';
 import { userActivity } from '@/lib/auth/user-activity';
+import { realtimeHub } from '@/lib/utils/realtime';
 import {
   User,
   Clock,
@@ -138,9 +139,20 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
       });
     });
 
+    const unsubHubViews = realtimeHub.on('views_updated', () => loadData());
+    const unsubHubBookmarks = realtimeHub.on('bookmarks_updated', () => loadData());
+    const unsubHubHistory = realtimeHub.on('history_updated', () => loadData());
+
+    const handleStorage = () => loadData();
+    window.addEventListener('storage', handleStorage);
+
     return () => {
       unsubscribeAuth();
       unsubscribeCols();
+      unsubHubViews();
+      unsubHubBookmarks();
+      unsubHubHistory();
+      window.removeEventListener('storage', handleStorage);
     };
   }, [username]);
 

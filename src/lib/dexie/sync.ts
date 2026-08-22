@@ -1,4 +1,5 @@
 import { localDB, LocalWatchProgress, LocalBookmarkItem } from './db';
+import { realtimeHub } from '@/lib/utils/realtime';
 
 class LocalFirstSyncManager {
   private syncTimer: NodeJS.Timeout | null = null;
@@ -14,6 +15,7 @@ class LocalFirstSyncManager {
     };
 
     await localDB.watchHistory.put(record);
+    realtimeHub.emit('history_updated');
     this.scheduleDebouncedSync();
   }
 
@@ -38,6 +40,7 @@ class LocalFirstSyncManager {
     };
 
     await localDB.bookmarks.put(record);
+    realtimeHub.emit('bookmarks_updated');
     this.scheduleDebouncedSync();
   }
 
@@ -47,6 +50,7 @@ class LocalFirstSyncManager {
 
   async removeBookmark(animeId: number) {
     await localDB.bookmarks.delete(animeId);
+    realtimeHub.emit('bookmarks_updated');
     this.scheduleDebouncedSync();
   }
 

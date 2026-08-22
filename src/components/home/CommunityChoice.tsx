@@ -6,14 +6,23 @@ import Image from 'next/image';
 import { Users, Eye, Star, ArrowRight, Play, Sparkles, Tv } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { userActivity, AnimeViewStat } from '@/lib/auth/user-activity';
+import { realtimeHub } from '@/lib/utils/realtime';
 
 export const CommunityChoice: React.FC = () => {
   const [mostWatched, setMostWatched] = useState<AnimeViewStat[]>([]);
 
   useEffect(() => {
-    return userActivity.subscribe((stats) => {
+    const unsubActivity = userActivity.subscribe((stats) => {
       setMostWatched(stats);
     });
+    const unsubHub = realtimeHub.on('views_updated', () => {
+      setMostWatched(userActivity.getMostWatched());
+    });
+
+    return () => {
+      unsubActivity();
+      unsubHub();
+    };
   }, []);
 
   return (

@@ -29,9 +29,12 @@ import {
   ArrowRight,
   ChevronDown,
   Layers,
+  Lock,
 } from 'lucide-react';
 import { UnifiedAnime } from '@/types';
 import { AnimeCard } from '@/components/anime/AnimeCard';
+import { authStore, UserProfile } from '@/lib/auth/user-store';
+import { AuthModal } from '@/components/auth/AuthModal';
 import {
   CATALOG_PRESETS,
   GENRE_ITEMS,
@@ -76,6 +79,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
+  // Auth state for search access
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   // Search input state
   const [searchInput, setSearchInput] = useState(activeParams.search || '');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -93,6 +100,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
   // View Mode
   const [viewMode, setViewMode] = useState<'grid' | 'compact' | 'list'>('grid');
   const [jumpPageInput, setJumpPageInput] = useState('');
+
+  useEffect(() => {
+    return authStore.subscribe((u) => setCurrentUser(u));
+  }, []);
 
   // Sync search input when activeParams.search changes externally
   useEffect(() => {
@@ -146,6 +157,10 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     updateFilters({ search: searchInput.trim() || undefined, page: 1 });
   };
 
@@ -332,38 +347,67 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           {/* Search Input */}
           <form onSubmit={handleSearchSubmit} className="flex-1 relative">
-            <div className="relative flex items-center bg-zinc-950 border border-zinc-800 focus-within:border-zinc-700 rounded-lg transition-colors">
-              <Search className="w-4 h-4 text-zinc-500 ml-3 shrink-0" />
+            <div
+              onClick={() => {
+                if (!currentUser) {
+                  setIsAuthModalOpen(true);
+                }
+              }}
+              className={`relative flex items-center bg-zinc-950 border rounded-lg transition-colors ${
+                !currentUser
+                  ? 'border-zinc-800 hover:border-zinc-700 cursor-pointer'
+                  : 'border-zinc-800 focus-within:border-zinc-700'
+              }`}
+            >
+              {currentUser ? (
+                <Search className="w-4 h-4 text-zinc-500 ml-3 shrink-0" />
+              ) : (
+                <Lock className="w-4 h-4 text-zinc-500 ml-3 shrink-0" />
+              )}
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Поиск по названию аниме..."
-                className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
+                onChange={(e) => {
+                  if (!currentUser) {
+                    setIsAuthModalOpen(true);
+                    return;
+                  }
+                  setSearchInput(e.target.value);
+                }}
+                onFocus={(e) => {
+                  if (!currentUser) {
+                    e.target.blur();
+                    setIsAuthModalOpen(true);
+                  }
+                }}
+                placeholder={currentUser ? "Поиск по названию аниме..." : "Поиск (войдите для доступа)..."}
+                className={`w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none ${
+                  !currentUser ? 'cursor-pointer' : ''
+                }`}
               />
 
               <AnimatePresence>
-              {searchInput.length > 0 && (
-                <motion.button
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="p-1.5 text-zinc-400 hover:text-zinc-100 transition-colors mr-1 cursor-pointer"
-                  title="Очистить"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </motion.button>
-              )}
+                {searchInput.length > 0 && currentUser && (
+                  <motion.button
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="p-1.5 text-zinc-400 hover:text-zinc-100 transition-colors mr-1 cursor-pointer"
+                    title="Очистить"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </motion.button>
+                )}
               </AnimatePresence>
 
               <button
                 type="submit"
                 className="px-3.5 py-1.5 mr-1 rounded-md bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-colors cursor-pointer shrink-0"
               >
-                Найти
+                {currentUser ? 'Найти' : 'Войти'}
               </button>
             </div>
           </form>
@@ -1281,6 +1325,12 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </form>
         </div>
       )}
+
+      {/* Auth Modal for search protection */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
   );
 };

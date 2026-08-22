@@ -1,6 +1,7 @@
 'use client';
 
 import { UserProfile, UserCollection, GlobalComment } from '@/types';
+import { realtimeHub } from '@/lib/utils/realtime';
 export type { UserProfile, UserCollection, GlobalComment };
 
 export const DEFAULT_AVATARS = [
@@ -44,18 +45,23 @@ class AuthStore {
         }
       }
 
-      // Sync across browser tabs in real-time
-      window.addEventListener('storage', (e) => {
-        if (e.key === 'kuronami_comments') {
-          this.notifyComments();
-        } else if (e.key === 'kuronami_collections') {
-          this.notifyCollections();
-        } else if (e.key === 'kuronami_current_user') {
-          try {
-            this.currentUser = e.newValue ? JSON.parse(e.newValue) : null;
-            this.notifyUser();
-          } catch {}
-        }
+      // Sync across browser tabs and components in real-time
+      realtimeHub.on('comments_updated', () => {
+        const comms = this.getRecentComments(10);
+        this.commentsListeners.forEach((l) => l(comms));
+      });
+
+      realtimeHub.on('collections_updated', () => {
+        const all = this.getAllCollections();
+        this.collectionsListeners.forEach((l) => l(all));
+      });
+
+      realtimeHub.on('user_updated', () => {
+        try {
+          const saved = localStorage.getItem('kuronami_current_user');
+          this.currentUser = saved ? JSON.parse(saved) : null;
+          this.userListeners.forEach((l) => l(this.currentUser));
+        } catch {}
       });
     }
   }
@@ -456,6 +462,7 @@ class AuthStore {
   private notifyComments() {
     const comms = this.getRecentComments(10);
     this.commentsListeners.forEach((l) => l(comms));
+    realtimeHub.emit('comments_updated');
   }
 
   addGlobalComment(params: {
@@ -495,7 +502,7 @@ class AuthStore {
       timecodeSeconds: params.timecodeSeconds,
       isSpoiler: Boolean(params.isSpoiler),
       likesCount: 0,
-      createdAt: 'Только что',
+      createdAt: new Date().toISOString(),
     };
 
     let all = this.getRecentComments(100);

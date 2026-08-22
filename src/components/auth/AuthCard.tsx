@@ -68,6 +68,10 @@ export const AuthCard: React.FC<AuthCardProps> = ({
 
   const passwordStrength = getPasswordStrength(password);
 
+  const cleanUsername = authStore.normalizeUsername(username);
+  const isUsernameAvailable = mode === 'register' && cleanUsername.length >= 2 && !authStore.isUsernameTaken(cleanUsername);
+  const isUsernameTakenNow = mode === 'register' && cleanUsername.length >= 2 && authStore.isUsernameTaken(cleanUsername);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -75,12 +79,22 @@ export const AuthCard: React.FC<AuthCardProps> = ({
     if (mode === 'register') {
       const cleanUser = authStore.normalizeUsername(username);
       if (!cleanUser || cleanUser.length < 2) {
-        setError('Укажите никнейм (от 2 символов, буквы, цифры, _)');
+        setError('Укажите никнейм (минимум 2 символа)');
+        return;
+      }
+
+      if (authStore.isUsernameTaken(cleanUser)) {
+        setError(`Никнейм @${cleanUser} уже занят. Пожалуйста, выберите другой.`);
         return;
       }
 
       if (!email || !email.includes('@')) {
         setError('Введите корректный email адрес');
+        return;
+      }
+
+      if (authStore.isEmailTaken(email.trim())) {
+        setError('Пользователь с таким email уже существует');
         return;
       }
 
@@ -142,7 +156,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({
 
   return (
     <div className="relative w-full max-w-md mx-auto select-none">
-      <div className="relative rounded-lg bg-zinc-900 border border-zinc-800 shadow-sm p-6 sm:p-8 space-y-6 overflow-hidden">
+      <div className="relative rounded-xl bg-zinc-900 border border-zinc-800 shadow-xl p-6 sm:p-8 space-y-6 overflow-hidden">
         {showCloseButton && onClose && !isGate && (
           <button
             onClick={onClose}
@@ -161,8 +175,8 @@ export const AuthCard: React.FC<AuthCardProps> = ({
           </h2>
           <p className="text-sm text-zinc-400 max-w-xs mx-auto leading-relaxed font-sans">
             {mode === 'register'
-              ? 'Зарегистрируйтесь для сохранения истории и создания коллекций'
-              : 'Войдите в свой аккаунт для доступа ко всем функциям'}
+              ? 'Зарегистрируйтесь для сохранения истории, поиска и создания коллекций'
+              : 'Войдите в свой аккаунт для доступа ко всем функциям и поиску'}
           </p>
         </div>
 
@@ -255,15 +269,37 @@ export const AuthCard: React.FC<AuthCardProps> = ({
                   nickname={username}
                 />
 
-                <CyberInput
-                  label="Уникальный Никнейм (@username)"
-                  icon={User}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  autoComplete="username"
-                  className={inputClassName}
-                  required
-                />
+                <div className="space-y-1">
+                  <CyberInput
+                    label="Уникальный Никнейм (@username)"
+                    icon={User}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete="username"
+                    className={inputClassName}
+                    required
+                  />
+                  {/* Real-time username validation helper */}
+                  {username.trim().length > 0 && (
+                    <div className="px-1 text-[11px] font-mono flex items-center justify-between">
+                      {isUsernameTakenNow && (
+                        <span className="text-rose-400 flex items-center gap-1">
+                          <X className="w-3 h-3" />
+                          Никнейм @{cleanUsername} уже занят
+                        </span>
+                      )}
+                      {isUsernameAvailable && (
+                        <span className="text-emerald-400 flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          Никнейм @{cleanUsername} свободен
+                        </span>
+                      )}
+                      {cleanUsername.length < 2 && (
+                        <span className="text-zinc-500">Минимум 2 символа</span>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <CyberInput
                   label="Email (Приватный)"
@@ -343,7 +379,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || (mode === 'register' && isUsernameTakenNow)}
             className="w-full py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 font-medium text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-4"
           >
             <span>{isLoading ? 'Обработка...' : mode === 'register' ? 'Зарегистрироваться' : 'Войти'}</span>
@@ -351,23 +387,12 @@ export const AuthCard: React.FC<AuthCardProps> = ({
           </button>
         </form>
 
-        <div className="pt-4 border-t border-zinc-800 text-center space-y-3">
+        <div className="pt-3 border-t border-zinc-800 text-center">
           <p className="text-xs text-zinc-500">
             {mode === 'register'
               ? 'Ваш email строго конфиденциален'
-              : 'Вход даёт доступ к плееру 1080p'}
+              : 'Вход даёт доступ к плееру 1080p, коллекциям и поиску'}
           </p>
-          
-          <button
-            type="button"
-            onClick={() => {
-              if (onClose) onClose();
-              if (redirectTo) router.push(redirectTo);
-            }}
-            className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
-          >
-            Продолжить как гость →
-          </button>
         </div>
       </div>
     </div>

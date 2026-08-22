@@ -6,6 +6,16 @@ import Image from 'next/image';
 import { MessageSquare, Clock, Send, EyeOff, Heart } from 'lucide-react';
 import { EpisodeComment } from '@/types';
 import { authStore, DEFAULT_AVATARS } from '@/lib/auth/user-store';
+import { useRelativeTime } from '@/lib/utils/time-ago';
+import { realtimeHub } from '@/lib/utils/realtime';
+
+const LiveCommentTimestamp: React.FC<{ createdAt: string; fallbackId?: string }> = ({
+  createdAt,
+  fallbackId,
+}) => {
+  const timeAgo = useRelativeTime(createdAt, fallbackId);
+  return <span className="text-[10px] text-zinc-500 font-mono">{timeAgo}</span>;
+};
 
 interface TimecodeCommentsProps {
   episodeId: string;
@@ -101,7 +111,7 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
       timecodeSeconds: attachTimecode ? Math.floor(currentVideoTime) : null,
       isSpoiler,
       likesCount: 0,
-      createdAt: 'Только что',
+      createdAt: new Date().toISOString(),
     };
 
     const updated = [newComment, ...comments];
@@ -273,7 +283,7 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] text-zinc-500 font-mono">{c.createdAt}</span>
+                  <LiveCommentTimestamp createdAt={c.createdAt} fallbackId={c.id} />
                 </div>
 
                 {/* Comment Body with Spoiler Protection */}

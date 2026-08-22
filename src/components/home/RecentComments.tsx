@@ -7,6 +7,16 @@ import { MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authStore, DEFAULT_AVATARS } from '@/lib/auth/user-store';
 import { GlobalComment } from '@/types';
+import { useRelativeTime } from '@/lib/utils/time-ago';
+import { realtimeHub } from '@/lib/utils/realtime';
+
+const LiveCommentTimestamp: React.FC<{ createdAt: string; fallbackId?: string }> = ({
+  createdAt,
+  fallbackId,
+}) => {
+  const timeAgo = useRelativeTime(createdAt, fallbackId);
+  return <span className="text-zinc-500 font-mono text-[11px]">{timeAgo}</span>;
+};
 
 export const RecentComments: React.FC = () => {
   const [comments, setComments] = useState<GlobalComment[]>([]);
@@ -22,7 +32,15 @@ export const RecentComments: React.FC = () => {
   };
 
   useEffect(() => {
-    return authStore.subscribeComments((c) => setComments(c));
+    const unsubStore = authStore.subscribeComments((c) => setComments(c));
+    const unsubHub = realtimeHub.on('comments_updated', () => {
+      setComments(authStore.getRecentComments(10));
+    });
+
+    return () => {
+      unsubStore();
+      unsubHub();
+    };
   }, []);
 
   if (comments.length === 0) return null;
@@ -74,7 +92,7 @@ export const RecentComments: React.FC = () => {
                       @{safeUsername}
                     </Link>
                     <span className="text-zinc-600">·</span>
-                    <span className="text-zinc-500">{comment.createdAt}</span>
+                    <LiveCommentTimestamp createdAt={comment.createdAt} fallbackId={comment.id} />
                   </div>
 
                   <p
