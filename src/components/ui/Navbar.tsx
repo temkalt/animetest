@@ -317,36 +317,68 @@ export const Navbar: React.FC = () => {
                   </div>
                 ) : searchResults.length > 0 ? (
                   searchResults.map((item) => {
-                    const title = item.title.russian || item.title.english || item.title.romaji;
+                    const title = item.title?.russian || item.title?.english || item.title?.romaji || 'Аниме';
+                    const subTitle = item.title?.english || item.title?.romaji || '';
+                    const cover = item.coverImage?.original || item.coverImage?.large || item.coverImage?.medium || item.cover;
+                    const score = typeof item.score === 'number' && item.score > 0
+                      ? item.score
+                      : item.averageScore
+                      ? item.averageScore / 10
+                      : 0;
+
                     return (
                       <div
                         key={item.id}
                         onClick={() => handleSelectResult(item.id)}
-                        className="flex items-center gap-3.5 p-3 rounded-lg hover:bg-zinc-900 border border-transparent hover:border-zinc-800 cursor-pointer transition-all group"
+                        className="flex items-center gap-3.5 p-2.5 rounded-lg hover:bg-zinc-900 border border-transparent hover:border-zinc-800 cursor-pointer transition-all group"
                       >
-                        <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-                          {item.coverImage?.original && (
-                            <Image src={item.coverImage.original} alt={title} fill className="object-cover group-hover:scale-105 transition-transform" />
+                        {/* Poster Thumbnail */}
+                        <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 flex-shrink-0">
+                          {cover ? (
+                            <Image
+                              src={cover}
+                              alt={title}
+                              fill
+                              sizes="48px"
+                              className="object-cover group-hover:scale-105 transition-transform duration-200"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-zinc-600">
+                              #{item.id}
+                            </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-zinc-300 transition-colors truncate">
+
+                        {/* Title & Metadata */}
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-zinc-200 transition-colors truncate">
                             {title}
                           </h4>
-                          <div className="flex items-center gap-2.5 text-[11px] text-zinc-400 font-mono">
-                            {item.score > 0 && (
-                              <span className="flex items-center gap-1 text-zinc-300 font-bold">
-                                <Star className="w-3 h-3 fill-zinc-400" />
-                                {item.score.toFixed(1)}
+                          {subTitle && subTitle !== title && (
+                            <p className="text-[10px] sm:text-[11px] text-zinc-500 truncate font-sans">
+                              {subTitle}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-zinc-400 font-mono pt-0.5">
+                            {score > 0 && (
+                              <span className="flex items-center gap-0.5 text-zinc-200 font-bold">
+                                <Star className="w-3 h-3 fill-zinc-200 text-zinc-200" />
+                                {score.toFixed(1)}
                               </span>
                             )}
                             <span className="px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px] font-bold">
                               {item.format || 'TV'}
                             </span>
-                            <span className="truncate text-zinc-400">{item.genres?.slice(0, 3).join(', ')}</span>
+                            {item.seasonYear && <span>• {item.seasonYear} г.</span>}
+                            {item.genres && item.genres.length > 0 && (
+                              <span className="truncate text-zinc-500 hidden sm:inline">
+                                • {item.genres.slice(0, 2).join(', ')}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 group-hover:translate-x-1 transition-all" />
+
+                        <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-300 group-hover:translate-x-1 transition-all shrink-0" />
                       </div>
                     );
                   })

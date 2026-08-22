@@ -249,6 +249,7 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         const dur = art.duration || 1;
         if (Math.abs(cur - lastSaveTime) > 4) {
           lastSaveTime = cur;
+          const cleanTitle = russianTitle || romajiTitle || (title ? title.split('—')[0].trim() : '');
           syncManager.saveWatchProgress({
             animeId,
             episodeNumber,
@@ -256,6 +257,8 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
             durationSeconds: dur,
             progressPercentage: (cur / dur) * 100,
             isCompleted: cur / dur >= 0.9,
+            animeTitle: cleanTitle || undefined,
+            animeCover: poster || undefined,
           });
         }
       });

@@ -183,26 +183,20 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
           </div>
 
           {/* Footer Bar */}
-          <div className="p-4 bg-[#08090D] border-t border-zinc-800 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <div className="relative w-6 h-6 rounded-lg overflow-hidden border border-white/20">
-                <Image
-                  src={collection.curator.avatar}
-                  alt={collection.curator.name}
-                  fill
-                  sizes="24px"
-                  className="object-cover"
-                />
+          <div className="p-4 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center font-display font-black text-xs text-white">
+                KN
               </div>
-              <span className="text-xs text-zinc-400 font-mono">
-                Куратор: <strong className="text-zinc-100">{collection.curator.name}</strong>
+              <span className="text-xs text-zinc-300 font-sans font-semibold">
+                Официальная коллекция KuroNami
               </span>
             </div>
 
             <Link
               href={collection.href}
               onClick={onClose}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-800 text-zinc-100 text-xs font-semibold shadow-sm  transition-all"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 text-xs font-semibold shadow-sm transition-all"
             >
               <span>Смотреть все в каталоге</span>
               <ArrowRight className="w-3.5 h-3.5" />

@@ -348,11 +348,14 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
               </div>
             )}
 
-            {/* Quick Actions Bar (Watch / Resume + Quick Bookmark Selector + Share) */}
+            {/* Quick Actions Bar (Watch / Resume + Quick Bookmark Selector + Collection + Share) */}
             <AnimeHeroActions
               animeId={anime.id}
               totalEpisodes={episodesCount}
               animeTitle={title}
+              animeCover={anime.coverImage.original}
+              animeFormat={formatType}
+              animeScore={anime.score}
             />
           </div>
         </div>

@@ -9,6 +9,10 @@ export interface LocalWatchProgress {
   progressPercentage: number;
   isCompleted: boolean;
   teamName?: string;
+  animeTitle?: string;
+  animeCover?: string;
+  animeTotalEpisodes?: number;
+  animeFormat?: string;
   updatedAt: string;
   synced: boolean;
 }
@@ -18,6 +22,11 @@ export interface LocalBookmarkItem {
   status: 'watching' | 'planned' | 'completed' | 'dropped' | 'on_hold';
   score?: number;
   isFavorite: boolean;
+  animeTitle?: string;
+  animeCover?: string;
+  animeFormat?: string;
+  animeScore?: number;
+  animeTotalEpisodes?: number;
   customFolder?: string;
   updatedAt: string;
   synced: boolean;

@@ -12,202 +12,9 @@ export const DEFAULT_AVATARS = [
   'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=200&auto=format&fit=crop&q=80',
 ];
 
-// Initial pre-seeded curated community collections
-const INITIAL_COLLECTIONS: UserCollection[] = [
-  {
-    id: 'col_sakuga_gods',
-    userId: 'user_master_otaku',
-    username: 'sakuga_master',
-    title: 'Вершина Сакуги и Анимации',
-    description: 'Тайтлы с невероятной динамикой боёв, покадровой ручной прорисовкой и эталонной режиссурой.',
-    coverImage: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80',
-    isPublic: true,
-    animeIds: [154587, 16498, 101922, 113415], // Frieren, Attack on Titan, Kimetsu, Jujutsu
-    likesCount: 142,
-    createdAt: '2026-08-15',
-    updatedAt: '2026-08-20',
-  },
-  {
-    id: 'col_dark_psychological',
-    userId: 'user_re_zero',
-    username: 'subaru_mind',
-    title: 'Мрачный Психологический Сэйнэн',
-    description: 'Глубокие сюжеты, философские дилеммы и захватывающий саспенс.',
-    coverImage: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80',
-    isPublic: true,
-    animeIds: [9253, 19, 1535, 20605], // Steins;Gate, Monster, Death Note, Tokyo Ghoul
-    likesCount: 98,
-    createdAt: '2026-08-18',
-    updatedAt: '2026-08-21',
-  },
-  {
-    id: 'col_cyber_sci_fi',
-    userId: 'user_cyber_ghost',
-    username: 'kusanagi_major',
-    title: 'Киберпанк и Неоновое Будущее',
-    description: 'Атмосфера аугментаций, мегакорпораций и искусственного интеллекта.',
-    coverImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
-    isPublic: true,
-    animeIds: [126546, 1, 467, 108632], // Cyberpunk Edgerunners, Cowboy Bebop, Ghost in the Shell, Vivy
-    likesCount: 84,
-    createdAt: '2026-08-19',
-    updatedAt: '2026-08-22',
-  },
-];
-
-// Initial real user comments on verified top anime
-const INITIAL_COMMENTS: GlobalComment[] = [
-  {
-    id: 'comm_1',
-    animeId: 154587,
-    animeTitle: 'Провожающая в последний путь Фрирен',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx154587-n2hrSMAneioW.jpg',
-    episodeNumber: 28,
-    userId: 'user_sakuga',
-    username: 'sakuga_master',
-    userAvatar: DEFAULT_AVATARS[0],
-    content: 'Анимация магии в последних сериях — это чистейшее искусство от Madhouse. Пересматриваю сцену экзамена уже третий раз!',
-    timecodeSeconds: 840,
-    isSpoiler: false,
-    likesCount: 24,
-    createdAt: '12 минут назад',
-  },
-  {
-    id: 'comm_2',
-    animeId: 151807,
-    animeTitle: 'Поднятие уровня в одиночку (Solo Leveling)',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx151807-m1gZXBdWqcSp.jpg',
-    episodeNumber: 12,
-    userId: 'user_shadow',
-    username: 'sung_jinwoo',
-    userAvatar: DEFAULT_AVATARS[1],
-    content: 'Момент с фразой «Пробудись» и появлением Теневых солдат вызвал мурашки по всему телу. Саундтрек Хироюки Савано невероятен.',
-    timecodeSeconds: 1120,
-    isSpoiler: false,
-    likesCount: 31,
-    createdAt: '25 минут назад',
-  },
-  {
-    id: 'comm_3',
-    animeId: 16498,
-    animeTitle: 'Атака титанов: Финал',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx16498-73IhOXpJZiPO.png',
-    episodeNumber: 1,
-    userId: 'user_eren',
-    username: 'jaeger_core',
-    userAvatar: DEFAULT_AVATARS[2],
-    content: 'Кульминация всего произведения. Каждая сцена несёт огромный эмоциональный вес.',
-    timecodeSeconds: 430,
-    isSpoiler: false,
-    likesCount: 19,
-    createdAt: '40 минут назад',
-  },
-  {
-    id: 'comm_4',
-    animeId: 101922,
-    animeTitle: 'Истребитель демонов: Kimetsu no Yaiba',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101922-PEn1CTOGdrwe.jpg',
-    episodeNumber: 19,
-    userId: 'user_tanjiro',
-    username: 'kamado_zen',
-    userAvatar: DEFAULT_AVATARS[3],
-    content: '19 серия навсегда вошла в историю анимации. Танец Бога Огня с песней Kamado Tanjiro no Uta великолепен.',
-    timecodeSeconds: 1205,
-    isSpoiler: false,
-    likesCount: 42,
-    createdAt: '1 час назад',
-  },
-  {
-    id: 'comm_5',
-    animeId: 9253,
-    animeTitle: 'Врата Штейна (Steins;Gate)',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx9253-12ZgqA6o5qC1.png',
-    episodeNumber: 22,
-    userId: 'user_okabe',
-    username: 'mad_scientist',
-    userAvatar: DEFAULT_AVATARS[4],
-    content: 'Лучший научно-фантастический шедевр всех времен. Эл Псай Конгру!',
-    timecodeSeconds: 960,
-    isSpoiler: false,
-    likesCount: 28,
-    createdAt: '1.5 часа назад',
-  },
-  {
-    id: 'comm_6',
-    animeId: 113415,
-    animeTitle: 'Магическая битва: 2 Сезон',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-bbBWj4pCQImw.jpg',
-    episodeNumber: 16,
-    userId: 'user_gojo',
-    username: 'satoru_infinity',
-    userAvatar: DEFAULT_AVATARS[5],
-    content: 'Битва Сукуны и Магораги в Сибуе показала новый уровень безумного продакшена MAPPA.',
-    timecodeSeconds: 780,
-    isSpoiler: false,
-    likesCount: 37,
-    createdAt: '2 часа назад',
-  },
-  {
-    id: 'comm_7',
-    animeId: 5114,
-    animeTitle: 'Стальной алхимик: Братство',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx5114-KJTQz9AImBkW.jpg',
-    episodeNumber: 64,
-    userId: 'user_alchemist',
-    username: 'edward_elric',
-    userAvatar: DEFAULT_AVATARS[0],
-    content: 'Завершил полный просмотр в 1080p. Законченная, идеальная история от начала до конца.',
-    timecodeSeconds: 1300,
-    isSpoiler: false,
-    likesCount: 15,
-    createdAt: '3 часа назад',
-  },
-  {
-    id: 'comm_8',
-    animeId: 126546,
-    animeTitle: 'Киберпанк: Бегущие по краю (Edgerunners)',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx126546-gn3NnF4tFqK2.jpg',
-    episodeNumber: 10,
-    userId: 'user_lucy',
-    username: 'moon_lucy',
-    userAvatar: DEFAULT_AVATARS[1],
-    content: 'Концовка разбивает сердце каждый раз. «I Really Want to Stay at Your House» до сих пор на репите.',
-    timecodeSeconds: 1250,
-    isSpoiler: true,
-    likesCount: 33,
-    createdAt: '4 часа назад',
-  },
-  {
-    id: 'comm_9',
-    animeId: 127230,
-    animeTitle: 'Человек-бензопила (Chainsaw Man)',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx127230-011nSg48y9aW.jpg',
-    episodeNumber: 8,
-    userId: 'user_denji',
-    username: 'pochita_fan',
-    userAvatar: DEFAULT_AVATARS[2],
-    content: 'Кинематографичная режиссура Рю Накаямы делает каждый эпизод как отдельный фильм.',
-    timecodeSeconds: 610,
-    isSpoiler: false,
-    likesCount: 22,
-    createdAt: '5 часов назад',
-  },
-  {
-    id: 'comm_10',
-    animeId: 1535,
-    animeTitle: 'Тетрадь смерти (Death Note)',
-    animeCover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1535-lawZ50i5B1kF.jpg',
-    episodeNumber: 25,
-    userId: 'user_lawliet',
-    username: 'l_detective',
-    userAvatar: DEFAULT_AVATARS[3],
-    content: 'Интеллектуальная дуэль Лайта и L остаётся непревзойдённой классикой аниме-индустрии.',
-    timecodeSeconds: 890,
-    isSpoiler: false,
-    likesCount: 29,
-    createdAt: '6 часов назад',
-  },
-];
+// Empty defaults - collections and comments are created strictly by real users
+const INITIAL_COLLECTIONS: UserCollection[] = [];
+const INITIAL_COMMENTS: GlobalComment[] = [];
 
 class AuthStore {
   private currentUser: UserProfile | null = null;
@@ -226,16 +33,28 @@ class AuthStore {
         }
       }
 
-      // Initialize collections in localStorage if empty
+      // Clean up legacy mock collections
       const savedCollections = localStorage.getItem('kuronami_collections');
-      if (!savedCollections) {
-        localStorage.setItem('kuronami_collections', JSON.stringify(INITIAL_COLLECTIONS));
+      if (savedCollections) {
+        try {
+          const parsed = JSON.parse(savedCollections);
+          if (Array.isArray(parsed)) {
+            const realUserCollections = parsed.filter((c: any) => !c.id?.startsWith('col_sakuga') && !c.id?.startsWith('col_dark') && !c.id?.startsWith('col_cyber'));
+            localStorage.setItem('kuronami_collections', JSON.stringify(realUserCollections));
+          }
+        } catch {}
       }
 
-      // Initialize comments in localStorage if empty
+      // Clean up legacy mock comments
       const savedComments = localStorage.getItem('kuronami_comments');
-      if (!savedComments) {
-        localStorage.setItem('kuronami_comments', JSON.stringify(INITIAL_COMMENTS));
+      if (savedComments) {
+        try {
+          const parsed = JSON.parse(savedComments);
+          if (Array.isArray(parsed)) {
+            const realUserComments = parsed.filter((c: any) => !c.id?.startsWith('comm_'));
+            localStorage.setItem('kuronami_comments', JSON.stringify(realUserComments));
+          }
+        } catch {}
       }
     }
   }

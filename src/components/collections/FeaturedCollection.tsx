@@ -6,13 +6,11 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   Sparkles,
-  Heart,
-  CheckCircle2,
   Play,
   Flame,
   Star,
-  Clock,
   Eye,
+  Layers,
 } from 'lucide-react';
 import { EditorialCollection } from '@/data/collections';
 import { SPRINGS } from '@/lib/motion-presets';
@@ -26,27 +24,13 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
   collection,
   onQuickView,
 }) => {
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(collection.likes);
   const [isHovered, setIsHovered] = useState(false);
-
-  const handleLike = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isLiked) {
-      setIsLiked(false);
-      setLikesCount((prev) => prev - 1);
-    } else {
-      setIsLiked(true);
-      setLikesCount((prev) => prev + 1);
-    }
-  };
 
   return (
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 transition-all duration-200"
+      className="relative w-full rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 transition-all duration-200 shadow-md"
     >
       {/* Cinematic Banner Layer */}
       <div className="absolute inset-0 z-0">
@@ -61,15 +45,15 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
         <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/80 to-transparent" />
       </div>
 
-      {/* Main Content Layout (Grid on desktop, stacked on mobile) */}
-      <div className="relative z-10 p-6 sm:p-10 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 min-h-[460px]">
+      {/* Main Content Layout */}
+      <div className="relative z-10 p-6 sm:p-10 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 min-h-[440px]">
         {/* Left Editorial Text Column */}
         <div className="flex-1 space-y-6 max-w-2xl">
-          {/* Top Issue & Curator Badge */}
+          {/* Top Badges */}
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-800 text-zinc-100 border border-zinc-700 text-[11px] font-mono font-bold tracking-wider">
-              <Flame className="w-3.5 h-3.5 text-zinc-400" />
-              <span>ВЫБОР ГЛАВНОГО РЕДАКТОРА</span>
+              <Flame className="w-3.5 h-3.5 text-zinc-300" />
+              <span>ГЛАВНАЯ ПОДБОРКА</span>
             </div>
 
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700 text-[11px] font-mono">
@@ -78,12 +62,12 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
             </div>
 
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700 text-[11px] font-mono">
-              <Clock className="w-3.5 h-3.5 text-zinc-400" />
-              <span>~{collection.estimatedHours} часов просмотра</span>
+              <Layers className="w-3.5 h-3.5 text-zinc-400" />
+              <span>{collection.animeList.length} тайтлов</span>
             </div>
           </div>
 
-          {/* Japanese Subtitle & Editorial Title */}
+          {/* Japanese Subtitle & Title */}
           <div className="space-y-2">
             <span className="text-xs font-mono tracking-widest text-zinc-500 uppercase block">
               {collection.subtitleJp}
@@ -93,78 +77,40 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
             </h2>
           </div>
 
-          {/* Spotlight Quote */}
-          {collection.spotlightQuote && (
-            <div className="p-3.5 rounded-lg bg-zinc-800/50 border-l-2 border-zinc-500">
-              <p className="text-xs sm:text-sm text-zinc-300 italic font-serif leading-relaxed">
-                {collection.spotlightQuote}
-              </p>
-            </div>
-          )}
-
-          {/* Editorial Note Description */}
+          {/* Description */}
           <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-xl font-sans">
-            {collection.editorialNote}
+            {collection.description}
           </p>
 
-          {/* Curator Profile Strip & Metrics */}
-          <div className="flex items-center justify-between gap-4 pt-2 border-t border-zinc-800 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-zinc-700 shrink-0 bg-zinc-800">
-                <Image
-                  src={collection.curator.avatar}
-                  alt={collection.curator.name}
-                  fill
-                  sizes="40px"
-                  className="object-cover"
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-bold text-zinc-100">
-                    {collection.curator.name}
-                  </span>
-                  <CheckCircle2 className="w-4 h-4 text-zinc-400" />
-                </div>
-                <p className="text-[11px] text-zinc-500 font-mono">
-                  {collection.curator.role}
-                </p>
-              </div>
+          {/* KuroNami Branding Strip */}
+          <div className="flex items-center gap-3 pt-2 border-t border-zinc-800">
+            <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center font-display font-black text-xs text-white">
+              KN
             </div>
-
-            {/* Like Counter */}
-            <button
-              type="button"
-              onClick={handleLike}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-xs font-mono font-bold transition-all cursor-pointer ${
-                isLiked
-                  ? 'bg-zinc-800 text-white border border-zinc-700'
-                  : 'bg-zinc-900 text-zinc-300 border border-zinc-800 hover:text-white hover:bg-zinc-800'
-              }`}
-            >
-              <Heart
-                className={`w-4 h-4 transition-colors ${
-                  isLiked ? 'fill-white text-white' : 'text-zinc-400'
-                }`}
-              />
-              <span>{likesCount} сохранений</span>
-            </button>
+            <div>
+              <div className="text-xs sm:text-sm font-bold text-zinc-100">
+                Коллекция от KuroNami
+              </div>
+              <p className="text-[11px] text-zinc-500 font-mono">
+                Официальный сборник портала
+              </p>
+            </div>
           </div>
 
           {/* Action CTAs */}
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center gap-3 pt-2 flex-wrap">
             <Link
               href={collection.href}
-              className="flex items-center gap-2 px-6 py-3 rounded-md bg-white hover:bg-zinc-200 text-zinc-900 font-bold text-xs sm:text-sm transition-all"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 font-bold text-xs sm:text-sm transition-all"
             >
               <Play className="w-4 h-4 fill-zinc-900" />
-              <span>Смотреть антологию</span>
+              <span>Смотреть в каталоге</span>
             </Link>
 
             <button
               type="button"
               onClick={() => onQuickView(collection)}
-              className="flex items-center gap-2 px-5 py-3 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-semibold text-xs sm:text-sm transition-all cursor-pointer"
+              className="flex items-center gap-2 px-5 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-semibold text-xs sm:text-sm transition-all cursor-pointer"
             >
               <Eye className="w-4 h-4 text-zinc-400" />
               <span>Тайтлы коллекции ({collection.animeList.length})</span>
@@ -203,7 +149,7 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
                         }
                   }
                   transition={SPRINGS.snappy}
-                  className="absolute w-32 sm:w-40 aspect-[3/4] rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950"
+                  className="absolute w-32 sm:w-40 aspect-[3/4] rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 shadow-xl"
                   style={{ zIndex: config.zIndex }}
                 >
                   <Image
@@ -218,10 +164,10 @@ export const FeaturedCollection: React.FC<FeaturedCollectionProps> = ({
                   {idx === 2 && (
                     <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-2 py-1 rounded-md bg-zinc-900/90 border border-zinc-800">
                       <span className="text-[10px] font-mono font-bold text-zinc-200 flex items-center gap-1">
-                        <Star className="w-3 h-3 text-zinc-400" />
-                        8.9
+                        <Star className="w-3 h-3 text-zinc-300" />
+                        HD 1080p
                       </span>
-                      <span className="text-[9px] font-mono text-zinc-400">1080P</span>
+                      <span className="text-[9px] font-mono text-zinc-400">KURO</span>
                     </div>
                   )}
                 </motion.div>

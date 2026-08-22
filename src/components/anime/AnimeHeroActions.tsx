@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Play, RotateCcw, Share2, Check, Sparkles } from 'lucide-react';
+import { Play, RotateCcw, Share2, Check, FolderPlus } from 'lucide-react';
 import { BookmarkQuickSelector } from './BookmarkQuickSelector';
+import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { syncManager } from '@/lib/dexie/sync';
 import { LocalWatchProgress } from '@/lib/dexie/db';
 
@@ -11,15 +12,22 @@ interface AnimeHeroActionsProps {
   animeId: number;
   totalEpisodes: number;
   animeTitle: string;
+  animeCover?: string;
+  animeFormat?: string;
+  animeScore?: number;
 }
 
 export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
   animeId,
   totalEpisodes,
   animeTitle,
+  animeCover = '',
+  animeFormat = 'TV',
+  animeScore,
 }) => {
   const [lastProgress, setLastProgress] = useState<LocalWatchProgress | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isAddToCollectionOpen, setIsAddToCollectionOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,7 +59,6 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
         setTimeout(() => setCopied(false), 2000);
       }
     } catch {
-      // Fallback copy
       try {
         await navigator.clipboard.writeText(window.location.href);
         setCopied(true);
@@ -66,13 +73,13 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
   const isResuming = Boolean(lastProgress && resumeEp > 1);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 pt-2 relative z-30">
+    <div className="flex flex-wrap items-center gap-2.5 pt-2 relative z-30">
       {/* Primary Watch Action Button */}
       <Link
         href={`/watch/${animeId}/${resumeEp}`}
-        className="flex items-center gap-2.5 px-6 py-3.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 font-sans font-bold text-xs transition-all duration-200 border border-zinc-800"
+        className="flex items-center gap-2 px-5 py-3 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-sans font-bold text-xs transition-all duration-200 border border-zinc-800 shadow-sm hover:scale-[1.02]"
       >
-        <Play className="w-4 h-4 fill-white" />
+        <Play className="w-4 h-4 fill-zinc-950" />
         <span>
           {isResuming ? `Продолжить: ${resumeEp} серия` : 'Смотреть онлайн'}
         </span>
@@ -83,7 +90,7 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
         <Link
           href={`/watch/${animeId}/1`}
           title="Смотреть с 1 серии"
-          className="flex items-center gap-1.5 px-3.5 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-800 text-xs font-mono transition-all "
+          className="flex items-center gap-1.5 px-3 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border border-zinc-700 text-xs font-mono transition-all"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">С 1 серии</span>
@@ -91,7 +98,25 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
       )}
 
       {/* Quick Bookmark Status Selector (with Favorite Heart) */}
-      <BookmarkQuickSelector animeId={animeId} />
+      <BookmarkQuickSelector
+        animeId={animeId}
+        animeTitle={animeTitle}
+        animeCover={animeCover}
+        animeFormat={animeFormat}
+        animeScore={animeScore}
+        animeTotalEpisodes={totalEpisodes}
+      />
+
+      {/* Add To Collection Button */}
+      <button
+        type="button"
+        onClick={() => setIsAddToCollectionOpen(true)}
+        className="flex items-center gap-1.5 px-3.5 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-zinc-700 text-xs font-semibold font-sans transition-all cursor-pointer"
+        title="Добавить в коллекцию"
+      >
+        <FolderPlus className="w-4 h-4 text-zinc-300" />
+        <span className="hidden sm:inline">В коллекцию</span>
+      </button>
 
       {/* Share / Copy Link Button */}
       <div className="relative">
@@ -99,22 +124,31 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
           type="button"
           onClick={handleShare}
           title="Поделиться аниме"
-          className={`p-3 rounded-lg border text-xs font-medium transition-all duration-200 cursor-pointer  ${
+          className={`p-3 rounded-lg border text-xs font-medium transition-all duration-200 cursor-pointer ${
             copied
-              ? 'bg-zinc-800 text-zinc-300 border-zinc-800'
-              : 'bg-zinc-800 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 border-zinc-800'
+              ? 'bg-zinc-800 text-zinc-200 border-zinc-600'
+              : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border-zinc-700'
           }`}
           aria-label="Поделиться"
         >
-          {copied ? <Check className="w-4 h-4 text-zinc-400" /> : <Share2 className="w-4 h-4" />}
+          {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
         </button>
 
         {copied && (
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-100 text-[10px] font-mono whitespace-nowrap shadow-sm animate-in fade-in zoom-in-95">
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-100 text-[10px] font-mono whitespace-nowrap shadow-md border border-zinc-700 animate-in fade-in zoom-in-95">
             Ссылка скопирована!
           </div>
         )}
       </div>
+
+      {/* Add To Collection Modal */}
+      <AddToCollectionModal
+        isOpen={isAddToCollectionOpen}
+        onClose={() => setIsAddToCollectionOpen(false)}
+        animeId={animeId}
+        animeTitle={animeTitle}
+        animeCover={animeCover}
+      />
     </div>
   );
 };

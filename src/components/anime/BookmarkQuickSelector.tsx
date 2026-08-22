@@ -61,9 +61,21 @@ const STATUS_CONFIGS: BookmarkStatusConfig[] = [
 
 interface BookmarkQuickSelectorProps {
   animeId: number;
+  animeTitle?: string;
+  animeCover?: string;
+  animeFormat?: string;
+  animeScore?: number;
+  animeTotalEpisodes?: number;
 }
 
-export const BookmarkQuickSelector: React.FC<BookmarkQuickSelectorProps> = ({ animeId }) => {
+export const BookmarkQuickSelector: React.FC<BookmarkQuickSelectorProps> = ({
+  animeId,
+  animeTitle,
+  animeCover,
+  animeFormat,
+  animeScore,
+  animeTotalEpisodes,
+}) => {
   const [bookmark, setBookmark] = useState<LocalBookmarkItem | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -104,7 +116,12 @@ export const BookmarkQuickSelector: React.FC<BookmarkQuickSelectorProps> = ({ an
       animeId,
       status,
       isFavorite: bookmark?.isFavorite || false,
-      score: bookmark?.score,
+      score: bookmark?.score || animeScore,
+      animeTitle: animeTitle || bookmark?.animeTitle,
+      animeCover: animeCover || bookmark?.animeCover,
+      animeFormat: animeFormat || bookmark?.animeFormat,
+      animeScore: animeScore || bookmark?.animeScore,
+      animeTotalEpisodes: animeTotalEpisodes || bookmark?.animeTotalEpisodes,
       updatedAt: new Date().toISOString(),
       synced: false,
     };
@@ -125,7 +142,12 @@ export const BookmarkQuickSelector: React.FC<BookmarkQuickSelectorProps> = ({ an
       animeId,
       status: bookmark?.status || 'planned',
       isFavorite: isFav,
-      score: bookmark?.score,
+      score: bookmark?.score || animeScore,
+      animeTitle: animeTitle || bookmark?.animeTitle,
+      animeCover: animeCover || bookmark?.animeCover,
+      animeFormat: animeFormat || bookmark?.animeFormat,
+      animeScore: animeScore || bookmark?.animeScore,
+      animeTotalEpisodes: animeTotalEpisodes || bookmark?.animeTotalEpisodes,
       updatedAt: new Date().toISOString(),
       synced: false,
     };

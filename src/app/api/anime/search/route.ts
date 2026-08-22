@@ -19,6 +19,8 @@ query SearchAnime($search: String) {
       seasonYear
       averageScore
       coverImage {
+        extraLarge
+        large
         medium
         color
       }
@@ -42,6 +44,8 @@ query GetByMalIds($ids: [Int]) {
       seasonYear
       averageScore
       coverImage {
+        extraLarge
+        large
         medium
         color
       }
@@ -82,12 +86,30 @@ export async function GET(req: NextRequest) {
 
         if (shikiList.length > 0) {
           const malIds = shikiList.map((s) => s.id);
-          const anilistData: any = await fetchAniListGraphQL(ANILIST_BY_MAL_QUERY, { ids: malIds });
+          const anilistData: any = await fetchAniListGraphQL(ANILIST_BY_MAL_QUERY, { ids: malIds }).catch(() => null);
           const anilistMedia = anilistData?.Page?.media || [];
 
-          // Map and preserve Shikimori Russian titles
+          // Map and preserve Shikimori Russian titles and images
           const results = shikiList.map((s) => {
             const matchedAniList = anilistMedia.find((m: any) => m.idMal === s.id);
+            const shikiImg = s.image?.original
+              ? (s.image.original.startsWith('http') ? s.image.original : `https://shikimori.one${s.image.original}`)
+              : s.image?.preview
+              ? (s.image.preview.startsWith('http') ? s.image.preview : `https://shikimori.one${s.image.preview}`)
+              : '';
+
+            const posterUrl =
+              matchedAniList?.coverImage?.extraLarge ||
+              matchedAniList?.coverImage?.large ||
+              matchedAniList?.coverImage?.medium ||
+              shikiImg;
+
+            const score = matchedAniList?.averageScore
+              ? matchedAniList.averageScore / 10
+              : s.score
+              ? parseFloat(s.score)
+              : 0;
+
             return {
               id: matchedAniList?.id || s.id,
               idMal: s.id,
@@ -98,10 +120,13 @@ export async function GET(req: NextRequest) {
               },
               format: matchedAniList?.format || s.kind?.toUpperCase() || 'TV',
               seasonYear: matchedAniList?.seasonYear || null,
+              score,
               averageScore: matchedAniList?.averageScore || (s.score ? parseFloat(s.score) * 10 : 80),
               coverImage: {
-                medium: matchedAniList?.coverImage?.medium || (s.image?.original ? `https://shikimori.one${s.image.original}` : ''),
-                color: '#8B5CF6',
+                original: posterUrl,
+                large: matchedAniList?.coverImage?.large || posterUrl,
+                medium: matchedAniList?.coverImage?.medium || posterUrl,
+                color: matchedAniList?.coverImage?.color || '#8B5CF6',
               },
               genres: matchedAniList?.genres || [],
             };
@@ -119,9 +144,18 @@ export async function GET(req: NextRequest) {
     const ruMap = await fetchBatchShikimoriTitles(malIds);
 
     const list = mediaList.map((m: any) => {
-      const ruTitle = (m.idMal ? ruMap.get(m.idMal) : null) ||
+      const ruTitle =
+        (m.idMal ? ruMap.get(m.idMal) : null) ||
         getKnownRussianTitle(m.id) ||
         (m.idMal ? getKnownRussianTitle(m.idMal) : null);
+
+      const posterUrl =
+        m.coverImage?.extraLarge ||
+        m.coverImage?.large ||
+        m.coverImage?.medium ||
+        '';
+
+      const score = m.averageScore ? m.averageScore / 10 : 0;
 
       return {
         ...m,
@@ -129,11 +163,19 @@ export async function GET(req: NextRequest) {
           ...m.title,
           russian: ruTitle,
         },
+        score,
+        coverImage: {
+          original: posterUrl,
+          large: m.coverImage?.large || posterUrl,
+          medium: m.coverImage?.medium || posterUrl,
+          color: m.coverImage?.color || '#8B5CF6',
+        },
       };
     });
 
     return NextResponse.json({ results: list });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('[Search API Error]:', err);
+    return NextResponse.json({ error: err.message, results: [] }, { status: 500 });
   }
 }

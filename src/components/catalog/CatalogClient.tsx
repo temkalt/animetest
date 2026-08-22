@@ -315,7 +315,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
       </div>
 
       {/* 2. Unified Clean Filter Toolbar */}
-      <div className="p-3 sm:p-4 rounded-xl bg-zinc-900/70 border border-zinc-800 shadow-sm space-y-3 backdrop-blur-md">
+      <div className="relative z-30 p-3 sm:p-4 rounded-xl bg-zinc-900/70 border border-zinc-800 shadow-sm space-y-3 backdrop-blur-md">
         {/* Row 1: Search + Sort Dropdown + View Toggle */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           {/* Search Input */}
@@ -354,7 +354,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           {/* Sort Menu & View Switcher */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Custom Sort Dropdown */}
-            <div className="relative flex-1 sm:flex-initial">
+            <div className={`relative flex-1 sm:flex-initial ${openDropdown === 'sort' ? 'z-50' : 'z-10'}`}>
               <button
                 type="button"
                 onClick={() => toggleDropdown('sort')}
@@ -382,7 +382,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 4, scale: 0.98 }}
                     transition={SPRINGS.snappy}
-                    className="absolute right-0 top-full mt-1.5 w-56 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 space-y-0.5"
+                    className="absolute right-0 top-full mt-1.5 w-56 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 space-y-0.5"
                   >
                     <div className="px-2.5 py-1 text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
                       Сортировка
@@ -458,7 +458,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
         {/* Row 2: Dropdown Filter Triggers (Grid of 5 Clean Selectors, NO horizontal scrollbars) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1 border-t border-zinc-800/80">
           {/* 1. Genre Dropdown */}
-          <div className="relative">
+          <div className={`relative ${openDropdown === 'genre' ? 'z-50' : 'z-10'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('genre')}
@@ -560,7 +560,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </div>
 
           {/* 2. Status Dropdown */}
-          <div className="relative">
+          <div className={`relative ${openDropdown === 'status' ? 'z-50' : 'z-10'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('status')}
@@ -592,7 +592,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={SPRINGS.snappy}
-                  className="absolute left-0 top-full mt-1.5 w-52 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 space-y-0.5"
+                  className="absolute left-0 top-full mt-1.5 w-52 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 space-y-0.5"
                 >
                   {STATUS_ITEMS.map((s) => {
                     const isSelected = (activeParams.status || '') === s.value;
@@ -624,7 +624,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </div>
 
           {/* 3. Format Dropdown */}
-          <div className="relative">
+          <div className={`relative ${openDropdown === 'format' ? 'z-50' : 'z-10'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('format')}
@@ -652,7 +652,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={SPRINGS.snappy}
-                  className="absolute left-0 top-full mt-1.5 w-52 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 space-y-0.5"
+                  className="absolute left-0 top-full mt-1.5 w-52 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 space-y-0.5"
                 >
                   {FORMAT_ITEMS.map((f) => {
                     const isSelected = (activeParams.format || '') === f.value;
@@ -684,7 +684,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </div>
 
           {/* 4. Season Dropdown */}
-          <div className="relative">
+          <div className={`relative ${openDropdown === 'season' ? 'z-50' : 'z-10'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('season')}
@@ -712,7 +712,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={SPRINGS.snappy}
-                  className="absolute left-0 sm:left-auto sm:right-0 lg:left-0 top-full mt-1.5 w-48 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 space-y-0.5"
+                  className="absolute left-0 sm:left-auto sm:right-0 lg:left-0 top-full mt-1.5 w-48 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 space-y-0.5"
                 >
                   {SEASON_ITEMS.map((season) => {
                     const isSelected = (activeParams.season || '') === season.value;
@@ -744,7 +744,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </div>
 
           {/* 5. Year Dropdown */}
-          <div className="relative">
+          <div className={`relative ${openDropdown === 'year' ? 'z-50' : 'z-10'}`}>
             <button
               type="button"
               onClick={() => toggleDropdown('year')}
@@ -774,7 +774,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={SPRINGS.snappy}
-                  className="absolute right-0 top-full mt-1.5 w-48 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl z-50 max-h-60 overflow-y-auto space-y-0.5"
+                  className="absolute right-0 top-full mt-1.5 w-48 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 max-h-60 overflow-y-auto space-y-0.5"
                 >
                   {YEAR_ITEMS.map((y) => {
                     const isSelected = (activeParams.year || '') === y.value;
