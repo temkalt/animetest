@@ -18,7 +18,7 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
   const [direction, setDirection] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  const topItems = items.slice(0, 5);
+  const topItems = items.slice(0, 6);
   const count = topItems.length;
 
   const handleNext = useCallback(() => {
@@ -62,8 +62,9 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
   if (!items || items.length === 0) return null;
 
   const current = topItems[currentIndex] || items[0];
-  const title = current.title.russian || current.title.english || current.title.romaji || 'Без названия';
+  const title = current.title.russian || current.title.romaji || current.title.english || 'Без названия';
   const backdropUrl = current.bannerImage || current.coverImage.original || current.coverImage.medium || '';
+  const synopsis = current.synopsisRu || current.synopsisEn || 'Описание отсутствует.';
 
   const slideVariants: Variants = {
     enter: (direction: number) => ({ x: direction > 0 ? 40 : -40, opacity: 0 }),
@@ -85,7 +86,7 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
         if (e.key === 'ArrowLeft') handlePrev();
         if (e.key === 'ArrowRight') handleNext();
       }}
-      className="relative w-full aspect-[16/11] sm:aspect-[21/10] lg:aspect-[2.35/1] min-h-[500px] rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800 shadow-sm group select-none focus:outline-none"
+      className="relative w-full aspect-[16/11] sm:aspect-[21/10] lg:aspect-[2.35/1] min-h-[500px] rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800 shadow-sm group select-none focus:outline-none"
     >
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div
@@ -145,21 +146,21 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
               {title}
             </motion.h1>
 
-            <motion.p variants={contentVariants} className="text-sm sm:text-base text-zinc-400 line-clamp-2 sm:line-clamp-3 font-sans max-w-2xl">
-              {current.synopsisRu || current.synopsisEn || 'Описание отсутствует.'}
+            <motion.p variants={contentVariants} className="text-sm sm:text-base text-zinc-300 line-clamp-2 sm:line-clamp-3 font-sans max-w-2xl leading-relaxed">
+              {synopsis}
             </motion.p>
 
             <motion.div variants={contentVariants} className="flex items-center gap-3 pt-2">
               <Link
                 href={`/watch/${current.id}/1`}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white text-zinc-900 font-sans font-medium text-sm hover:bg-zinc-200 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white text-zinc-900 font-sans font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-sm cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current" />
                 <span>Смотреть</span>
               </Link>
               <Link
                 href={`/anime/${current.id}`}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-zinc-800 text-zinc-100 border border-zinc-700 font-sans font-medium text-sm hover:bg-zinc-700 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-zinc-800/90 text-zinc-100 border border-zinc-700 font-sans font-medium text-sm hover:bg-zinc-700 transition-colors cursor-pointer"
               >
                 <Info className="w-4 h-4" />
                 <span>Подробнее</span>
@@ -169,38 +170,39 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
         </AnimatePresence>
       </div>
 
-      <div className="absolute bottom-6 right-6 z-20 flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          {topItems.map((_, idx) => (
-            <motion.button
-              key={idx}
-              onClick={() => handleSelect(idx)}
-              aria-label={`Слайд ${idx + 1}`}
-              layout
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className={`h-1.5 rounded-full ${
-                idx === currentIndex ? 'w-6 bg-white' : 'w-2 bg-zinc-700 hover:bg-zinc-500'
+      {/* Slide Indicators & Navigation Buttons */}
+      <div className="absolute bottom-6 right-6 lg:bottom-10 lg:right-10 z-20 flex items-center gap-4 pointer-events-auto">
+        <div className="flex items-center gap-1.5 bg-zinc-900/80 px-2.5 py-1.5 rounded-full border border-zinc-800">
+          {topItems.map((_, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handleSelect(index)}
+              aria-label={`Перейти к слайду ${index + 1}`}
+              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                index === currentIndex ? 'w-6 bg-white' : 'w-1.5 bg-zinc-600 hover:bg-zinc-400'
               }`}
             />
           ))}
         </div>
-        <div className="hidden sm:flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
             onClick={handlePrev}
-            className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+            aria-label="Предыдущий слайд"
+            className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer"
           >
-            <ChevronLeft className="w-5 h-5" />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
             onClick={handleNext}
-            className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+            aria-label="Следующий слайд"
+            className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer"
           >
-            <ChevronRight className="w-5 h-5" />
-          </motion.button>
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

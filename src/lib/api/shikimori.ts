@@ -49,7 +49,7 @@ export function cleanSynopsis(raw?: string | null): string {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/?[^>]+(>|$)/g, '')
     .replace(/\[(anime|manga|character|person|comment|topic|entry)=[^\]]+\](.*?)\[\/\1\]/gi, '$2')
-    .replace(/\[\/?(b|i|u|s|code|spoiler|url|quote)\]/gi, '')
+    .replace(/\[\/?(b|i|u|s|code|spoiler|quote)\]/gi, '')
     .replace(/\[[^\]]+\]/g, '')
     .replace(/&quot;/g, '"')
     .replace(/&#039;/g, "'")
@@ -57,7 +57,6 @@ export function cleanSynopsis(raw?: string | null): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/\(Source:[^)]+\)/gi, '')
-    .replace(/\[Written by MAL Rewrite\]/gi, '')
     .replace(/Note:[^\n]+/gi, '')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]+/g, ' ')
@@ -96,16 +95,25 @@ export async function fetchBatchShikimoriTitles(malIds: number[]): Promise<Map<n
       const json = await res.json();
       const list: any[] = json.data?.animes || [];
       for (const item of list) {
-        const id = Number(item.id || item.malId);
+        const shikiId = Number(item.id);
+        const malId = Number(item.malId);
         if (item.russian) {
-          memoryTitleCache.set(id, item.russian);
-          result.set(id, item.russian);
+          if (shikiId) {
+            memoryTitleCache.set(shikiId, item.russian);
+            result.set(shikiId, item.russian);
+          }
+          if (malId) {
+            memoryTitleCache.set(malId, item.russian);
+            result.set(malId, item.russian);
+          }
         }
         if (item.description) {
-          memoryMetaCache.set(id, {
+          const meta = {
             russian: item.russian,
             description: cleanSynopsis(item.description),
-          });
+          };
+          if (shikiId) memoryMetaCache.set(shikiId, meta);
+          if (malId) memoryMetaCache.set(malId, meta);
         }
       }
     }
@@ -148,14 +156,22 @@ export async function fetchBatchShikimoriMetadata(malIds: number[]): Promise<Map
       const json = await res.json();
       const list: any[] = json.data?.animes || [];
       for (const item of list) {
-        const id = Number(item.id || item.malId);
+        const shikiId = Number(item.id);
+        const malId = Number(item.malId);
         const meta: ShikimoriBatchResult = {
           russian: item.russian || undefined,
           description: cleanSynopsis(item.description) || undefined,
         };
-        memoryMetaCache.set(id, meta);
-        if (item.russian) memoryTitleCache.set(id, item.russian);
-        result.set(id, meta);
+        if (shikiId) {
+          memoryMetaCache.set(shikiId, meta);
+          result.set(shikiId, meta);
+          if (item.russian) memoryTitleCache.set(shikiId, item.russian);
+        }
+        if (malId) {
+          memoryMetaCache.set(malId, meta);
+          result.set(malId, meta);
+          if (item.russian) memoryTitleCache.set(malId, item.russian);
+        }
       }
     }
   } catch (err) {
@@ -180,54 +196,19 @@ export async function fetchShikimoriMetadata(malId: number) {
       next: { revalidate: 86400 },
     });
 
-    if (!res.ok) throw new Error('GraphQL fetch failed');
+    if (!res.ok) return null;
     const json = await res.json();
     const list = json.data?.animes;
-    
     if (list && list.length > 0) {
       const item = list[0];
       if (item.description) {
         item.description = cleanSynopsis(item.description);
       }
-      
-      if (!item.description || item.description.trim() === '') {
-        // Fallback to REST API
-        const restRes = await fetch(`https://shikimori.one/api/animes/${malId}`, {
-          headers: { 'User-Agent': 'KuroNamiAnimePortal/2.0' },
-          next: { revalidate: 86400 }
-        });
-        if (restRes.ok) {
-          const restJson = await restRes.json();
-          if (restJson.description) {
-            item.description = cleanSynopsis(restJson.description);
-          }
-        }
-      }
-      
       return item;
     }
-    throw new Error('Empty or invalid list from GraphQL');
+    return null;
   } catch (err) {
-    console.warn('[Shikimori API] Fetch failed, attempting REST fallback:', err);
-    try {
-      const restRes = await fetch(`https://shikimori.one/api/animes/${malId}`, {
-        headers: { 'User-Agent': 'KuroNamiAnimePortal/2.0' },
-        next: { revalidate: 86400 }
-      });
-      if (restRes.ok) {
-        const restJson = await restRes.json();
-        return {
-          id: String(restJson.id),
-          malId: String(restJson.mal_id || malId),
-          name: restJson.name,
-          russian: restJson.russian,
-          description: restJson.description ? cleanSynopsis(restJson.description) : null,
-          episodes: restJson.episodes
-        };
-      }
-    } catch (e) {
-      console.warn('[Shikimori API] REST fallback also failed:', e);
-    }
+    console.warn('[Shikimori API] Fetch failed:', err);
     return null;
   }
 }

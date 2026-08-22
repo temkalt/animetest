@@ -541,13 +541,12 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
 
       {/* 3. Main Profile Content Tabs: History, Bookmarks, Collections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Radar Matrix Card */}
+        {/* Real-time Taste Profile Card */}
         <GenreRadarChart 
           className="h-full" 
-          data={genreStats} 
-          totalWatched={groupedHistory.length} 
-          totalHours={parseFloat(totalHours)} 
-          averageScore={averageScore} 
+          history={history}
+          bookmarks={bookmarks}
+          animeMap={animeMap}
         />
 
         {/* History / Bookmarks / Collections Tab Panel */}
