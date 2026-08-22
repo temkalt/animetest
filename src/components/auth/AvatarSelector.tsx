@@ -15,6 +15,10 @@ export const AVATAR_PRESETS = [
   { url: DEFAULT_AVATARS[5], name: 'Фрирен' },
   { url: DEFAULT_AVATARS[6], name: 'Мегуми' },
   { url: DEFAULT_AVATARS[7], name: 'Пауэр' },
+  { url: DEFAULT_AVATARS[8], name: 'Наруто' },
+  { url: DEFAULT_AVATARS[9], name: 'Зоро' },
+  { url: DEFAULT_AVATARS[10], name: 'Киллуа' },
+  { url: DEFAULT_AVATARS[11], name: 'Эрен' },
 ];
 
 interface AvatarSelectorProps {
@@ -157,8 +161,8 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           </button>
         </div>
 
-        {/* Grid of Preset Avatars (8 anime character avatars in 2 neat rows) */}
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 p-2 rounded-xl bg-zinc-950/60 border border-zinc-800">
+        {/* Grid of Preset Avatars (12 anime character avatars) */}
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 p-2 rounded-xl bg-zinc-950/60 border border-zinc-800">
           {AVATAR_PRESETS.map((av, idx) => {
             const isSelected = selectedAvatar === av.url;
             return (

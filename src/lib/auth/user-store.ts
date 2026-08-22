@@ -5,14 +5,18 @@ import { realtimeHub } from '@/lib/utils/realtime';
 export type { UserProfile, UserCollection, GlobalComment };
 
 export const DEFAULT_AVATARS = [
-  'https://s4.anilist.co/file/anilistcdn/character/large/b40-8B3c861v79Vf.png',
-  'https://s4.anilist.co/file/anilistcdn/character/large/b88344-9w4Rk5t5aC4g.png',
-  'https://s4.anilist.co/file/anilistcdn/character/large/b137079-yNqW4qR28H2l.jpg',
-  'https://s4.anilist.co/file/anilistcdn/character/large/b124381-8j2p1v0Q2K2p.png',
-  'https://s4.anilist.co/file/anilistcdn/character/large/b85425-Q19c5rB8Rk6H.png',
-  'https://s4.anilist.co/file/anilistcdn/character/large/b182261-p3Gz7zOq6H5N.jpg',
-  'https://s4.anilist.co/file/anilistcdn/character/large/b127497-2T3wLzO6r4gA.png',
-  'https://s4.anilist.co/file/anilistcdn/character/large/b142478-4oHq7pYt7K1e.jpg',
+  'https://s4.anilist.co/file/anilistcdn/character/large/b40-MNypXsxSRb1R.png',     // Луффи
+  'https://s4.anilist.co/file/anilistcdn/character/large/b127691-9zqh1xpIubn7.png',  // Годжо
+  'https://s4.anilist.co/file/anilistcdn/character/large/b137080-UHcynYNjb5ZU.png',  // Макима
+  'https://s4.anilist.co/file/anilistcdn/character/large/b126071-BTNEc1nRIv68.png',  // Танджиро
+  'https://s4.anilist.co/file/anilistcdn/character/large/b45627-CR68RyZmddGG.png',   // Леви
+  'https://s4.anilist.co/file/anilistcdn/character/large/b176754-PCnpqIOkjhFk.png',  // Фрирен
+  'https://s4.anilist.co/file/anilistcdn/character/large/b126635-L0y3I92JSUkN.png',  // Мегуми
+  'https://s4.anilist.co/file/anilistcdn/character/large/b137079-6yLEUYR3bmpr.png',  // Пауэр
+  'https://s4.anilist.co/file/anilistcdn/character/large/b17-phjcWCkRuIhu.png',      // Наруто
+  'https://s4.anilist.co/file/anilistcdn/character/large/b62-S7oAeA9WInjV.png',      // Зоро
+  'https://s4.anilist.co/file/anilistcdn/character/large/b27-Z5O02kQUydpT.jpg',      // Киллуа
+  'https://s4.anilist.co/file/anilistcdn/character/large/b40882-dsj7IP943WFF.jpg',   // Эрен
 ];
 
 // Empty defaults - collections and comments are created strictly by real users
