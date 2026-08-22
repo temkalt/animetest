@@ -2,7 +2,7 @@ const SHIKIMORI_GRAPHQL_ENDPOINT = 'https://shikimori.one/api/graphql';
 
 export const SHIKIMORI_METADATA_QUERY = `
 query GetShikimoriMeta($ids: String) {
-  animes(ids: $ids, limit: 1) {
+  animes(ids: $ids, limit: 50) {
     id
     malId
     name
@@ -35,15 +35,41 @@ query GetShikimoriMeta($ids: String) {
 }
 `;
 
-const memoryCache = new Map<number, string>();
+export interface ShikimoriBatchResult {
+  russian?: string;
+  description?: string;
+}
+
+const memoryTitleCache = new Map<number, string>();
+const memoryMetaCache = new Map<number, ShikimoriBatchResult>();
+
+export function cleanSynopsis(raw?: string | null): string {
+  if (!raw) return '';
+  return raw
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?[^>]+(>|$)/g, '')
+    .replace(/\[(anime|manga|character|person|comment|topic|entry)=[^\]]+\](.*?)\[\/\1\]/gi, '$2')
+    .replace(/\[\/?(b|i|u|s|code|spoiler|quote)\]/gi, '')
+    .replace(/\[[^\]]+\]/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\(Source:[^)]+\)/gi, '')
+    .replace(/Note:[^\n]+/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+}
 
 export async function fetchBatchShikimoriTitles(malIds: number[]): Promise<Map<number, string>> {
   const result = new Map<number, string>();
   const toFetch: number[] = [];
 
   for (const id of malIds) {
-    if (memoryCache.has(id)) {
-      result.set(id, memoryCache.get(id)!);
+    if (memoryTitleCache.has(id)) {
+      result.set(id, memoryTitleCache.get(id)!);
     } else {
       toFetch.push(id);
     }
@@ -52,26 +78,87 @@ export async function fetchBatchShikimoriTitles(malIds: number[]): Promise<Map<n
   if (toFetch.length === 0) return result;
 
   try {
-    // Shikimori REST API batch endpoint
-    const url = `https://shikimori.one/api/animes?ids=${toFetch.slice(0, 50).join(',')}&limit=50`;
-    const res = await fetch(url, {
+    const res = await fetch(SHIKIMORI_GRAPHQL_ENDPOINT, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'User-Agent': 'KuroNamiAnimePortal/2.0',
       },
+      body: JSON.stringify({
+        query: SHIKIMORI_METADATA_QUERY,
+        variables: { ids: toFetch.slice(0, 50).join(',') },
+      }),
       next: { revalidate: 86400 },
     });
 
     if (res.ok) {
-      const list: Array<{ id: number; russian: string; name: string }> = await res.json();
+      const json = await res.json();
+      const list: any[] = json.data?.animes || [];
       for (const item of list) {
+        const id = Number(item.id || item.malId);
         if (item.russian) {
-          memoryCache.set(item.id, item.russian);
-          result.set(item.id, item.russian);
+          memoryTitleCache.set(id, item.russian);
+          result.set(id, item.russian);
+        }
+        if (item.description) {
+          memoryMetaCache.set(id, {
+            russian: item.russian,
+            description: cleanSynopsis(item.description),
+          });
         }
       }
     }
   } catch (err) {
     console.warn('[Shikimori API] Batch fetch failed:', err);
+  }
+
+  return result;
+}
+
+export async function fetchBatchShikimoriMetadata(malIds: number[]): Promise<Map<number, ShikimoriBatchResult>> {
+  const result = new Map<number, ShikimoriBatchResult>();
+  const toFetch: number[] = [];
+
+  for (const id of malIds) {
+    if (memoryMetaCache.has(id)) {
+      result.set(id, memoryMetaCache.get(id)!);
+    } else {
+      toFetch.push(id);
+    }
+  }
+
+  if (toFetch.length === 0) return result;
+
+  try {
+    const res = await fetch(SHIKIMORI_GRAPHQL_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'KuroNamiAnimePortal/2.0',
+      },
+      body: JSON.stringify({
+        query: SHIKIMORI_METADATA_QUERY,
+        variables: { ids: toFetch.slice(0, 50).join(',') },
+      }),
+      next: { revalidate: 86400 },
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      const list: any[] = json.data?.animes || [];
+      for (const item of list) {
+        const id = Number(item.id || item.malId);
+        const meta: ShikimoriBatchResult = {
+          russian: item.russian || undefined,
+          description: cleanSynopsis(item.description) || undefined,
+        };
+        memoryMetaCache.set(id, meta);
+        if (item.russian) memoryTitleCache.set(id, item.russian);
+        result.set(id, meta);
+      }
+    }
+  } catch (err) {
+    console.warn('[Shikimori API] Batch metadata fetch failed:', err);
   }
 
   return result;
@@ -95,7 +182,14 @@ export async function fetchShikimoriMetadata(malId: number) {
     if (!res.ok) return null;
     const json = await res.json();
     const list = json.data?.animes;
-    return list && list.length > 0 ? list[0] : null;
+    if (list && list.length > 0) {
+      const item = list[0];
+      if (item.description) {
+        item.description = cleanSynopsis(item.description);
+      }
+      return item;
+    }
+    return null;
   } catch (err) {
     console.warn('[Shikimori API] Fetch failed:', err);
     return null;
@@ -137,4 +231,3 @@ export async function fetchKinopoiskId(shikiId: number): Promise<number | null> 
   kinopoiskCache.set(shikiId, null);
   return null;
 }
-

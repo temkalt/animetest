@@ -1145,24 +1145,11 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
           }`}
         >
-          <AnimatePresence mode="popLayout">
-            {initialAnimeList.map((anime) => (
-              <motion.div
-                layout
-                key={anime.id}
-                variants={{
-                  hidden: { opacity: 0, y: 8, scale: 0.95 },
-                  show: { opacity: 1, y: 0, scale: 1 },
-                }}
-                initial="hidden"
-                animate="show"
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={SPRINGS.snappy}
-              >
-                <AnimeCard anime={anime} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {initialAnimeList.map((anime) => (
+            <div key={anime.id}>
+              <AnimeCard anime={anime} />
+            </div>
+          ))}
         </motion.div>
       )}
 

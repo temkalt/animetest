@@ -115,39 +115,36 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
       </div>
 
       {/* Grid */}
-      <AnimatePresence mode="wait">
-        {itemsForDay.length === 0 ? (
-          <motion.div
-            key={`empty-${selectedDay}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="flex flex-col items-center justify-center py-12 rounded-lg bg-zinc-900 border border-zinc-800 text-center px-4"
+      {itemsForDay.length === 0 ? (
+        <motion.div
+          key={`empty-${selectedDay}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
+          className="flex flex-col items-center justify-center py-12 rounded-lg bg-zinc-900 border border-zinc-800 text-center px-4"
+        >
+          <Calendar className="w-8 h-8 text-zinc-600 mb-4" />
+          <h3 className="text-lg font-medium text-zinc-200 mb-2">
+            Нет релизов на {currentDayInfo.fullName.toLowerCase()}
+          </h3>
+          <p className="text-sm text-zinc-500 max-w-sm mb-6">
+            Все серии этого дня уже вышли в эфир или ожидают обновления вещательной сетки.
+          </p>
+          <Link
+            href="/catalog?status=RELEASING"
+            className="text-sm text-zinc-400 hover:text-white transition-colors"
           >
-            <Calendar className="w-8 h-8 text-zinc-600 mb-4" />
-            <h3 className="text-lg font-medium text-zinc-200 mb-2">
-              Нет релизов на {currentDayInfo.fullName.toLowerCase()}
-            </h3>
-            <p className="text-sm text-zinc-500 max-w-sm mb-6">
-              Все серии этого дня уже вышли в эфир или ожидают обновления вещательной сетки.
-            </p>
-            <Link
-              href="/catalog?status=RELEASING"
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
-            >
-              Смотреть каталог онгоингов →
-            </Link>
-          </motion.div>
-        ) : (
-          <motion.div
-            key={`grid-${selectedDay}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, staggerChildren: 0.03 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-          >
+            Смотреть каталог онгоингов →
+          </Link>
+        </motion.div>
+      ) : (
+        <motion.div
+          key={`grid-${selectedDay}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+        >
             {itemsForDay.map((item) => (
               <motion.div key={`${item.id}-${item.episode}`} whileHover={{ y: -2 }}>
                 <Link
@@ -198,7 +195,6 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
             ))}
           </motion.div>
         )}
-      </AnimatePresence>
     </div>
   );
 };

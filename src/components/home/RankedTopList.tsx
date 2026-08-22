@@ -111,15 +111,13 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
 
       {/* Main List */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-2 sm:p-4">
-        <AnimatePresence mode="wait">
-          <motion.div 
-            key={activeTab} 
-            initial={{ opacity: 0, y: 10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            exit={{ opacity: 0, y: -10 }} 
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1], staggerChildren: 0.03 }}
-            className="flex flex-col gap-2"
-          >
+        <motion.div 
+          key={activeTab} 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+          className="flex flex-col gap-2"
+        >
             {list.map((item, idx) => {
               const rank = idx + 1;
               const title = item.title.russian || item.title.english || item.title.romaji;
@@ -178,7 +176,6 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
               );
             })}
           </motion.div>
-        </AnimatePresence>
       </div>
 
       {/* Footer Link */}

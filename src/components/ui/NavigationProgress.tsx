@@ -2,33 +2,71 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const NavigationProgressBar: React.FC = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
 
+  // Complete progress on route change
   useEffect(() => {
-    setIsNavigating(true);
-    const timer = setTimeout(() => {
-      setIsNavigating(false);
-    }, 300);
-    return () => clearTimeout(timer);
+    if (isVisible) {
+      setProgress(100);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setProgress(0);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
   }, [pathname, searchParams]);
 
+  // Listen to clicks on navigation links to start progress instantly (0ms)
+  useEffect(() => {
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('a');
+      if (!target) return;
+
+      const href = target.getAttribute('href');
+      if (
+        !href ||
+        href.startsWith('#') ||
+        href.startsWith('http') ||
+        href.startsWith('mailto:') ||
+        target.target === '_blank'
+      ) {
+        return;
+      }
+
+      // If clicking same page, ignore
+      if (href === pathname) return;
+
+      setIsVisible(true);
+      setProgress(35);
+
+      const trickle = setTimeout(() => {
+        setProgress((prev) => (prev < 80 ? 75 : prev));
+      }, 120);
+
+      return () => clearTimeout(trickle);
+    };
+
+    window.addEventListener('click', handleAnchorClick, { capture: true });
+    return () => window.removeEventListener('click', handleAnchorClick, { capture: true });
+  }, [pathname]);
+
+  if (!isVisible) return null;
+
   return (
-    <AnimatePresence>
-      {isNavigating && (
-        <motion.div
-          initial={{ scaleX: 0, opacity: 1, transformOrigin: '0%' }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.2 } }}
-          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed top-0 inset-x-0 h-[2px] bg-white z-50 pointer-events-none"
-        />
-      )}
-    </AnimatePresence>
+    <div className="fixed top-0 left-0 right-0 z-[100] h-[2px] pointer-events-none bg-transparent">
+      <div
+        className="h-full bg-gradient-to-r from-zinc-500 via-zinc-200 to-white transition-all ease-out"
+        style={{
+          width: `${progress}%`,
+          transitionDuration: progress === 100 ? '120ms' : '200ms',
+        }}
+      />
+    </div>
   );
 };
 

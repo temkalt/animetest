@@ -1,6 +1,6 @@
 import { fetchAniListGraphQL, ANIME_DETAILS_QUERY, POPULAR_ANIME_QUERY, AIRING_SCHEDULE_QUERY } from './anilist';
-import { fetchShikimoriMetadata, fetchBatchShikimoriTitles, fetchKinopoiskId } from './shikimori';
-import { getKnownRussianTitle, getKnownEpisodeCount } from './russian-titles';
+import { fetchShikimoriMetadata, fetchBatchShikimoriMetadata, fetchKinopoiskId, cleanSynopsis, ShikimoriBatchResult } from './shikimori';
+import { getKnownRussianTitle, getKnownRussianSynopsis, getKnownEpisodeCount } from './russian-titles';
 import { StreamAggregator } from './stream-aggregator';
 import {
   UnifiedAnime,
@@ -67,7 +67,7 @@ export class AnimeResolver {
           color: '#6366F1',
         },
         bannerImage: null,
-        synopsisRu: null,
+        synopsisRu: cleanSynopsis(s.description) || null,
         synopsisEn: '',
         score: s.score ? parseFloat(s.score) : 0,
         popularity: 100,
@@ -106,8 +106,8 @@ export class AnimeResolver {
       const list = data?.Page?.media || [];
       if (list.length > 0) {
         const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-        const ruMap = await fetchBatchShikimoriTitles(malIds);
-        return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
+        return list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
       }
     } catch (err) {
       console.warn('[AnimeResolver] getTrending AniList failed, using Shikimori fallback:', err);
@@ -130,8 +130,8 @@ export class AnimeResolver {
       const list = data?.Page?.media || [];
       if (list.length > 0) {
         const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-        const ruMap = await fetchBatchShikimoriTitles(malIds);
-        return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
+        return list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
       }
     } catch (err) {
       console.warn('[AnimeResolver] getPopular AniList failed, using Shikimori fallback:', err);
@@ -152,8 +152,8 @@ export class AnimeResolver {
       const list = data?.Page?.media || [];
       if (list.length > 0) {
         const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-        const ruMap = await fetchBatchShikimoriTitles(malIds);
-        return list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
+        return list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
       }
     } catch (err) {
       console.warn('[AnimeResolver] getTopRated AniList failed, using Shikimori fallback:', err);
@@ -193,9 +193,9 @@ export class AnimeResolver {
         };
 
         const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-        const ruMap = await fetchBatchShikimoriTitles(malIds);
+        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
 
-        const items = list.map((item: any) => this.mapAniListToUnified(item, ruMap));
+        const items = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
         return { items, pageInfo };
       }
     } catch (err) {
@@ -208,68 +208,110 @@ export class AnimeResolver {
   static async getAiringSchedule(): Promise<WeeklySchedule> {
     try {
       const now = Math.floor(Date.now() / 1000);
-      const startOfWeek = now - 86400 * 2;
-      const endOfWeek = now + 86400 * 6;
+      const startOfWeek = now - (now % 86400) - new Date().getDay() * 86400;
+      const endOfWeek = startOfWeek + 7 * 86400;
 
       const data: any = await fetchAniListGraphQL(AIRING_SCHEDULE_QUERY, {
-        airingAt_greater: startOfWeek,
-        airingAt_lesser: endOfWeek,
+        airingAtGreater: startOfWeek,
+        airingAtLesser: endOfWeek,
         perPage: 50,
       });
 
-      const schedules = data?.Page?.airingSchedules || [];
-      if (schedules.length > 0) {
-        const malIds = schedules.map((s: any) => s.media?.idMal).filter(Boolean);
-        const ruMap = await fetchBatchShikimoriTitles(malIds);
+      const list = data?.Page?.airingSchedules || [];
+      const malIds = list.map((s: any) => s.media?.idMal).filter(Boolean);
+      const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
 
-        const result: { [day: number]: any[] } = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+      const schedule: WeeklySchedule = {
+        1: [],
+        2: [],
+        3: [],
+        4: [],
+        5: [],
+        6: [],
+        7: [],
+      };
 
-        for (const item of schedules) {
-          if (!item.media) continue;
-          const date = new Date(item.airingAt * 1000);
-          let day = date.getDay();
-          if (day === 0) day = 7;
+      for (const item of list) {
+        const media = item.media;
+        if (!media) continue;
 
-          const hours = date.getHours().toString().padStart(2, '0');
-          const minutes = date.getMinutes().toString().padStart(2, '0');
+        const date = new Date(item.airingAt * 1000);
+        const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
 
-          const knownRu = (item.media.idMal ? ruMap.get(item.media.idMal) : null) ||
-            getKnownRussianTitle(item.media.id) ||
-            (item.media.idMal ? getKnownRussianTitle(item.media.idMal) : null);
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
 
-          const titleStr = knownRu || item.media.title?.english || item.media.title?.romaji || 'Аниме';
+        const ruMeta = media.idMal ? ruMetaMap.get(media.idMal) : undefined;
+        const ruTitle = ruMeta?.russian ||
+          getKnownRussianTitle(media.id) ||
+          (media.idMal ? getKnownRussianTitle(media.idMal) : null);
 
-          result[day].push({
-            id: item.media.id,
-            title: titleStr,
-            episode: item.episode,
-            airingAt: item.airingAt,
-            timeStr: `${hours}:${minutes} МСК`,
-            coverImage: item.media.coverImage?.large || item.media.coverImage?.medium || '',
-            format: item.media.format || 'TV',
-            studio: item.media.studios?.nodes?.[0]?.name,
-          });
-        }
-
-        return result;
+        schedule[dayOfWeek].push({
+          id: media.id,
+          title: ruTitle || media.title?.romaji || media.title?.english || 'Untitled',
+          episode: item.episode,
+          airingAt: item.airingAt,
+          timeStr: `${hours}:${minutes}`,
+          coverImage: media.coverImage?.large || media.coverImage?.medium || '',
+          format: media.format || 'TV',
+          studio: media.studios?.nodes?.[0]?.name || 'Studio',
+        });
       }
+
+      return schedule;
     } catch (err) {
-      console.warn('[AnimeResolver] getAiringSchedule AniList failed, distributing ongoings:', err);
+      console.warn('[AnimeResolver] Airing schedule AniList failed, using mock data:', err);
+      return this.getMockSchedule();
     }
+  }
 
-    // Fallback: distribute top ongoings across the 7 days of the week
-    const fallbackOngoings = await this.fetchShikimoriCatalogFallback({ status: 'RELEASING', perPage: 28 });
-    const result: { [day: number]: any[] } = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+  private static getMockSchedule(): WeeklySchedule {
+    const result: WeeklySchedule = {
+      1: [],
+      2: [],
+      3: [],
+      4: [],
+      5: [],
+      6: [],
+      7: [],
+    };
 
-    fallbackOngoings.items.forEach((item, index) => {
-      const day = (index % 7) + 1;
+    const dummyItems = [
+      {
+        id: 154587,
+        title: 'Провожающая в последний путь Фрирен',
+        coverImage: { medium: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx154587-qQTzQnEJJ3oB.jpg' },
+        format: 'TV',
+      },
+      {
+        id: 151807,
+        title: 'Поднятие уровня в одиночку',
+        coverImage: { medium: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx151807-m1gynsplyu27.jpg' },
+        format: 'TV',
+      },
+      {
+        id: 171018,
+        title: 'Дандадан',
+        coverImage: { medium: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx171018-7sR1r95n3m82.jpg' },
+        format: 'TV',
+      },
+      {
+        id: 153288,
+        title: 'Кайдзю номер восемь',
+        coverImage: { medium: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx153288-n1q2g3h4j5k6.jpg' },
+        format: 'TV',
+      },
+    ];
+
+    [1, 2, 3, 4, 5, 6, 7].forEach((day, index) => {
+      const item = dummyItems[index % dummyItems.length];
       result[day].push({
         id: item.id,
-        title: item.title.russian || item.title.romaji,
-        episode: item.episodesAired || 1,
+        title: item.title,
+        episode: 12,
         airingAt: Math.floor(Date.now() / 1000),
         timeStr: '19:00 МСК',
-        coverImage: item.coverImage.original || item.coverImage.medium,
+        coverImage: item.coverImage.medium,
         format: item.format || 'TV',
         studio: 'Studio',
       });
@@ -300,7 +342,7 @@ export class AnimeResolver {
           if (shikiData) {
             unified.shikimoriId = Number(shikiData.id);
             unified.title.russian = shikiData.russian || unified.title.russian;
-            unified.synopsisRu = shikiData.description || unified.synopsisRu;
+            unified.synopsisRu = cleanSynopsis(shikiData.description) || unified.synopsisRu;
             if (shikiData.episodes) {
               unified.episodesTotal = Math.max(unified.episodesTotal || 0, shikiData.episodes);
             }
@@ -336,7 +378,7 @@ export class AnimeResolver {
             color: '#8B5CF6',
           },
           bannerImage: null,
-          synopsisRu: shikiData.description || null,
+          synopsisRu: cleanSynopsis(shikiData.description) || null,
           synopsisEn: '',
           score: shikiData.score ? parseFloat(shikiData.score) : 0,
           popularity: 100,
@@ -358,10 +400,8 @@ export class AnimeResolver {
       const knownCount = getKnownEpisodeCount(unified.id) || (unified.malId ? getKnownEpisodeCount(unified.malId) : null);
       if (knownCount) {
         unified.episodesTotal = knownCount;
-        unified.episodesAired = knownCount;
       }
 
-      // Resolve streams & multi-voiceovers through StreamAggregator
       const streamRes = await StreamAggregator.resolveStreams({
         animeId: unified.id,
         malId: unified.malId,
@@ -383,12 +423,19 @@ export class AnimeResolver {
     }
   }
 
-  private static mapAniListToUnified(media: any, ruMap?: Map<number, string>): UnifiedAnime {
+  private static mapAniListToUnified(media: any, ruMetaMap?: Map<number, ShikimoriBatchResult>): UnifiedAnime {
     const slug = (media.title?.romaji || `anime-${media.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const knownRu = (media.idMal && ruMap ? ruMap.get(media.idMal) : null) ||
+    const ruMeta = media.idMal && ruMetaMap ? ruMetaMap.get(media.idMal) : undefined;
+    const knownRu = ruMeta?.russian ||
       getKnownRussianTitle(media.id) ||
       (media.idMal ? getKnownRussianTitle(media.idMal) : null) ||
       getKnownRussianTitle(slug);
+
+    const knownRuSynopsis = ruMeta?.description ||
+      getKnownRussianSynopsis(media.id) ||
+      (media.idMal ? getKnownRussianSynopsis(media.idMal) : null) ||
+      getKnownRussianSynopsis(slug) ||
+      null;
 
     const isUnreleased = media.status === 'NOT_YET_RELEASED';
     const knownEps = getKnownEpisodeCount(media.id) || (media.idMal ? getKnownEpisodeCount(media.idMal) : null);
@@ -432,8 +479,8 @@ export class AnimeResolver {
         color: media.coverImage?.color || '#8B5CF6',
       },
       bannerImage: media.bannerImage || null,
-      synopsisRu: null,
-      synopsisEn: media.description || '',
+      synopsisRu: knownRuSynopsis ? cleanSynopsis(knownRuSynopsis) : null,
+      synopsisEn: cleanSynopsis(media.description) || '',
       score: media.averageScore ? Number((media.averageScore / 10).toFixed(1)) : 0,
       popularity: media.popularity || 0,
       genres: media.genres || [],
