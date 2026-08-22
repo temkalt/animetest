@@ -1,6 +1,12 @@
-import { fetchAniListGraphQL, ANIME_DETAILS_QUERY, POPULAR_ANIME_QUERY, AIRING_SCHEDULE_QUERY } from './anilist';
+import { fetchAniListGraphQL, ANIME_DETAILS_QUERY, ANIME_DETAILS_BY_MAL_QUERY, POPULAR_ANIME_QUERY, AIRING_SCHEDULE_QUERY } from './anilist';
 import { fetchShikimoriMetadata, fetchBatchShikimoriMetadata, fetchKinopoiskId, cleanSynopsis, ShikimoriBatchResult } from './shikimori';
-import { getKnownRussianTitle, getKnownRussianSynopsis, getKnownEpisodeCount, generateRussianGenreSynopsis } from './russian-titles';
+import {
+  getKnownRussianTitle,
+  getKnownRussianSynopsis,
+  getKnownEpisodeCount,
+  generateRussianGenreSynopsis,
+  ensureRussianTitle,
+} from './russian-titles';
 import { StreamAggregator } from './stream-aggregator';
 import {
   UnifiedAnime,
@@ -10,6 +16,9 @@ import {
   CatalogSearchResult,
   CatalogFilterParams,
 } from '@/types';
+
+const ANIME_FORMATS = new Set(['TV', 'TV_SHORT', 'MOVIE', 'SPECIAL', 'OVA', 'ONA']);
+const EXCLUDED_RELATIONS = new Set(['CHARACTER', 'OTHER', 'ADAPTATION', 'SOURCE']);
 
 export class AnimeResolver {
   private static async fetchShikimoriCatalogFallback(
@@ -51,7 +60,12 @@ export class AnimeResolver {
           romaji: s.name,
           english: null,
           native: null,
-          russian: s.russian || getKnownRussianTitle(s.id) || getKnownRussianTitle(s.name) || s.name,
+          russian: ensureRussianTitle({
+            russian: s.russian,
+            romaji: s.name,
+            id: s.id,
+            malId: s.id,
+          }),
         },
         synonyms: [],
         format: (s.kind || 'TV').toUpperCase(),
@@ -260,12 +274,15 @@ export class AnimeResolver {
 
         const ruMeta = media.idMal ? ruMetaMap.get(media.idMal) : undefined;
         const slug = (media.title?.romaji || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const ruTitle = ruMeta?.russian ||
-          getKnownRussianTitle(media.id) ||
-          (media.idMal ? getKnownRussianTitle(media.idMal) : null) ||
-          getKnownRussianTitle(slug) ||
-          (media.title?.english ? getKnownRussianTitle(media.title.english) : null) ||
-          (media.title?.romaji ? getKnownRussianTitle(media.title.romaji) : null);
+        const ruTitle = ensureRussianTitle({
+          russian: ruMeta?.russian,
+          english: media.title?.english,
+          romaji: media.title?.romaji,
+          userPreferred: media.title?.userPreferred,
+          id: media.id,
+          malId: media.idMal,
+          slug,
+        });
 
         if (!schedule[dayOfWeekItem]) {
           schedule[dayOfWeekItem] = [];
@@ -273,7 +290,7 @@ export class AnimeResolver {
 
         schedule[dayOfWeekItem].push({
           id: media.id,
-          title: ruTitle || media.title?.romaji || media.title?.english || 'Без названия',
+          title: ruTitle,
           episode: item.episode,
           airingAt: item.airingAt,
           timeStr: `${hours}:${minutes} МСК`,
@@ -352,14 +369,20 @@ export class AnimeResolver {
 
       // Fallback 1: lookup by idMal
       if (!media) {
-        data = await fetchAniListGraphQL(ANIME_DETAILS_QUERY, { idMal: anilistId });
+        data = await fetchAniListGraphQL(ANIME_DETAILS_BY_MAL_QUERY, { idMal: anilistId }).catch(() => null);
         media = data?.Media;
       }
 
       let unified: UnifiedAnime;
 
       if (media) {
-        unified = this.mapAniListToUnified(media);
+        const relMalIds = (media.relations?.edges || [])
+          .map((e: any) => e.node?.idMal)
+          .filter(Boolean);
+        const allMalIds = media.idMal ? [media.idMal, ...relMalIds] : relMalIds;
+        const ruMetaMap = allMalIds.length > 0 ? await fetchBatchShikimoriMetadata(allMalIds) : undefined;
+
+        unified = this.mapAniListToUnified(media, ruMetaMap);
 
         // Ingest Russian metadata & synopses from Shikimori
         if (media.idMal) {
@@ -451,13 +474,15 @@ export class AnimeResolver {
   private static mapAniListToUnified(media: any, ruMetaMap?: Map<number, ShikimoriBatchResult>): UnifiedAnime {
     const slug = (media.title?.romaji || `anime-${media.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const ruMeta = media.idMal && ruMetaMap ? ruMetaMap.get(media.idMal) : undefined;
-    const knownRu = ruMeta?.russian ||
-      getKnownRussianTitle(media.id) ||
-      (media.idMal ? getKnownRussianTitle(media.idMal) : null) ||
-      getKnownRussianTitle(slug) ||
-      (media.title?.english ? getKnownRussianTitle(media.title.english) : null) ||
-      (media.title?.romaji ? getKnownRussianTitle(media.title.romaji) : null) ||
-      (media.title?.userPreferred ? getKnownRussianTitle(media.title.userPreferred) : null);
+    const knownRu = ensureRussianTitle({
+      russian: ruMeta?.russian,
+      english: media.title?.english,
+      romaji: media.title?.romaji,
+      userPreferred: media.title?.userPreferred,
+      id: media.id,
+      malId: media.idMal,
+      slug,
+    });
 
     const knownRuSynopsis = ruMeta?.description ||
       getKnownRussianSynopsis(media.id) ||
@@ -470,18 +495,38 @@ export class AnimeResolver {
     const totalEps = knownEps || media.episodes || (media.nextAiringEpisode?.episode ? media.nextAiringEpisode.episode : null);
     const airedEps = knownEps || (media.nextAiringEpisode?.episode ? media.nextAiringEpisode.episode - 1 : (media.episodes || (isUnreleased ? 0 : 12)));
 
-    const relations = (media.relations?.edges || []).map((edge: any) => {
-      const relRu = getKnownRussianTitle(edge.node.id) || (edge.node.idMal ? getKnownRussianTitle(edge.node.idMal) : null);
-      return {
-        id: edge.node.id,
-        malId: edge.node.idMal,
-        relationType: edge.relationType,
-        title: relRu || edge.node.title?.romaji || edge.node.title?.english || 'Unknown',
-        format: edge.node.format || 'TV',
-        coverImage: edge.node.coverImage?.large || '',
-        year: edge.node.startDate?.year || edge.node.seasonYear || undefined,
-      };
-    });
+    const relations = (media.relations?.edges || [])
+      .filter((edge: any) => {
+        if (!edge || !edge.node || !edge.node.id) return false;
+        if (edge.node.type && edge.node.type !== 'ANIME') return false;
+        if (edge.node.format && !ANIME_FORMATS.has(edge.node.format.toUpperCase())) return false;
+        const relType = (edge.relationType || '').toUpperCase();
+        if (EXCLUDED_RELATIONS.has(relType)) return false;
+        return true;
+      })
+      .map((edge: any) => {
+        const ruMeta = edge.node.idMal && ruMetaMap ? ruMetaMap.get(edge.node.idMal) : undefined;
+        const slug = (edge.node.title?.romaji || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const relRu = ensureRussianTitle({
+          russian: ruMeta?.russian,
+          english: edge.node.title?.english,
+          romaji: edge.node.title?.romaji,
+          userPreferred: edge.node.title?.userPreferred,
+          id: edge.node.id,
+          malId: edge.node.idMal,
+          slug,
+        });
+
+        return {
+          id: edge.node.id,
+          malId: edge.node.idMal,
+          relationType: edge.relationType,
+          title: relRu,
+          format: edge.node.format || 'TV',
+          coverImage: edge.node.coverImage?.large || '',
+          year: edge.node.startDate?.year || edge.node.seasonYear || undefined,
+        };
+      });
 
     return {
       id: media.id,

@@ -303,3 +303,218 @@ export function generateRussianGenreSynopsis(
   }
   return `${formatStr} «${cleanTitle}». Захватывающая история с яркими персонажами и динамичным сюжетом. Смотрите все серии онлайн в высоком качестве на KuroNami.`;
 }
+
+/**
+ * Intelligent transliterator from Hepburn Romaji / English to natural Russian Cyrillic
+ */
+export function transliterateToRussian(input: string): string {
+  if (!input) return '';
+  let str = input.trim();
+
+  // If already contains Russian letters, return cleaned string
+  if (/[а-яё]/i.test(str)) {
+    return str;
+  }
+
+  // Replace common season/movie indicators
+  str = str
+    .replace(/\b(\d+)(st|nd|rd|th)\s+Season\b/gi, '$1 сезон')
+    .replace(/\bSeason\s+(\d+)\b/gi, '$1 сезон')
+    .replace(/\bPart\s+(\d+)\b/gi, 'Часть $1')
+    .replace(/\bMovie\b/gi, 'Фильм')
+    .replace(/\bThe\s+Final\s+Season\b/gi, 'Финал')
+    .replace(/\bFinal\s+Season\b/gi, 'Финал')
+    .replace(/\bFinal\b/gi, 'Финал');
+
+  const replacements: Array<[RegExp, string]> = [
+    // Multi-letter diphthongs & Japanese phonetics
+    [/\bshingeki\s+no\b/gi, 'Шингеки но '],
+    [/\bkimetsu\s+no\b/gi, 'Кимецу но '],
+    [/\bkyojin\b/gi, 'кёдзин'],
+    [/\byaiba\b/gi, 'яйба'],
+    [/\bkaisen\b/gi, 'кайсен'],
+    [/\bjujutsu\b/gi, 'дзюдзюцу'],
+    [/\btsurugi\b/gi, 'цуруги'],
+    [/\bshin\b/gi, 'шин'],
+    [/\bchou\b/gi, 'тё'],
+    [/\bryuu\b/gi, 'рю'],
+    [/\bkyuu\b/gi, 'кю'],
+    [/\bshou\b/gi, 'сё'],
+    [/\bshoujo\b/gi, 'сёдзё'],
+    [/\bshounen\b/gi, 'сёнэн'],
+    [/\bseinen\b/gi, 'сэйнэн'],
+    [/\bisekai\b/gi, 'исэкай'],
+    [/\bmonogatari\b/gi, 'моногатари'],
+    [/\bkyoushitsu\b/gi, 'кёсицу'],
+    [/\bgakuen\b/gi, 'гакуэн'],
+    [/\bkoukou\b/gi, 'коко'],
+    [/\bsensei\b/gi, 'сэнсэй'],
+    [/\bsenpai\b/gi, 'сэнпай'],
+    [/\bkouhai\b/gi, 'кохай'],
+    [/\bchibi\b/gi, 'чиби'],
+    [/\bno\b/g, 'но'],
+    [/\bto\b/g, 'то'],
+    [/\bwa\b/g, 'ва'],
+    [/\bga\b/g, 'га'],
+    [/\bwo\b/g, 'во'],
+    [/\bni\b/g, 'ни'],
+    [/\bde\b/g, 'дэ'],
+    [/\bmo\b/g, 'мо'],
+    [/\bkara\b/g, 'кара'],
+    [/\bmade\b/g, 'мадэ'],
+
+    // Common phonetic combinations
+    [/tsu/gi, 'цу'],
+    [/kya/gi, 'кя'],
+    [/kyu/gi, 'кю'],
+    [/kyo/gi, 'кё'],
+    [/nya/gi, 'ня'],
+    [/nyu/gi, 'ню'],
+    [/nyo/gi, 'нё'],
+    [/hya/gi, 'хя'],
+    [/hyu/gi, 'хю'],
+    [/hyo/gi, 'хё'],
+    [/mya/gi, 'мя'],
+    [/myu/gi, 'мю'],
+    [/myo/gi, 'мё'],
+    [/rya/gi, 'ря'],
+    [/ryu/gi, 'рю'],
+    [/ryo/gi, 'рё'],
+    [/gya/gi, 'гя'],
+    [/gyu/gi, 'гю'],
+    [/gyo/gi, 'гё'],
+    [/bya/gi, 'бя'],
+    [/byu/gi, 'бю'],
+    [/byo/gi, 'бё'],
+    [/pya/gi, 'пя'],
+    [/pyu/gi, 'пю'],
+    [/pyo/gi, 'пё'],
+
+    // Vowel digraphs
+    [/aa/gi, 'а'],
+    [/ii/gi, 'и'],
+    [/uu/gi, 'у'],
+    [/ee/gi, 'э'],
+    [/oo/gi, 'о'],
+    [/ou/gi, 'о'],
+    [/ei/gi, 'эй'],
+    [/ai/gi, 'ай'],
+    [/oi/gi, 'ой'],
+    [/ui/gi, 'уй'],
+
+    // Consonants
+    [/th/gi, 'т'],
+    [/ph/gi, 'ф'],
+    [/ck/gi, 'к'],
+    [/qu/gi, 'кв'],
+    [/sh/gi, 'ш'],
+    [/ch/gi, 'ч'],
+    [/zh/gi, 'ж'],
+    [/kh/gi, 'х'],
+    [/gh/gi, 'г'],
+    [/ts/gi, 'ц'],
+
+    // Basic Latin to Cyrillic characters
+    [/a/g, 'а'], [/A/g, 'А'],
+    [/b/g, 'б'], [/B/g, 'Б'],
+    [/v/g, 'в'], [/V/g, 'В'],
+    [/g/g, 'г'], [/G/g, 'Г'],
+    [/d/g, 'д'], [/D/g, 'Д'],
+    [/e/g, 'е'], [/E/g, 'Е'],
+    [/z/g, 'з'], [/Z/g, 'З'],
+    [/i/g, 'и'], [/I/g, 'И'],
+    [/j/g, 'дж'], [/J/g, 'Дж'],
+    [/k/g, 'к'], [/K/g, 'К'],
+    [/l/g, 'л'], [/L/g, 'Л'],
+    [/m/g, 'м'], [/M/g, 'М'],
+    [/n/g, 'н'], [/N/g, 'Н'],
+    [/o/g, 'о'], [/O/g, 'О'],
+    [/p/g, 'п'], [/P/g, 'П'],
+    [/r/g, 'р'], [/R/g, 'Р'],
+    [/s/g, 'с'], [/S/g, 'С'],
+    [/t/g, 'т'], [/T/g, 'Т'],
+    [/u/g, 'у'], [/U/g, 'У'],
+    [/f/g, 'ф'], [/F/g, 'Ф'],
+    [/h/g, 'х'], [/H/g, 'Х'],
+    [/c/g, 'к'], [/C/g, 'К'],
+    [/w/g, 'в'], [/W/g, 'В'],
+    [/y/g, 'й'], [/Y/g, 'Й'],
+    [/x/g, 'кс'], [/X/g, 'Кс'],
+    [/q/g, 'к'], [/Q/g, 'К'],
+  ];
+
+  for (const [regex, cyr] of replacements) {
+    str = str.replace(regex, cyr);
+  }
+
+  // Capitalize first letter
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Ensures a truthful, high-fidelity Russian title for any anime object.
+ * Priority:
+ * 1. Existing russian title (if contains cyrillic)
+ * 2. Dictionary lookup by ID or MAL ID
+ * 3. Dictionary lookup by Slug / English / Romaji / UserPreferred title
+ * 4. Transliteration to natural Russian Cyrillic (never leaves raw English)
+ */
+export function ensureRussianTitle(item: {
+  russian?: string | null;
+  english?: string | null;
+  romaji?: string | null;
+  userPreferred?: string | null;
+  id?: number | string | null;
+  malId?: number | string | null;
+  idMal?: number | string | null;
+  slug?: string | null;
+}): string {
+  // If an authentic Russian title already exists (contains cyrillic)
+  if (item.russian && /[а-яё]/i.test(item.russian)) {
+    return item.russian.trim();
+  }
+
+  // Check ID & MAL ID
+  if (item.id) {
+    const byId = getKnownRussianTitle(item.id);
+    if (byId) return byId;
+  }
+  const mal = item.malId || item.idMal;
+  if (mal) {
+    const byMal = getKnownRussianTitle(mal);
+    if (byMal) return byMal;
+  }
+
+  // Check Slug
+  if (item.slug) {
+    const bySlug = getKnownRussianTitle(item.slug);
+    if (bySlug) return bySlug;
+  }
+
+  // Check English title
+  if (item.english) {
+    const byEn = getKnownRussianTitle(item.english);
+    if (byEn) return byEn;
+  }
+
+  // Check Romaji title
+  if (item.romaji) {
+    const byRomaji = getKnownRussianTitle(item.romaji);
+    if (byRomaji) return byRomaji;
+  }
+
+  // Check UserPreferred
+  if (item.userPreferred) {
+    const byPref = getKnownRussianTitle(item.userPreferred);
+    if (byPref) return byPref;
+  }
+
+  // Fallback: Transliterate Romaji / English to Russian
+  const baseTitle = item.romaji || item.english || item.userPreferred || item.russian || '';
+  if (baseTitle) {
+    return transliterateToRussian(baseTitle);
+  }
+
+  return 'Аниме';
+}
+

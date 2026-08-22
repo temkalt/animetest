@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchAniListGraphQL } from '@/lib/api/anilist';
 import { fetchBatchShikimoriTitles } from '@/lib/api/shikimori';
-import { getKnownRussianTitle } from '@/lib/api/russian-titles';
+import { getKnownRussianTitle, ensureRussianTitle } from '@/lib/api/russian-titles';
 
 export const runtime = 'edge';
 
@@ -82,16 +82,16 @@ export async function POST(req: NextRequest) {
 
     for (const m of mediaList) {
       const slug = (m.title?.romaji || `anime-${m.id}`).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const ruTitle =
-        (m.idMal ? ruMap.get(m.idMal) : null) ||
-        getKnownRussianTitle(m.id) ||
-        (m.idMal ? getKnownRussianTitle(m.idMal) : null) ||
-        getKnownRussianTitle(slug) ||
-        (m.title?.english ? getKnownRussianTitle(m.title.english) : null) ||
-        (m.title?.romaji ? getKnownRussianTitle(m.title.romaji) : null) ||
-        (m.title?.userPreferred ? getKnownRussianTitle(m.title.userPreferred) : null) ||
-        m.title?.english ||
-        m.title?.romaji;
+      const ruFromShiki = m.idMal ? ruMap.get(m.idMal) : null;
+      const ruTitle = ensureRussianTitle({
+        russian: ruFromShiki,
+        english: m.title?.english,
+        romaji: m.title?.romaji,
+        userPreferred: m.title?.userPreferred,
+        id: m.id,
+        malId: m.idMal,
+        slug,
+      });
 
       itemsMap[m.id] = {
         id: m.id,

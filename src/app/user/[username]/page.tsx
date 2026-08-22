@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GenreRadarChart } from '@/components/profile/GenreRadarChart';
 import { syncManager } from '@/lib/dexie/sync';
@@ -24,6 +25,7 @@ import {
   Play,
   Edit3,
   LogIn,
+  LogOut,
   Sparkles,
   Check,
   Bookmark,
@@ -61,6 +63,7 @@ const BOOKMARK_STATUS_LABELS: Record<string, { label: string; dot: string }> = {
 };
 
 export default function UserProfilePage({ params }: { params: Promise<{ username: string }> }) {
+  const router = useRouter();
   const { username } = React.use(params);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -294,6 +297,11 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     setIsEditing(false);
   };
 
+  const handleLogout = () => {
+    authStore.logout();
+    router.push('/');
+  };
+
   const handleRemoveBookmark = async (e: React.MouseEvent, animeId: number) => {
     e.preventDefault();
     e.stopPropagation();
@@ -448,14 +456,25 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
 
             <div className="shrink-0">
               {user ? (
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition-colors cursor-pointer"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Редактировать</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition-colors cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Редактировать</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold border border-rose-500/20 transition-colors cursor-pointer"
+                    title="Выйти из аккаунта"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Выйти</span>
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"

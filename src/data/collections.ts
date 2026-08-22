@@ -1,3 +1,5 @@
+import { WA_COLLECTIONS } from './wa-collections';
+
 export interface CollectionAnimeItem {
   id: number;
   title: string;
@@ -43,7 +45,7 @@ export interface EditorialCollection {
   animeList: CollectionAnimeItem[];
 }
 
-export const COLLECTIONS_DATA: EditorialCollection[] = [
+const _EDITORIAL_COLLECTIONS: EditorialCollection[] = [
   {
     "id": "sakuga-gods",
     "issueNumber": "ISSUE № 01",
@@ -2074,3 +2076,6 @@ export const COLLECTIONS_DATA: EditorialCollection[] = [
     ]
   }
 ];
+
+// Merge: original KuroNami editorial collections + 71 WikiAnime-inspired collections
+export const COLLECTIONS_DATA: EditorialCollection[] = [..._EDITORIAL_COLLECTIONS, ...WA_COLLECTIONS];

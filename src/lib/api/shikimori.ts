@@ -77,49 +77,59 @@ export async function fetchBatchShikimoriTitles(malIds: number[]): Promise<Map<n
 
   if (toFetch.length === 0) return result;
 
-  try {
-    const res = await fetch(SHIKIMORI_GRAPHQL_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'KuroNamiAnimePortal/2.0',
-      },
-      body: JSON.stringify({
-        query: SHIKIMORI_METADATA_QUERY,
-        variables: { ids: toFetch.slice(0, 50).join(',') },
-      }),
-      next: { revalidate: 86400 },
-    });
-
-    if (res.ok) {
-      const json = await res.json();
-      const list: any[] = json.data?.animes || [];
-      for (const item of list) {
-        const shikiId = Number(item.id);
-        const malId = Number(item.malId);
-        if (item.russian) {
-          if (shikiId) {
-            memoryTitleCache.set(shikiId, item.russian);
-            result.set(shikiId, item.russian);
-          }
-          if (malId) {
-            memoryTitleCache.set(malId, item.russian);
-            result.set(malId, item.russian);
-          }
-        }
-        if (item.description) {
-          const meta = {
-            russian: item.russian,
-            description: cleanSynopsis(item.description),
-          };
-          if (shikiId) memoryMetaCache.set(shikiId, meta);
-          if (malId) memoryMetaCache.set(malId, meta);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[Shikimori API] Batch fetch failed:', err);
+  // Chunk toFetch into batches of 50 items max per Shikimori GraphQL request
+  const chunks: number[][] = [];
+  for (let i = 0; i < toFetch.length; i += 50) {
+    chunks.push(toFetch.slice(i, i + 50));
   }
+
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      try {
+        const res = await fetch(SHIKIMORI_GRAPHQL_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'KuroNamiAnimePortal/2.0',
+          },
+          body: JSON.stringify({
+            query: SHIKIMORI_METADATA_QUERY,
+            variables: { ids: chunk.join(',') },
+          }),
+          next: { revalidate: 86400 },
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          const list: any[] = json.data?.animes || [];
+          for (const item of list) {
+            const shikiId = Number(item.id);
+            const malId = Number(item.malId);
+            if (item.russian) {
+              if (shikiId) {
+                memoryTitleCache.set(shikiId, item.russian);
+                result.set(shikiId, item.russian);
+              }
+              if (malId) {
+                memoryTitleCache.set(malId, item.russian);
+                result.set(malId, item.russian);
+              }
+            }
+            if (item.description) {
+              const meta = {
+                russian: item.russian,
+                description: cleanSynopsis(item.description),
+              };
+              if (shikiId) memoryMetaCache.set(shikiId, meta);
+              if (malId) memoryMetaCache.set(malId, meta);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[Shikimori API] Batch fetch chunk failed:', err);
+      }
+    })
+  );
 
   return result;
 }
@@ -138,45 +148,55 @@ export async function fetchBatchShikimoriMetadata(malIds: number[]): Promise<Map
 
   if (toFetch.length === 0) return result;
 
-  try {
-    const res = await fetch(SHIKIMORI_GRAPHQL_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'KuroNamiAnimePortal/2.0',
-      },
-      body: JSON.stringify({
-        query: SHIKIMORI_METADATA_QUERY,
-        variables: { ids: toFetch.slice(0, 50).join(',') },
-      }),
-      next: { revalidate: 86400 },
-    });
-
-    if (res.ok) {
-      const json = await res.json();
-      const list: any[] = json.data?.animes || [];
-      for (const item of list) {
-        const shikiId = Number(item.id);
-        const malId = Number(item.malId);
-        const meta: ShikimoriBatchResult = {
-          russian: item.russian || undefined,
-          description: cleanSynopsis(item.description) || undefined,
-        };
-        if (shikiId) {
-          memoryMetaCache.set(shikiId, meta);
-          result.set(shikiId, meta);
-          if (item.russian) memoryTitleCache.set(shikiId, item.russian);
-        }
-        if (malId) {
-          memoryMetaCache.set(malId, meta);
-          result.set(malId, meta);
-          if (item.russian) memoryTitleCache.set(malId, item.russian);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[Shikimori API] Batch metadata fetch failed:', err);
+  // Chunk toFetch into batches of 50 items max per Shikimori GraphQL request
+  const chunks: number[][] = [];
+  for (let i = 0; i < toFetch.length; i += 50) {
+    chunks.push(toFetch.slice(i, i + 50));
   }
+
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      try {
+        const res = await fetch(SHIKIMORI_GRAPHQL_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'KuroNamiAnimePortal/2.0',
+          },
+          body: JSON.stringify({
+            query: SHIKIMORI_METADATA_QUERY,
+            variables: { ids: chunk.join(',') },
+          }),
+          next: { revalidate: 86400 },
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          const list: any[] = json.data?.animes || [];
+          for (const item of list) {
+            const shikiId = Number(item.id);
+            const malId = Number(item.malId);
+            const meta: ShikimoriBatchResult = {
+              russian: item.russian || undefined,
+              description: cleanSynopsis(item.description) || undefined,
+            };
+            if (shikiId) {
+              memoryMetaCache.set(shikiId, meta);
+              result.set(shikiId, meta);
+              if (item.russian) memoryTitleCache.set(shikiId, item.russian);
+            }
+            if (malId) {
+              memoryMetaCache.set(malId, meta);
+              result.set(malId, meta);
+              if (item.russian) memoryTitleCache.set(malId, item.russian);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[Shikimori API] Batch metadata chunk fetch failed:', err);
+      }
+    })
+  );
 
   return result;
 }

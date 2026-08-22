@@ -71,8 +71,8 @@ query GetPopularAnime(
 `;
 
 export const ANIME_DETAILS_QUERY = `
-query GetAnimeDetails($id: Int, $idMal: Int) {
-  Media(id: $id, idMal: $idMal, type: ANIME) {
+query GetAnimeDetails($id: Int) {
+  Media(id: $id, type: ANIME) {
     id
     idMal
     title {
@@ -127,14 +127,100 @@ query GetAnimeDetails($id: Int, $idMal: Int) {
         node {
           id
           idMal
+          type
           title {
             romaji
             english
+            native
+            userPreferred
           }
           format
           seasonYear
           startDate {
             year
+            month
+            day
+          }
+          coverImage {
+            large
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
+export const ANIME_DETAILS_BY_MAL_QUERY = `
+query GetAnimeDetailsByMal($idMal: Int) {
+  Media(idMal: $idMal, type: ANIME) {
+    id
+    idMal
+    title {
+      romaji
+      english
+      native
+      userPreferred
+    }
+    synonyms
+    format
+    status
+    description(asHtml: false)
+    startDate {
+      year
+      month
+      day
+    }
+    season
+    seasonYear
+    episodes
+    duration
+    coverImage {
+      extraLarge
+      large
+      color
+    }
+    bannerImage
+    genres
+    tags {
+      id
+      name
+      rank
+    }
+    averageScore
+    popularity
+    trailer {
+      id
+      site
+    }
+    nextAiringEpisode {
+      episode
+      airingAt
+    }
+    studios(isMain: true) {
+      nodes {
+        name
+      }
+    }
+    relations {
+      edges {
+        relationType(version: 2)
+        node {
+          id
+          idMal
+          type
+          title {
+            romaji
+            english
+            native
+            userPreferred
+          }
+          format
+          seasonYear
+          startDate {
+            year
+            month
+            day
           }
           coverImage {
             large

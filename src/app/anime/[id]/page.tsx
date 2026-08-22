@@ -396,7 +396,11 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
             </div>
           </div>
 
-          <FranchiseTree currentAnimeId={anime.id} relations={anime.relations} />
+          <FranchiseTree
+            currentAnimeId={anime.id}
+            relations={anime.relations}
+            currentAnime={anime}
+          />
         </section>
       )}
 

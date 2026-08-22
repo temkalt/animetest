@@ -24,11 +24,11 @@ type SortOption = 'popularity' | 'count' | 'issue';
 
 const FILTER_TABS: { id: FilterCategory; label: string }[] = [
   { id: 'all', label: 'Все' },
-  { id: 'sakuga', label: 'Сакуга' },
-  { id: 'cyberpunk', label: 'Киберпанк' },
   { id: 'fantasy', label: 'Фэнтези' },
-  { id: 'seinen', label: 'Сэйнэн' },
   { id: 'romance', label: 'Романтика' },
+  { id: 'sakuga', label: 'Сакуга' },
+  { id: 'seinen', label: 'Сэйнэн' },
+  { id: 'cyberpunk', label: 'Киберпанк' },
 ];
 
 export const CollectionsContainer: React.FC = () => {
@@ -135,7 +135,7 @@ export const CollectionsContainer: React.FC = () => {
 
             <div className="px-4 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-center">
               <span className="text-base sm:text-lg font-extrabold font-display text-zinc-100 block leading-tight">
-                190+
+                1700+
               </span>
               <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
                 Шедевров
