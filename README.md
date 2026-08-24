@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
 
-## Getting Started
+# 🌊 KuroNami (黒波)
+### *Премиальный онлайн-кинотеатр и портал в мир аниме нового поколения*
 
-First, run the development server:
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Streaming](https://img.shields.io/badge/Streaming-1080p_Full_HD-8A2BE2?style=for-the-badge&logo=playstation)](https://kuronami.app)
+[![No Ads](https://img.shields.io/badge/Experience-Zero_Ad_Overload-00C853?style=for-the-badge)](https://kuronami.app)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+<p align="center">
+  <b>KuroNami</b> — это кинематографичная веб-платформа для комфортного просмотра аниме, созданная отаку для отаку.<br>
+  Безупречное качество видео, любимые русские озвучки, умный плеер и эстетичный темный интерфейс без назойливой рекламы.
+</p>
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+</div>
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ✨ Ключевые возможности
 
-## Learn More
+### 🎬 Ультимативный плеер нового поколения
+* **1080p Full HD & 60 FPS** — прямое воспроизведение кристально чистого видеопотока без задержек и артефактов сжатия.
+* ⏭️ **Auto-Skip Опенингов и Эндингов** — автоматический пропуск заставок в один клик или по таймкодам.
+* ⚡ **Мгновенное переключение серий и балансеров** — видео начинает воспроизводиться за миллисекунды.
+* ⌨️ **Полноценное управление с клавиатуры** — перемотка стрелками, пробел для паузы, `F` для полноэкранного режима, `M` для звука.
+* 💾 **Умное запоминание таймкода** — продолжение просмотра с точностью до секунды на любом устройстве.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 🎙️ Все лучшие студии озвучки и субтитры
+Вся палитра профессионального дубляжа и авторского перевода:
+* 🎙️ **Студийная Банда (Studio Band)**
+* 🎙️ **Dream Cast**
+* 🎙️ **AniLibria**
+* 🎙️ **SHIZA Project**
+* 🎙️ **Jam Club**
+* 🎙️ **Flarrow Films & DEEP**
+* 📜 **Оригинальные японские дорожки с субтитрами**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+### 🌌 Умный мульти-балансировщик стримов
+KuroNami автоматически опрашивает доступные видео-источники в реальном времени, выбирая самую высокую скорость и наилучшее качество:
+* **AniLibria Direct HLS** — официальный прямой стрим без посредников.
+* **Kodik Network** — огромный архив всех доступных озвучек в рунете.
+* **Collaps & Alloha Hub** — надежные резервные зеркала высокой четкости.
+* **Sibnet & Kinobox** — альтернативные источники для редких тайтлов и OVA.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 📚 Бесконечный каталог и живой поиск
+* 🔍 **Умный глобальный поиск (`Ctrl + K` / `Cmd + K`)** — мгновенный поиск по русским, английским и японским (Romaji) названиям.
+* 🏷️ **Глубокая система фильтров** — сортировка по жанрам, годам выпуска, сезонам (Зима/Весна/Лето/Осень), статусу (Онгоинг / Завершен / Анонс) и возрастным рейтингам.
+* 📅 **Эфирная сетка онгоингов** — расписание выхода свежих серий по дням недели с точным временем релиза.
+* 🏆 **Топы и рейтинги** — актуальные подборки трендов сезона, шедевров всех времен и выбор сообщества.
+
+---
+
+### 🎨 Эксклюзивные кураторские коллекции
+Откройте для себя аниме через авторские тематические подборки от редакции и сообщества:
+* 🌸 **Сакуга-Шедевры** — эталон динамичной анимации и визуального триумфа.
+* 🏙️ **Неоновый Киберпанк** — аугментации, искусственный интеллект и антиутопия.
+* 🗡️ **Темное и Эпическое Фэнтези** — глубокие миры, магия и рыцарские саги.
+* ☕ **Уютный Слайс и Романтика** — ламповые истории для теплых вечеров.
+* 🧩 **Возможность собирать и публиковать свои коллекции** любимых тайтлов.
+
+---
+
+### 📱 Кинематографичный дизайн и эстетика
+* 🌑 **Глубокая темная тема (OLED Dark)** — комфорт для глаз при ночных марафонах.
+* ✨ **Glassmorphism и плавные микро-анимации** — интерфейс премиального уровня.
+* 📱 **Идеальная адаптивность** — удобный просмотр на смартфонах, планшетах, ноутбуках и Smart TV.
+* 📴 **Оффлайн-синхронизация** — история просмотров и список «Буду смотреть» работают даже при кратковременной потере сети.
+
+---
+
+## 🌟 Наслаждайтесь просмотром!
+
+Добро пожаловать во вселенную **KuroNami**. Найдите свое следующее любимое аниме и погрузитесь в атмосферу отличных историй! 🍿✨
