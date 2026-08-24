@@ -41,7 +41,7 @@ export const Footer: React.FC = () => {
   };
 
   return (
-    <footer className='border-t border-zinc-800 mt-16 pt-12 pb-8'>
+    <footer className='border-t border-zinc-800 mt-16 pt-12 pb-24 md:pb-8'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         {/* Links grid */}
         <div className='grid grid-cols-2 sm:grid-cols-3 gap-8 mb-12'>

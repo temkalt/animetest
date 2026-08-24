@@ -149,7 +149,7 @@ export const CuratedSpotlight: React.FC<CuratedSpotlightProps> = ({
                   className="object-cover opacity-50"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
-                <div className="absolute inset-0 p-6 flex flex-col justify-end space-y-2">
+                <div className="absolute inset-0 p-4 sm:p-6 flex flex-col justify-end space-y-1.5 sm:space-y-2">
                   <div className="flex items-center gap-3 text-sm text-zinc-400 font-mono">
                     <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" />{cat.rating}</span>
                     <span>•</span>

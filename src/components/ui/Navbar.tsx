@@ -89,7 +89,7 @@ export const Navbar: React.FC = () => {
     setIsSearchOpen(true);
   };
 
-  // Keyboard shortcut Ctrl+K / Cmd+K
+  // Keyboard shortcut Ctrl+K / Cmd+K and Global Custom Event
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -101,8 +101,17 @@ export const Navbar: React.FC = () => {
         setIsMobileMenuOpen(false);
       }
     };
+
+    const handleOpenSearchModal = () => {
+      setIsSearchOpen(true);
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('open-search-modal', handleOpenSearchModal);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-search-modal', handleOpenSearchModal);
+    };
   }, []);
 
   useEffect(() => {

@@ -160,10 +160,6 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
-      setIsAuthModalOpen(true);
-      return;
-    }
     updateFilters({ search: searchInput.trim() || undefined, page: 1 });
   };
 
@@ -350,48 +346,19 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           {/* Search Input */}
           <form onSubmit={handleSearchSubmit} className="flex-1 relative">
-            <div
-              onClick={() => {
-                if (!currentUser) {
-                  setIsAuthModalOpen(true);
-                }
-              }}
-              className={`relative flex items-center bg-zinc-950 border rounded-lg transition-colors ${
-                !currentUser
-                  ? 'border-zinc-800 hover:border-zinc-700 cursor-pointer'
-                  : 'border-zinc-800 focus-within:border-zinc-700'
-              }`}
-            >
-              {currentUser ? (
-                <Search className="w-4 h-4 text-zinc-500 ml-3 shrink-0" />
-              ) : (
-                <Lock className="w-4 h-4 text-zinc-500 ml-3 shrink-0" />
-              )}
+            <div className="relative flex items-center bg-zinc-950 border border-zinc-800 focus-within:border-zinc-700 rounded-lg transition-colors">
+              <Search className="w-4 h-4 text-zinc-500 ml-3 shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchInput}
-                onChange={(e) => {
-                  if (!currentUser) {
-                    setIsAuthModalOpen(true);
-                    return;
-                  }
-                  setSearchInput(e.target.value);
-                }}
-                onFocus={(e) => {
-                  if (!currentUser) {
-                    e.target.blur();
-                    setIsAuthModalOpen(true);
-                  }
-                }}
-                placeholder={currentUser ? "Поиск по названию аниме..." : "Поиск (войдите для доступа)..."}
-                className={`w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none ${
-                  !currentUser ? 'cursor-pointer' : ''
-                }`}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Поиск по русскому или английскому названию..."
+                className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
               />
 
               <AnimatePresence>
-                {searchInput.length > 0 && currentUser && (
+                {searchInput.length > 0 && (
                   <motion.button
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -410,7 +377,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 type="submit"
                 className="px-3.5 py-1.5 mr-1 rounded-md bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-colors cursor-pointer shrink-0"
               >
-                {currentUser ? 'Найти' : 'Войти'}
+                Найти
               </button>
             </div>
           </form>
@@ -564,8 +531,8 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           })}
         </div>
 
-        {/* Row 2: 5 Core Filter Selectors (Always visible, clean floating popovers without clipping) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-2 border-t border-zinc-800/80 relative z-30">
+        {/* Row 2: 5 Core Filter Selectors (Desktop floating popovers) */}
+        <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-2 border-t border-zinc-800/80 relative z-30">
           {/* 1. Genre Dropdown */}
           <div className={`relative ${openDropdown === 'genre' ? 'z-50' : 'z-20'}`}>
             <button

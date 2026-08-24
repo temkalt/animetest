@@ -27,6 +27,17 @@ export const MobileBottomNav: React.FC = () => {
   const NAV_ITEMS = [
     { href: '/', label: 'Главная', icon: Home },
     { href: '/catalog', label: 'Каталог', icon: Film },
+    {
+      href: '#search',
+      label: 'Поиск',
+      icon: Search,
+      isAction: true,
+      onClick: () => {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('open-search-modal'));
+        }
+      },
+    },
     { href: '/collections', label: 'Подборки', icon: Layers },
     {
       href: currentUser ? `/user/${currentUser.username}` : '#',
@@ -52,7 +63,10 @@ export const MobileBottomNav: React.FC = () => {
                 key={item.label}
                 href={item.href}
                 onClick={(e) => {
-                  if (item.isAuth) {
+                  if (item.isAction && item.onClick) {
+                    e.preventDefault();
+                    item.onClick();
+                  } else if (item.isAuth) {
                     e.preventDefault();
                     setIsAuthOpen(true);
                   }

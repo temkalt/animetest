@@ -139,17 +139,17 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
                 <motion.div key={item.id} whileHover={{ x: 3 }}>
                   <Link
                     href={`/anime/${item.id}`}
-                    className="group flex items-center gap-4 p-2 rounded-lg hover:bg-zinc-800/50 hover:border-zinc-700 transition-colors border border-transparent"
+                    className="group flex items-center gap-2.5 sm:gap-4 p-1.5 sm:p-2 rounded-lg hover:bg-zinc-800/50 hover:border-zinc-700 transition-colors border border-transparent"
                   >
                     {/* Numerical Rank */}
-                    <div className="w-8 text-center flex-shrink-0">
-                      <span className={`text-lg font-mono ${isTop3 ? 'font-bold text-zinc-100' : 'text-zinc-500'}`}>
+                    <div className="w-6 sm:w-8 text-center flex-shrink-0">
+                      <span className={`text-base sm:text-lg font-mono ${isTop3 ? 'font-bold text-zinc-100' : 'text-zinc-500'}`}>
                         {rank < 10 ? `0${rank}` : rank}
                       </span>
                     </div>
 
                     {/* Poster Thumbnail */}
-                    <div className="relative w-12 h-16 rounded overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-800">
+                    <div className="relative w-10 sm:w-12 h-14 sm:h-16 rounded overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-800">
                       {cover ? (
                         <Image
                           src={cover}
@@ -164,10 +164,10 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
 
                     {/* Title & Metadata */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-zinc-100 truncate group-hover:text-white transition-colors">
+                      <h4 className="text-xs sm:text-sm font-medium text-zinc-100 truncate group-hover:text-white transition-colors">
                         {title}
                       </h4>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400 font-mono">
+                      <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 text-[11px] sm:text-xs text-zinc-400 font-mono">
                         <span>{item.format || 'TV'}</span>
                         <span>•</span>
                         <span>{item.seasonYear || '2026'}</span>
@@ -177,9 +177,9 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
                     </div>
 
                     {/* Score */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0 px-3">
-                      <Star className="w-4 h-4 text-zinc-400" />
-                      <span className="text-sm font-mono text-zinc-300">
+                    <div className="flex items-center gap-1 flex-shrink-0 px-1 sm:px-3">
+                      <Star className="w-3.5 h-3.5 text-zinc-400" />
+                      <span className="text-xs sm:text-sm font-mono text-zinc-300">
                         {item.score > 0 ? item.score.toFixed(1) : '—'}
                       </span>
                     </div>

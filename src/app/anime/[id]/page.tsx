@@ -271,9 +271,9 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
         
 
         {/* Hero Content Section */}
-        <div className="relative z-10 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row gap-8 items-start">
+        <div className="relative z-10 p-4 sm:p-8 md:p-10 flex flex-col md:flex-row gap-6 md:gap-8 items-start">
           {/* Poster Column */}
-          <div className="flex flex-col items-center gap-4 flex-shrink-0 w-full sm:w-64 md:w-64">
+          <div className="flex flex-col items-center gap-4 flex-shrink-0 w-44 sm:w-56 md:w-64 mx-auto md:mx-0">
             <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden shadow-sm border border border-zinc-800 bg-zinc-900 group">
               {anime.coverImage.original && (
                 <Image

@@ -136,7 +136,7 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
         </motion.div>
       </AnimatePresence>
 
-      <div className="relative z-10 h-full flex flex-col justify-end p-6 lg:p-10 max-w-3xl pointer-events-none">
+      <div className="relative z-10 h-full flex flex-col justify-end p-4 sm:p-6 lg:p-10 pb-6 max-w-3xl pointer-events-none">
         <AnimatePresence mode="wait">
           <motion.div
             key={current.id}
@@ -144,11 +144,11 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
             animate="visible"
             exit="hidden"
             transition={{ staggerChildren: 0.1 }}
-            className="space-y-4 pointer-events-auto"
+            className="space-y-2.5 sm:space-y-4 pointer-events-auto"
           >
-            <motion.div variants={contentVariants} className="flex items-center gap-3 text-sm text-zinc-400 font-mono">
+            <motion.div variants={contentVariants} className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-zinc-400 font-mono">
               <span className="flex items-center gap-1.5 text-zinc-100">
-                <Star className="w-4 h-4" />
+                <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-zinc-100 text-zinc-100" />
                 {current.score > 0 ? current.score.toFixed(1) : 'N/A'}
               </span>
               <span>•</span>
@@ -157,29 +157,29 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
               <span>{current.seasonYear || 'N/A'}</span>
             </motion.div>
 
-            <motion.h1 variants={contentVariants} className="text-3xl sm:text-5xl font-bold font-sans tracking-tight text-zinc-100 line-clamp-2">
+            <motion.h1 variants={contentVariants} className="text-xl sm:text-3xl md:text-5xl font-bold font-sans tracking-tight text-zinc-100 line-clamp-2">
               {title}
             </motion.h1>
 
-            <motion.p variants={contentVariants} className="text-sm sm:text-base text-zinc-300 line-clamp-2 sm:line-clamp-3 font-sans max-w-2xl leading-relaxed">
+            <motion.p variants={contentVariants} className="text-xs sm:text-sm md:text-base text-zinc-300 line-clamp-2 sm:line-clamp-3 font-sans max-w-2xl leading-relaxed">
               {synopsis}
             </motion.p>
 
-            <motion.div variants={contentVariants} className="flex items-center gap-3 pt-2">
+            <motion.div variants={contentVariants} className="flex items-center gap-2.5 sm:gap-3 pt-1 sm:pt-2">
               <Link
                 href={`/watch/${current.id}/1`}
                 prefetch={true}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white text-zinc-900 font-sans font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2.5 rounded-lg bg-white text-zinc-900 font-sans font-semibold text-xs sm:text-sm hover:bg-zinc-200 transition-colors shadow-sm cursor-pointer"
               >
-                <Play className="w-4 h-4 fill-current" />
+                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
                 <span>Смотреть</span>
               </Link>
               <Link
                 href={`/anime/${current.id}`}
                 prefetch={true}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-zinc-800/90 text-zinc-100 border border-zinc-700 font-sans font-medium text-sm hover:bg-zinc-700 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-2.5 rounded-lg bg-zinc-800/90 text-zinc-100 border border-zinc-700 font-sans font-medium text-xs sm:text-sm hover:bg-zinc-700 transition-colors cursor-pointer"
               >
-                <Info className="w-4 h-4" />
+                <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>Подробнее</span>
               </Link>
             </motion.div>
@@ -188,7 +188,7 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
       </div>
 
       {/* Slide Indicators & Navigation Buttons */}
-      <div className="absolute bottom-6 right-6 lg:bottom-10 lg:right-10 z-20 flex items-center gap-4 pointer-events-auto">
+      <div className="absolute top-4 right-4 sm:top-auto sm:bottom-6 sm:right-6 lg:bottom-10 lg:right-10 z-20 flex items-center gap-2 sm:gap-4 pointer-events-auto">
         <div className="flex items-center gap-1.5 bg-zinc-900/80 px-2.5 py-1.5 rounded-full border border-zinc-800">
           {topItems.map((_, index) => (
             <button
@@ -197,13 +197,13 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
               onClick={() => handleSelect(index)}
               aria-label={`Перейти к слайду ${index + 1}`}
               className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                index === currentIndex ? 'w-6 bg-white' : 'w-1.5 bg-zinc-600 hover:bg-zinc-400'
+                index === currentIndex ? 'w-5 sm:w-6 bg-white' : 'w-1.5 bg-zinc-600 hover:bg-zinc-400'
               }`}
             />
           ))}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="hidden sm:flex items-center gap-1">
           <button
             type="button"
             onClick={handlePrev}
