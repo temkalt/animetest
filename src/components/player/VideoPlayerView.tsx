@@ -135,11 +135,17 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
       return `https://${mirrorDomain}/find-player?shikimoriID=${effectiveShikimoriId}&episode=${episodeNumber}&min_quality=720`;
     }
 
-    // 3. Alloha Engine
+    // 3. Alloha Engine (dynamic resolution by Kinopoisk ID or localized title)
     if (effectiveEngine === 'alloha') {
       const allohaTr = probeData?.results?.alloha?.translations?.[0];
       if (allohaTr?.iframeUrl) return allohaTr.iframeUrl;
-      return `https://theatre.stravers.live/?token_movie=9ceb642cd6ce5e013fe7a9922430a9&token=5009a7a2d05cb714cc53c8408471e3`;
+      if (kinopoiskId) {
+        return `https://theatre.stravers.live/?kp=${kinopoiskId}&token=5009a7a2d05cb714cc53c8408471e3&episode=${episodeNumber}&season=1`;
+      }
+      const searchTitle = (russianTitle || title || romajiTitle || englishTitle || '')
+        .replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\bсезон\s*\d+\b|\b\d+\s*сезон\b|\bseason\s*\d+\b|\bтв-\d+\b|\bфильм\b|—\s*Серия\s*\d+)/gi, '')
+        .trim();
+      return `https://theatre.stravers.live/?name=${encodeURIComponent(searchTitle)}&token=5009a7a2d05cb714cc53c8408471e3&episode=${episodeNumber}&season=1`;
     }
 
     // 4. Collaps Engine fallback
@@ -156,6 +162,11 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     selectedMirror,
     effectiveShikimoriId,
     episodeNumber,
+    kinopoiskId,
+    russianTitle,
+    title,
+    romajiTitle,
+    englishTitle,
     probeData,
   ]);
 
