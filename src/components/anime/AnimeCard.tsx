@@ -27,7 +27,7 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({ anime, priority = false, c
     : anime.format || 'TV';
 
   return (
-    <Link href={`/anime/${anime.id}`} className={`group block ${className}`}>
+    <Link href={`/anime/${anime.id}`} prefetch={true} className={`group block ${className}`}>
       <motion.div 
         whileHover={{ y: -4, scale: 1.02 }}
         whileTap={{ scale: 0.98 }}

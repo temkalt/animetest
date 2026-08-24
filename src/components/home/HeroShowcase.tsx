@@ -158,6 +158,7 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
             <motion.div variants={contentVariants} className="flex items-center gap-3 pt-2">
               <Link
                 href={`/watch/${current.id}/1`}
+                prefetch={true}
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white text-zinc-900 font-sans font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-sm cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current" />
@@ -165,6 +166,7 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
               </Link>
               <Link
                 href={`/anime/${current.id}`}
+                prefetch={true}
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-zinc-800/90 text-zinc-100 border border-zinc-700 font-sans font-medium text-sm hover:bg-zinc-700 transition-colors cursor-pointer"
               >
                 <Info className="w-4 h-4" />

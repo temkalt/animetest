@@ -23,6 +23,8 @@ function cleanFranchiseTitle(title: string): string {
     .trim();
 }
 
+const ddbbMemoryCache = new Map<string, { data: DDBBProvider[]; expiresAt: number }>();
+
 /**
  * Fetch live balancer streams from DDBB (ReYohoho core aggregator)
  */
@@ -31,6 +33,12 @@ export async function fetchDDBBPlayers(params: {
   kinopoiskId?: number | string;
   shikimoriId?: number | string;
 }): Promise<DDBBProvider[]> {
+  const cacheKey = `${params.kinopoiskId || ''}-${params.shikimoriId || ''}-${params.title || ''}`;
+  const cached = ddbbMemoryCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
   try {
     const searchQueries: string[] = [];
 
@@ -49,7 +57,7 @@ export async function fetchDDBBPlayers(params: {
     for (const query of searchQueries) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3500);
+        const timeout = setTimeout(() => controller.abort(), 1800);
 
         const res = await fetch(`${DDBB_API_URL}?${query}`, {
           headers: {
@@ -57,6 +65,7 @@ export async function fetchDDBBPlayers(params: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           },
           signal: controller.signal,
+          next: { revalidate: 3600 },
         }).catch(() => null);
 
         clearTimeout(timeout);
@@ -66,7 +75,7 @@ export async function fetchDDBBPlayers(params: {
         const rawProviders = Array.isArray(json.data) ? json.data : [];
 
         if (rawProviders.length > 0) {
-          return rawProviders.map((p) => {
+          const result = rawProviders.map((p) => {
             let effectiveIframe = p.iframeUrl;
             if (!effectiveIframe && Array.isArray(p.translations) && p.translations.length > 0) {
               effectiveIframe = p.translations[0]?.iframeUrl || null;
@@ -76,6 +85,13 @@ export async function fetchDDBBPlayers(params: {
               iframeUrl: effectiveIframe,
             };
           }).filter((p) => !!p.iframeUrl);
+
+          ddbbMemoryCache.set(cacheKey, {
+            data: result,
+            expiresAt: Date.now() + 30 * 60 * 1000,
+          });
+
+          return result;
         }
       } catch {
         // Continue to next query

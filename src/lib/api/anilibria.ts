@@ -27,7 +27,7 @@ const memoryAniLibriaCache = new Map<string, { russianTitle?: string; descriptio
 export async function searchAniLibriaReleases(query: string): Promise<AniLibriaReleaseItem[]> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
 
     const res = await fetch(`${ANILIBRIA_BASE}/anime/catalog/releases?f[search]=${encodeURIComponent(query)}&limit=10`, {
       headers: {
@@ -76,7 +76,7 @@ export async function fetchAniLibriaRussianMeta(titleQuery: string): Promise<{ r
 export async function getAniLibriaReleaseDetails(idOrAlias: number | string): Promise<AniLibriaReleaseItem | null> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
 
     const res = await fetch(`${ANILIBRIA_BASE}/anime/releases/${idOrAlias}`, {
       headers: {

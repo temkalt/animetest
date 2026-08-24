@@ -8,6 +8,8 @@ export interface StreamResolutionResult {
   voiceovers: string[];
 }
 
+const streamResolutionMemoryCache = new Map<number, { data: StreamResolutionResult; expiresAt: number }>();
+
 export class StreamAggregator {
   /**
    * Resolves all player engines, voiceovers, and stream sources for an anime and its episodes
@@ -25,18 +27,26 @@ export class StreamAggregator {
     totalEpisodes: number;
   }): Promise<StreamResolutionResult> {
     const { animeId, malId, shikimoriId, titles, totalEpisodes } = params;
+
+    // Check in-memory stream cache
+    const cached = streamResolutionMemoryCache.get(animeId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
     const voiceoverTeamsSet = new Set<string>();
 
-    // 1. Try to find authentic AniLibria HLS release
-    const anilibriaRelease = await this.findAniLibriaMatch(titles);
-    const hasAniLibria = !!(anilibriaRelease && anilibriaRelease.episodes && anilibriaRelease.episodes.length > 0);
-
-    // 2. Fetch live DDBB balancers (Alloha, Collaps, Turbo, VeoVeo)
+    // Parallel resolution of AniLibria and DDBB players with fast timeouts
     const searchTitle = titles.russian || titles.romaji || titles.english || '';
-    const ddbbProviders = await fetchDDBBPlayers({
-      title: searchTitle,
-      shikimoriId: shikimoriId || undefined,
-    });
+    const [anilibriaRelease, ddbbProviders] = await Promise.all([
+      this.findAniLibriaMatch(titles).catch(() => null),
+      fetchDDBBPlayers({
+        title: searchTitle,
+        shikimoriId: shikimoriId || undefined,
+      }).catch(() => []),
+    ]);
+
+    const hasAniLibria = !!(anilibriaRelease && anilibriaRelease.episodes && anilibriaRelease.episodes.length > 0);
 
     // 3. Generate episode list with complete multi-player tree
     const targetEpisodesCount = Math.max(
@@ -83,10 +93,17 @@ export class StreamAggregator {
       });
     }
 
-    return {
+    const result: StreamResolutionResult = {
       episodes,
       voiceovers: Array.from(voiceoverTeamsSet),
     };
+
+    streamResolutionMemoryCache.set(animeId, {
+      data: result,
+      expiresAt: Date.now() + 20 * 60 * 1000, // 20 min TTL
+    });
+
+    return result;
   }
 
   private static cleanQuery(text: string): string {

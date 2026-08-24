@@ -337,15 +337,10 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
               : null;
 
           return (
-            <motion.a
+            <Link
               key={epNum}
               href={`/watch/${animeId}/${epNum}`}
-              whileHover={{ scale: 1.05 }}
-              onClick={(e) => {
-                e.preventDefault();
-                router.push(`/watch/${animeId}/${epNum}`);
-              }}
-              className={`group relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-lg border transition-colors duration-200 cursor-pointer overflow-hidden ${
+              className={`group relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-lg border transition-all duration-200 cursor-pointer overflow-hidden hover:scale-105 ${
                 isCurrent
                   ? 'bg-zinc-800 border-zinc-700 text-zinc-100'
                   : isCompleted
@@ -423,7 +418,7 @@ export const EpisodeGrid: React.FC<EpisodeGridProps> = ({
                   />
                 </div>
               )}
-            </motion.a>
+            </Link>
           );
         })}
       </div>

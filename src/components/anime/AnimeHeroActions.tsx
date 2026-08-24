@@ -79,6 +79,7 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
       <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
         <Link
           href={`/watch/${animeId}/${resumeEp}`}
+          prefetch={true}
           className="flex items-center gap-2 px-5 py-3 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-sans font-bold text-xs transition-colors duration-200 border border-zinc-800 shadow-sm"
         >
           <Play className="w-4 h-4 fill-zinc-950" />
@@ -93,6 +94,7 @@ export const AnimeHeroActions: React.FC<AnimeHeroActionsProps> = ({
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Link
             href={`/watch/${animeId}/1`}
+            prefetch={true}
             title="Смотреть с 1 серии"
             className="flex items-center gap-1.5 px-3 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border border-zinc-700 text-xs font-mono transition-colors"
           >

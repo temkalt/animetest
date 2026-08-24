@@ -81,7 +81,7 @@ async function fetchShikimoriWithFallback(query: string, variables: Record<strin
   for (const endpoint of SHIKIMORI_ENDPOINTS) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4500);
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
 
       const res = await fetch(endpoint, {
         method: 'POST',

@@ -21,6 +21,8 @@ import {
 const ANIME_FORMATS = new Set(['TV', 'TV_SHORT', 'MOVIE', 'SPECIAL', 'OVA', 'ONA']);
 const EXCLUDED_RELATIONS = new Set(['CHARACTER', 'OTHER', 'ADAPTATION', 'SOURCE']);
 
+const detailsMemoryCache = new Map<number, { data: UnifiedAnime; expiresAt: number }>();
+
 export class AnimeResolver {
   private static async fetchShikimoriCatalogFallback(
     params: CatalogFilterParams
@@ -364,6 +366,11 @@ export class AnimeResolver {
   }
 
   static async getDetails(anilistId: number): Promise<UnifiedAnime | null> {
+    const cached = detailsMemoryCache.get(anilistId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
     try {
       let data: any = await fetchAniListGraphQL(ANIME_DETAILS_QUERY, { id: anilistId });
       let media = data?.Media;
@@ -478,6 +485,12 @@ export class AnimeResolver {
       });
 
       unified.episodes = streamRes.episodes;
+
+      detailsMemoryCache.set(anilistId, {
+        data: unified,
+        expiresAt: Date.now() + 15 * 60 * 1000, // 15 min TTL
+      });
+
       return unified;
     } catch (err) {
       console.error('[AnimeResolver] getDetails error:', err);
