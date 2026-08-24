@@ -35,7 +35,7 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({ anime, priority = false, c
     : anime.format === 'SPECIAL' ? 'Спешл'
     : anime.format || 'TV';
 
-  const coverUrl = anime.coverImage?.medium || anime.coverImage?.original || '';
+  const coverUrl = anime.coverImage?.original || anime.coverImage?.medium || '';
 
   return (
     <Link href={`/anime/${anime.id}`} prefetch={true} className={`group block ${className}`}>

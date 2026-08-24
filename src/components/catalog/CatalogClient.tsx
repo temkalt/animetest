@@ -1108,9 +1108,9 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               >
                 {/* Poster Thumbnail */}
                 <div className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden shrink-0 bg-zinc-950 border border-zinc-800">
-                  {(anime.coverImage.medium || anime.coverImage.original) && (
+                  {Boolean(anime.coverImage.original || anime.coverImage.medium) && (
                     <Image
-                      src={anime.coverImage.medium || anime.coverImage.original}
+                      src={anime.coverImage.original || anime.coverImage.medium || ''}
                       alt={title}
                       fill
                       unoptimized={true}

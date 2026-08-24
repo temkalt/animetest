@@ -132,7 +132,7 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
                     malId: item.malId,
                     slug: item.slug,
                   });
-              const cover = item.coverImage.medium || item.coverImage.original || '';
+              const cover = item.coverImage.original || item.coverImage.medium || '';
               const isTop3 = rank <= 3;
 
               return (
