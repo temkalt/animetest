@@ -25,9 +25,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authStore, UserProfile } from '@/lib/auth/user-store';
+import { searchStore } from '@/lib/search/search-store';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { modalVariants } from '@/lib/motion-presets';
-import { getRussianGenre } from '@/components/catalog/catalog-data';
 
 const NAV_LINKS = [
   { href: '/catalog', label: 'Каталог', icon: Film, accent: 'group-hover:text-zinc-100' },
@@ -35,119 +34,19 @@ const NAV_LINKS = [
   { href: '/collections', label: 'Коллекции', icon: Layers, accent: 'group-hover:text-zinc-100' },
 ];
 
-const POPULAR_SEARCH_TAGS = [
-  'Атака титанов',
-  'Магическая битва',
-  'Клинок рассекающий демонов',
-  'Человек-бензопила',
-  'Соло Левелинг',
-  'Фрирен',
-];
-
 export const Navbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     return authStore.subscribe((u) => setCurrentUser(u));
   }, []);
 
-  // Lock background scroll when search modal is open
-  useEffect(() => {
-    if (isSearchOpen) {
-      const originalOverflow = document.body.style.overflow;
-      const originalPaddingRight = document.body.style.paddingRight;
-      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
-
-      document.body.style.overflow = 'hidden';
-      if (scrollBarWidth > 0) {
-        document.body.style.paddingRight = `${scrollBarWidth}px`;
-      }
-
-      return () => {
-        document.body.style.overflow = originalOverflow;
-        document.body.style.paddingRight = originalPaddingRight;
-      };
-    }
-  }, [isSearchOpen]);
-
   const handleOpenSearch = () => {
-    setIsSearchOpen(true);
-  };
-
-  // Keyboard shortcut Ctrl+K / Cmd+K and Global Custom Event
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsSearchOpen((prev) => !prev);
-      }
-      if (e.key === 'Escape') {
-        setIsSearchOpen(false);
-        setIsMobileMenuOpen(false);
-      }
-    };
-
-    const handleOpenSearchModal = () => {
-      setIsSearchOpen(true);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('open-search-modal', handleOpenSearchModal);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('open-search-modal', handleOpenSearchModal);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [isSearchOpen]);
-
-  useEffect(() => {
-    if (searchQuery.trim().length < 2) {
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch(`/api/anime/search?q=${encodeURIComponent(searchQuery.trim())}`);
-        const data = await res.json();
-        setSearchResults(data.results || []);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 180);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const handleSelectResult = (animeId: number) => {
-    setIsSearchOpen(false);
-    setSearchQuery('');
-    router.push(`/anime/${animeId}`);
-  };
-
-  const handleTagClick = (tag: string) => {
-    setSearchQuery(tag);
+    searchStore.open();
   };
 
   return (
@@ -270,7 +169,7 @@ export const Navbar: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    setIsSearchOpen(true);
+                    searchStore.open();
                   }}
                   className="w-full flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-200"
                 >
@@ -334,172 +233,6 @@ export const Navbar: React.FC = () => {
           )}
         </AnimatePresence>
       </header>
-
-      {/* Global Interactive Search Modal (Cmd+K) */}
-      <AnimatePresence>
-        {mounted && isSearchOpen && createPortal(
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setIsSearchOpen(false);
-              }
-            }}
-            className="fixed inset-0 z-[9999] bg-zinc-950/80 backdrop-blur-sm flex items-start justify-center p-4 pt-12 sm:pt-20 overscroll-contain"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: -12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: -12 }}
-              transition={{ type: 'spring', stiffness: 450, damping: 30 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden flex flex-col max-h-[82vh] shadow-2xl"
-            >
-              {/* Search Bar Input */}
-              <div className="flex items-center gap-3.5 px-5 py-4 border-b border-zinc-800 bg-zinc-950">
-                <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Поиск аниме по русскому или английскому названию..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-transparent text-sm text-white placeholder-zinc-500 focus:outline-none font-sans font-medium"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-                <kbd className="px-2 py-0.5 rounded-lg bg-zinc-800 text-[10px] font-mono text-zinc-400 border border-zinc-700 cursor-pointer" onClick={() => setIsSearchOpen(false)}>
-                  ESC
-                </kbd>
-              </div>
-
-              {/* Popular Search Suggestions (when empty query) */}
-              {!searchQuery && (
-                <div className="p-5 border-b border-zinc-800 bg-zinc-900">
-                  <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 mb-3">
-                    <TrendingUp className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>Часто ищут:</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {POPULAR_SEARCH_TAGS.map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => handleTagClick(tag)}
-                        className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 text-xs transition-all cursor-pointer"
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Search Results List */}
-              <div 
-                className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin bg-zinc-950 overscroll-contain"
-                onWheel={(e) => e.stopPropagation()}
-              >
-                {isLoading ? (
-                  <div className="py-16 text-center text-xs text-zinc-400 font-mono">
-                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <span>Поиск по базе аниме...</span>
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  searchResults.map((item) => {
-                    const title = item.title?.russian || item.title?.english || item.title?.romaji || 'Аниме';
-                    const subTitle = item.title?.english || item.title?.romaji || '';
-                    const cover = item.coverImage?.original || item.coverImage?.large || item.coverImage?.medium || item.cover;
-                    const score = typeof item.score === 'number' && item.score > 0
-                      ? item.score
-                      : item.averageScore
-                      ? item.averageScore / 10
-                      : 0;
-
-                    return (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ scale: 1.01 }}
-                        onClick={() => handleSelectResult(item.id)}
-                        className="flex items-center gap-3.5 p-2.5 rounded-lg hover:bg-zinc-900 border border-transparent hover:border-zinc-800 cursor-pointer transition-all group"
-                      >
-                        {/* Poster Thumbnail */}
-                        <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 flex-shrink-0">
-                          {cover ? (
-                            <Image
-                              src={cover}
-                              alt={title}
-                              fill
-                              sizes="48px"
-                              className="object-cover group-hover:scale-105 transition-transform duration-200"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-zinc-600">
-                              #{item.id}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Title & Metadata */}
-                        <div className="flex-1 min-w-0 space-y-0.5">
-                          <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-zinc-200 transition-colors truncate">
-                            {title}
-                          </h4>
-                          {subTitle && subTitle !== title && (
-                            <p className="text-[10px] sm:text-[11px] text-zinc-500 truncate font-sans">
-                              {subTitle}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-zinc-400 font-mono pt-0.5">
-                            {score > 0 && (
-                              <span className="flex items-center gap-0.5 text-zinc-200 font-bold">
-                                <Star className="w-3 h-3 fill-zinc-200 text-zinc-200" />
-                                {score.toFixed(1)}
-                              </span>
-                            )}
-                            <span className="px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px] font-bold">
-                              {item.format || 'TV'}
-                            </span>
-                            {item.seasonYear && <span>• {item.seasonYear} г.</span>}
-                            {item.genres && item.genres.length > 0 && (
-                              <span className="truncate text-zinc-500 hidden sm:inline">
-                                • {item.genres.slice(0, 2).map((g: string) => getRussianGenre(g)).join(', ')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-300 group-hover:translate-x-1 transition-all shrink-0" />
-                      </motion.div>
-                    );
-                  })
-                ) : searchQuery.trim().length >= 2 ? (
-                  <div className="py-16 text-center text-xs text-zinc-500 font-mono">
-                    Ничего не найдено по запросу «{searchQuery}»
-                  </div>
-                ) : (
-                  <div className="py-12 text-center text-xs text-zinc-500 font-mono space-y-1">
-                    <p>Начните вводить название тайтла</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>,
-          document.body
-        )}
-      </AnimatePresence>
 
       {/* Auth Modal */}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />

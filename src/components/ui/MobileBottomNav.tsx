@@ -13,6 +13,7 @@ import {
   LogIn,
 } from 'lucide-react';
 import { authStore, UserProfile } from '@/lib/auth/user-store';
+import { searchStore } from '@/lib/search/search-store';
 import { AuthModal } from '@/components/auth/AuthModal';
 
 export const MobileBottomNav: React.FC = () => {
@@ -33,9 +34,7 @@ export const MobileBottomNav: React.FC = () => {
       icon: Search,
       isAction: true,
       onClick: () => {
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('open-search-modal'));
-        }
+        searchStore.open();
       },
     },
     { href: '/collections', label: 'Подборки', icon: Layers },

@@ -7,6 +7,8 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { PageTransitionProvider } from '@/components/providers/PageTransitionProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 
+import { SearchModal } from '@/components/ui/SearchModal';
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://kuronami.app';
 
 export const metadata: Metadata = {
@@ -107,6 +109,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <MobileBottomNav />
+        <SearchModal />
       </body>
     </html>
   );
