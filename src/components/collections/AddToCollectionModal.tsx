@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { X, Plus, Check, FolderPlus, Sparkles, Lock, Globe } from 'lucide-react';
 import { authStore, UserCollection } from '@/lib/auth/user-store';
@@ -20,6 +21,7 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
   animeTitle,
   animeCover,
 }) => {
+  const [mounted, setMounted] = useState(false);
   const [userCollections, setUserCollections] = useState<UserCollection[]>([]);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -27,7 +29,23 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
   const [isPublic, setIsPublic] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const currentUser = authStore.getUser();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     const update = () => {
@@ -51,7 +69,7 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
     }, 2200);
   };
 
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
   const handleToggleAnime = (col: UserCollection) => {
     const isAlreadyIn = col.animeIds.includes(animeId);
@@ -85,9 +103,9 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md rounded-xl bg-zinc-900 border border-zinc-700 shadow-2xl p-5 space-y-4 max-h-[85vh] flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-md rounded-2xl bg-zinc-900 border border-zinc-700 shadow-2xl p-5 space-y-4 max-h-[85vh] flex flex-col my-auto z-10">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -240,6 +258,7 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
