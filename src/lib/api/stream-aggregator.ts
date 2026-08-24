@@ -2,13 +2,17 @@ import { VoiceoverTrack, EpisodeItem } from '@/types';
 import { getAniLibriaReleaseDetails, searchAniLibriaReleases, AniLibriaReleaseItem } from './anilibria';
 import { fetchDDBBPlayers } from './ddbb';
 import { StreamResolver } from '../player/stream-resolver';
+import { LRUCache } from '@/lib/utils/lru-cache';
 
 export interface StreamResolutionResult {
   episodes: EpisodeItem[];
   voiceovers: string[];
 }
 
-const streamResolutionMemoryCache = new Map<number, { data: StreamResolutionResult; expiresAt: number }>();
+const streamResolutionMemoryCache = new LRUCache<number, StreamResolutionResult>({
+  maxSize: 500,
+  ttlMs: 20 * 60 * 1000,
+});
 
 export class StreamAggregator {
   /**
@@ -30,8 +34,8 @@ export class StreamAggregator {
 
     // Check in-memory stream cache
     const cached = streamResolutionMemoryCache.get(animeId);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
+    if (cached) {
+      return cached;
     }
 
     const voiceoverTeamsSet = new Set<string>();
@@ -107,10 +111,7 @@ export class StreamAggregator {
       voiceovers: Array.from(voiceoverTeamsSet),
     };
 
-    streamResolutionMemoryCache.set(animeId, {
-      data: result,
-      expiresAt: Date.now() + 20 * 60 * 1000, // 20 min TTL
-    });
+    streamResolutionMemoryCache.set(animeId, result, 20 * 60 * 1000);
 
     return result;
   }

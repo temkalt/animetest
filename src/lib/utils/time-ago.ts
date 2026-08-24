@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 
@@ -124,24 +124,21 @@ export function useRelativeTime(
   fallbackId?: string,
   baseIntervalMs = 10000
 ): string {
-  const [formatted, setFormatted] = useState(() => formatRelativeTime(dateInput, fallbackId));
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    setFormatted(formatRelativeTime(dateInput, fallbackId));
-
     const date = parseDateInput(dateInput, fallbackId);
     if (!date) return;
-
-    const updateTime = () => {
-      setFormatted(formatRelativeTime(dateInput, fallbackId));
-    };
 
     const diffMs = Math.abs(Date.now() - date.getTime());
     const intervalMs = diffMs < 60000 ? 5000 : diffMs < 3600000 ? 15000 : baseIntervalMs;
 
-    const interval = setInterval(updateTime, intervalMs);
+    const interval = setInterval(() => {
+      setTick((t) => t + 1);
+    }, intervalMs);
+
     return () => clearInterval(interval);
   }, [dateInput, fallbackId, baseIntervalMs]);
 
-  return formatted;
+  return formatRelativeTime(dateInput, fallbackId);
 }

@@ -121,6 +121,11 @@ export async function ensurePostgresTables() {
         score integer,
         is_favorite boolean DEFAULT false NOT NULL,
         custom_folder varchar(100),
+        anime_title text,
+        anime_cover text,
+        anime_format varchar(50),
+        anime_score real,
+        anime_total_episodes integer,
         created_at timestamp DEFAULT now() NOT NULL,
         updated_at timestamp DEFAULT now() NOT NULL,
         PRIMARY KEY (user_id, anime_id)
@@ -135,10 +140,30 @@ export async function ensurePostgresTables() {
         episode_number real NOT NULL,
         current_time_seconds real NOT NULL,
         duration_seconds real NOT NULL,
+        progress_percentage real DEFAULT 0,
         is_completed boolean DEFAULT false NOT NULL,
+        team_name varchar(100),
+        anime_title text,
+        anime_cover text,
+        anime_total_episodes integer,
+        anime_format varchar(50),
         updated_at timestamp DEFAULT now() NOT NULL
       );
     `;
+
+    // Safe non-destructive column migrations for existing Postgres tables
+    await sqlClient`ALTER TABLE bookmarks ADD COLUMN IF NOT EXISTS anime_title text;`;
+    await sqlClient`ALTER TABLE bookmarks ADD COLUMN IF NOT EXISTS anime_cover text;`;
+    await sqlClient`ALTER TABLE bookmarks ADD COLUMN IF NOT EXISTS anime_format varchar(50);`;
+    await sqlClient`ALTER TABLE bookmarks ADD COLUMN IF NOT EXISTS anime_score real;`;
+    await sqlClient`ALTER TABLE bookmarks ADD COLUMN IF NOT EXISTS anime_total_episodes integer;`;
+
+    await sqlClient`ALTER TABLE watch_history ADD COLUMN IF NOT EXISTS progress_percentage real DEFAULT 0;`;
+    await sqlClient`ALTER TABLE watch_history ADD COLUMN IF NOT EXISTS team_name varchar(100);`;
+    await sqlClient`ALTER TABLE watch_history ADD COLUMN IF NOT EXISTS anime_title text;`;
+    await sqlClient`ALTER TABLE watch_history ADD COLUMN IF NOT EXISTS anime_cover text;`;
+    await sqlClient`ALTER TABLE watch_history ADD COLUMN IF NOT EXISTS anime_total_episodes integer;`;
+    await sqlClient`ALTER TABLE watch_history ADD COLUMN IF NOT EXISTS anime_format varchar(50);`;
 
     tablesInitialized = true;
   } catch (err) {

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { X, Play, Info, Star, ArrowRight } from 'lucide-react';
-import { EditorialCollection } from '@/data/collections';
+import type { EditorialCollection } from '@/data/collections';
 import { getRussianGenre } from '@/components/catalog/catalog-data';
 
 interface CollectionModalProps {

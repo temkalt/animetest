@@ -45,14 +45,16 @@ query GetShikimoriMeta($ids: String) {
 }
 `;
 
+import { LRUCache } from '@/lib/utils/lru-cache';
+
 export interface ShikimoriBatchResult {
   russian?: string;
   description?: string;
 }
 
-const memoryTitleCache = new Map<number, string>();
-const memoryMetaCache = new Map<number, ShikimoriBatchResult>();
-const memorySearchTitleCache = new Map<string, string>();
+const memoryTitleCache = new LRUCache<number, string>({ maxSize: 1000, ttlMs: 24 * 60 * 60 * 1000 });
+const memoryMetaCache = new LRUCache<number, ShikimoriBatchResult>({ maxSize: 1000, ttlMs: 24 * 60 * 60 * 1000 });
+const memorySearchTitleCache = new LRUCache<string, string>({ maxSize: 500, ttlMs: 24 * 60 * 60 * 1000 });
 
 export function cleanSynopsis(raw?: string | null): string {
   if (!raw) return '';
@@ -279,7 +281,7 @@ export async function searchShikimoriRussianTitle(query: string): Promise<string
   return null;
 }
 
-const kinopoiskCache = new Map<number, number | null>();
+const kinopoiskCache = new LRUCache<number, number | null>({ maxSize: 1000, ttlMs: 7 * 24 * 60 * 60 * 1000 });
 
 export async function fetchKinopoiskId(shikiId: number): Promise<number | null> {
   if (kinopoiskCache.has(shikiId)) {

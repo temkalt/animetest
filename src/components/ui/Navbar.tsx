@@ -47,7 +47,6 @@ const POPULAR_SEARCH_TAGS = [
 export const Navbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -57,9 +56,11 @@ export const Navbar: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   useEffect(() => {
     return authStore.subscribe((u) => setCurrentUser(u));
@@ -120,7 +121,6 @@ export const Navbar: React.FC = () => {
 
   useEffect(() => {
     if (!currentUser || searchQuery.trim().length < 2) {
-      setSearchResults([]);
       return;
     }
 

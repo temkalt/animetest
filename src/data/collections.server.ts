@@ -1,50 +1,8 @@
-export interface CollectionAnimeItem {
-  id: number;
-  title: string;
-  originalTitle?: string;
-  year?: number;
-  format?: string;
-  episodes?: number;
-  score: number;
-  cover: string;
-  banner?: string | null;
-  studio?: string;
-  synopsis: string;
-  genres: string[];
-}
+import { WA_COLLECTIONS } from './wa-collections';
 
-export interface CuratorInfo {
-  name: string;
-  role: string;
-  avatar: string;
-  badge: string;
-  verified: boolean;
-}
+import type { CollectionAnimeItem, CuratorInfo, EditorialCollection } from './collections';
 
-export interface EditorialCollection {
-  id: string;
-  issueNumber: string;
-  title: string;
-  subtitleJp: string;
-  editorialNote: string;
-  description: string;
-  category: string;
-  categoryLabel: string;
-  accentColor: string;
-  banner: string;
-  posters: string[];
-  count: number;
-  curator: CuratorInfo;
-  tags: string[];
-  studios: string[];
-  href: string;
-  featured?: boolean;
-  spotlightQuote?: string;
-  animeList: CollectionAnimeItem[];
-}
-
-
-export const _EDITORIAL_COLLECTIONS: EditorialCollection[] = [] = [
+const _EDITORIAL_COLLECTIONS: EditorialCollection[] = [
   {
     "id": "sakuga-gods",
     "issueNumber": "ISSUE № 01",
@@ -2076,4 +2034,81 @@ export const _EDITORIAL_COLLECTIONS: EditorialCollection[] = [] = [
   }
 ];
 
-export const COLLECTIONS_DATA: EditorialCollection[] = _EDITORIAL_COLLECTIONS;
+// Merge: original KuroNami editorial collections + 71 WikiAnime-inspired collections
+export const COLLECTIONS_DATA: EditorialCollection[] = [..._EDITORIAL_COLLECTIONS, ...WA_COLLECTIONS];
+
+export interface GetCuratedCollectionsOptions {
+  category?: string;
+  search?: string;
+  sortBy?: 'popularity' | 'count' | 'issue';
+  limit?: number;
+  offset?: number;
+}
+
+export function getCuratedCollections(options?: GetCuratedCollectionsOptions): EditorialCollection[] {
+  let list = COLLECTIONS_DATA;
+
+  if (options?.category && options.category !== 'all') {
+    const cat = options.category.toLowerCase();
+    list = list.filter((c) => c.category.toLowerCase() === cat);
+  }
+
+  if (options?.search) {
+    const q = options.search.toLowerCase().trim();
+    list = list.filter((c) => {
+      return (
+        c.title.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.curator.name.toLowerCase().includes(q) ||
+        c.tags.some((t) => t.toLowerCase().includes(q)) ||
+        c.animeList.some(
+          (a) =>
+            a.title.toLowerCase().includes(q) ||
+            (a.originalTitle && a.originalTitle.toLowerCase().includes(q))
+        )
+      );
+    });
+  }
+
+  if (options?.sortBy) {
+    list = [...list].sort((a, b) => {
+      if (options.sortBy === 'count') return b.count - a.count;
+      if (options.sortBy === 'issue') return a.issueNumber.localeCompare(b.issueNumber);
+      return a.issueNumber.localeCompare(b.issueNumber);
+    });
+  }
+
+  if (options?.offset !== undefined || options?.limit !== undefined) {
+    const start = options.offset || 0;
+    const end = options.limit ? start + options.limit : undefined;
+    list = list.slice(start, end);
+  }
+
+  return list;
+}
+
+export function getFeaturedCollection(): EditorialCollection {
+  return COLLECTIONS_DATA.find((c) => c.featured) || COLLECTIONS_DATA[0];
+}
+
+export function getCuratedCollectionById(id: string): EditorialCollection | undefined {
+  return COLLECTIONS_DATA.find((c) => c.id === id);
+}
+
+export function getCuratedCategoryCounts(): Record<string, number> {
+  const counts: Record<string, number> = {
+    all: COLLECTIONS_DATA.length,
+    sakuga: 0,
+    cyberpunk: 0,
+    fantasy: 0,
+    seinen: 0,
+    romance: 0,
+  };
+  COLLECTIONS_DATA.forEach((c) => {
+    if (counts[c.category] !== undefined) {
+      counts[c.category] += 1;
+    }
+  });
+  return counts;
+}
+

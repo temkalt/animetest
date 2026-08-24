@@ -12,7 +12,7 @@ import {
   Eye,
   Layers,
 } from 'lucide-react';
-import { EditorialCollection } from '@/data/collections';
+import type { EditorialCollection } from '@/data/collections';
 import { SPRINGS } from '@/lib/motion-presets';
 
 interface FeaturedCollectionProps {

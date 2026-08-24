@@ -104,12 +104,6 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
     return d === 0 ? 7 : d;
   });
 
-  useEffect(() => {
-    const d = new Date().getDay();
-    const currentDay = d === 0 ? 7 : d;
-    setTodayDay(currentDay);
-  }, []);
-
   const weekDays = useMemo(() => getCurrentWeekDates(), []);
 
   const itemsForDay = scheduleData[selectedDay] || (scheduleData as any)[String(selectedDay)] || [];

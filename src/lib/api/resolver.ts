@@ -9,6 +9,7 @@ import {
   ensureRussianTitle,
 } from './russian-titles';
 import { StreamAggregator } from './stream-aggregator';
+import { LRUCache } from '@/lib/utils/lru-cache';
 import {
   UnifiedAnime,
   EpisodeItem,
@@ -21,11 +22,11 @@ import {
 const ANIME_FORMATS = new Set(['TV', 'TV_SHORT', 'MOVIE', 'SPECIAL', 'OVA', 'ONA']);
 const EXCLUDED_RELATIONS = new Set(['CHARACTER', 'OTHER', 'ADAPTATION', 'SOURCE']);
 
-const detailsMemoryCache = new Map<number, { data: UnifiedAnime; expiresAt: number }>();
-const trendingMemoryCache = new Map<string, { data: UnifiedAnime[]; expiresAt: number }>();
-const popularMemoryCache = new Map<string, { data: UnifiedAnime[]; expiresAt: number }>();
-const topRatedMemoryCache = new Map<string, { data: UnifiedAnime[]; expiresAt: number }>();
-const catalogMemoryCache = new Map<string, { data: CatalogSearchResult; expiresAt: number }>();
+const detailsMemoryCache = new LRUCache<number, UnifiedAnime>({ maxSize: 500, ttlMs: 30 * 60 * 1000 });
+const trendingMemoryCache = new LRUCache<string, UnifiedAnime[]>({ maxSize: 100, ttlMs: 30 * 60 * 1000 });
+const popularMemoryCache = new LRUCache<string, UnifiedAnime[]>({ maxSize: 100, ttlMs: 30 * 60 * 1000 });
+const topRatedMemoryCache = new LRUCache<string, UnifiedAnime[]>({ maxSize: 100, ttlMs: 30 * 60 * 1000 });
+const catalogMemoryCache = new LRUCache<string, CatalogSearchResult>({ maxSize: 200, ttlMs: 20 * 60 * 1000 });
 let scheduleMemoryCache: { data: WeeklySchedule | null; expiresAt: number } = { data: null, expiresAt: 0 };
 
 export class AnimeResolver {
@@ -118,8 +119,8 @@ export class AnimeResolver {
   static async getTrending(page = 1, perPage = 20, season?: string, seasonYear?: number): Promise<UnifiedAnime[]> {
     const cacheKey = `${page}-${perPage}-${season || ''}-${seasonYear || ''}`;
     const cached = trendingMemoryCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
+    if (cached) {
+      return cached;
     }
 
     try {
@@ -134,12 +135,7 @@ export class AnimeResolver {
       const list = data?.Page?.media || [];
       if (list.length > 0) {
         const result = list.map((item: any) => this.mapAniListToUnified(item));
-
-        trendingMemoryCache.set(cacheKey, {
-          data: result,
-          expiresAt: Date.now() + 30 * 60 * 1000,
-        });
-
+        trendingMemoryCache.set(cacheKey, result, 30 * 60 * 1000);
         return result;
       }
     } catch (err) {
@@ -147,18 +143,15 @@ export class AnimeResolver {
     }
 
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['TRENDING_DESC'] });
-    trendingMemoryCache.set(cacheKey, {
-      data: fallback.items,
-      expiresAt: Date.now() + 15 * 60 * 1000,
-    });
+    trendingMemoryCache.set(cacheKey, fallback.items, 15 * 60 * 1000);
     return fallback.items;
   }
 
   static async getPopular(page = 1, perPage = 20, season?: string, seasonYear?: number): Promise<UnifiedAnime[]> {
     const cacheKey = `${page}-${perPage}-${season || ''}-${seasonYear || ''}`;
     const cached = popularMemoryCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
+    if (cached) {
+      return cached;
     }
 
     try {
@@ -173,12 +166,7 @@ export class AnimeResolver {
       const list = data?.Page?.media || [];
       if (list.length > 0) {
         const result = list.map((item: any) => this.mapAniListToUnified(item));
-
-        popularMemoryCache.set(cacheKey, {
-          data: result,
-          expiresAt: Date.now() + 30 * 60 * 1000,
-        });
-
+        popularMemoryCache.set(cacheKey, result, 30 * 60 * 1000);
         return result;
       }
     } catch (err) {
@@ -186,18 +174,15 @@ export class AnimeResolver {
     }
 
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['POPULARITY_DESC'] });
-    popularMemoryCache.set(cacheKey, {
-      data: fallback.items,
-      expiresAt: Date.now() + 15 * 60 * 1000,
-    });
+    popularMemoryCache.set(cacheKey, fallback.items, 15 * 60 * 1000);
     return fallback.items;
   }
 
   static async getTopRated(page = 1, perPage = 20): Promise<UnifiedAnime[]> {
     const cacheKey = `${page}-${perPage}`;
     const cached = topRatedMemoryCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
+    if (cached) {
+      return cached;
     }
 
     try {
@@ -210,12 +195,7 @@ export class AnimeResolver {
       const list = data?.Page?.media || [];
       if (list.length > 0) {
         const result = list.map((item: any) => this.mapAniListToUnified(item));
-
-        topRatedMemoryCache.set(cacheKey, {
-          data: result,
-          expiresAt: Date.now() + 30 * 60 * 1000,
-        });
-
+        topRatedMemoryCache.set(cacheKey, result, 30 * 60 * 1000);
         return result;
       }
     } catch (err) {
@@ -223,28 +203,22 @@ export class AnimeResolver {
     }
 
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['SCORE_DESC'] });
-    topRatedMemoryCache.set(cacheKey, {
-      data: fallback.items,
-      expiresAt: Date.now() + 15 * 60 * 1000,
-    });
+    topRatedMemoryCache.set(cacheKey, fallback.items, 15 * 60 * 1000);
     return fallback.items;
   }
 
   static async searchCatalog(params: CatalogFilterParams): Promise<CatalogSearchResult> {
     const cacheKey = JSON.stringify(params);
     const cached = catalogMemoryCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
+    if (cached) {
+      return cached;
     }
 
     const isCyrillic = params.search ? /[а-яё]/i.test(params.search) : false;
 
     if (isCyrillic && params.search) {
       const res = await this.fetchShikimoriCatalogFallback(params);
-      catalogMemoryCache.set(cacheKey, {
-        data: res,
-        expiresAt: Date.now() + 20 * 60 * 1000,
-      });
+      catalogMemoryCache.set(cacheKey, res, 20 * 60 * 1000);
       return res;
     }
 
@@ -273,11 +247,7 @@ export class AnimeResolver {
         const items = list.map((item: any) => this.mapAniListToUnified(item));
         const res = { items, pageInfo };
 
-        catalogMemoryCache.set(cacheKey, {
-          data: res,
-          expiresAt: Date.now() + 20 * 60 * 1000,
-        });
-
+        catalogMemoryCache.set(cacheKey, res, 20 * 60 * 1000);
         return res;
       }
     } catch (err) {
@@ -285,10 +255,7 @@ export class AnimeResolver {
     }
 
     const fallbackRes = await this.fetchShikimoriCatalogFallback(params);
-    catalogMemoryCache.set(cacheKey, {
-      data: fallbackRes,
-      expiresAt: Date.now() + 15 * 60 * 1000,
-    });
+    catalogMemoryCache.set(cacheKey, fallbackRes, 15 * 60 * 1000);
     return fallbackRes;
   }
 
@@ -446,8 +413,8 @@ export class AnimeResolver {
 
   static async getDetails(anilistId: number): Promise<UnifiedAnime | null> {
     const cached = detailsMemoryCache.get(anilistId);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
+    if (cached) {
+      return cached;
     }
 
     try {
@@ -489,10 +456,7 @@ export class AnimeResolver {
         return null;
       }
 
-      detailsMemoryCache.set(anilistId, {
-        data: unified,
-        expiresAt: Date.now() + 30 * 60 * 1000, // 30 min TTL
-      });
+      detailsMemoryCache.set(anilistId, unified, 30 * 60 * 1000);
 
       return unified;
     } catch (err) {

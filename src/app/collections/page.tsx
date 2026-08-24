@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { CollectionsContainer } from '@/components/collections/CollectionsContainer';
+import { getCuratedCollections } from '@/data/collections.server';
 
 export const metadata: Metadata = {
   title: 'Тематические Коллекции — KuroNami Editorial Archive',
@@ -14,6 +15,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function CollectionsPage() {
-  return <CollectionsContainer />;
+export const revalidate = 86400; // 24 hours ISR cache
+
+export default async function CollectionsPage() {
+  const collections = getCuratedCollections();
+  return <CollectionsContainer initialCollections={collections} />;
 }

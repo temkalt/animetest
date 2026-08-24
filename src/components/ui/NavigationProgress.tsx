@@ -11,14 +11,19 @@ const NavigationProgressBar: React.FC = () => {
 
   // Complete progress on route change
   useEffect(() => {
-    if (isVisible) {
+    let timer: NodeJS.Timeout | null = null;
+    const raf = requestAnimationFrame(() => {
       setProgress(100);
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setIsVisible(false);
         setProgress(0);
       }, 150);
-      return () => clearTimeout(timer);
-    }
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      if (timer) clearTimeout(timer);
+    };
   }, [pathname, searchParams]);
 
   // Listen to clicks on navigation links to start progress instantly (0ms)

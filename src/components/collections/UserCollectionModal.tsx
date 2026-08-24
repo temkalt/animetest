@@ -102,13 +102,11 @@ export const UserCollectionModal: React.FC<UserCollectionModalProps> = ({
   // Live search for adding anime
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
-      setSearchResults([]);
-      setIsSearching(false);
       return;
     }
 
-    setIsSearching(true);
     const timer = setTimeout(async () => {
+      setIsSearching(true);
       try {
         const res = await fetch(`/api/anime/search?q=${encodeURIComponent(searchQuery.trim())}`);
         const data = await res.json();

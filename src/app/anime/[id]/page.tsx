@@ -36,10 +36,10 @@ export const revalidate = 3600;
 export async function generateMetadata({ params }: AnimeDetailsProps): Promise<Metadata> {
   const { id } = await params;
   const animeId = parseInt(id, 10);
-  if (isNaN(animeId)) return { title: 'Аниме не найдено — KuroNami' };
+  if (isNaN(animeId)) return { title: 'Аниме не найдено' };
 
   const anime = await AnimeResolver.getDetails(animeId);
-  if (!anime) return { title: 'Аниме не найдено — KuroNami' };
+  if (!anime) return { title: 'Аниме не найдено' };
 
   const title = (anime.title.russian && /[а-яё]/i.test(anime.title.russian))
     ? anime.title.russian
@@ -49,12 +49,23 @@ export async function generateMetadata({ params }: AnimeDetailsProps): Promise<M
   const ogImage = anime.bannerImage || anime.coverImage.original;
 
   return {
-    title: `${title} — Смотреть онлайн | KuroNami`,
+    title: `${title} — Смотреть онлайн`,
     description,
+    alternates: {
+      canonical: `/anime/${animeId}`,
+    },
     openGraph: {
       title: `${title} — KuroNami`,
       description,
+      type: anime.format === 'MOVIE' ? 'video.movie' : 'video.tv_show',
+      url: `/anime/${animeId}`,
       images: ogImage ? [{ url: ogImage, width: 1200, height: 630, alt: title }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} — KuroNami`,
+      description,
+      images: ogImage ? [ogImage] : [],
     },
   };
 }
@@ -130,8 +141,108 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
   const durationStr = anime.durationMinutes ? `${anime.durationMinutes} мин / сер` : '24 мин / сер';
   const bannerBg = anime.bannerImage || anime.coverImage.original;
 
+  // Schema.org JSON-LD Structured Data
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+    ? process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
+    : 'https://kuronami.app';
+  const cleanSynopsis = (anime.synopsisRu || anime.synopsisEn || 'Смотрите аниме онлайн в 1080p качестве на KuroNami.').replace(/<[^>]+>/g, '');
+  const isMovie = anime.format === 'MOVIE';
+
+  const breadcrumbJsonLd = {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Главная',
+        item: `${siteUrl}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Каталог',
+        item: `${siteUrl}/catalog`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: title,
+        item: `${siteUrl}/anime/${anime.id}`,
+      },
+    ],
+  };
+
+  const mainEntityJsonLd = {
+    '@type': isMovie ? 'Movie' : 'TVSeries',
+    '@id': `${siteUrl}/anime/${anime.id}#schema`,
+    url: `${siteUrl}/anime/${anime.id}`,
+    name: title,
+    alternateName: [subTitle, nativeTitle, ...(anime.synonyms || [])].filter(Boolean),
+    description: cleanSynopsis,
+    image: [bannerBg, anime.coverImage?.original, anime.coverImage?.medium].filter(Boolean),
+    genre: anime.genres && anime.genres.length > 0 ? anime.genres : ['Аниме'],
+    inLanguage: ['ja', 'ru'],
+    ...(anime.seasonYear ? { dateCreated: `${anime.seasonYear}`, startDate: `${anime.seasonYear}` } : {}),
+    ...(anime.durationMinutes ? { duration: `PT${anime.durationMinutes}M` } : {}),
+    productionCompany: (anime.studios || []).map((studio) => ({
+      '@type': 'Organization',
+      name: studio,
+    })),
+    ...(anime.score > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: anime.score.toFixed(1),
+            bestRating: '10',
+            worstRating: '1',
+            ratingCount: Math.max(anime.popularity || 1, 100),
+          },
+        }
+      : {}),
+    ...(!isMovie
+      ? {
+          numberOfEpisodes: episodesCount,
+          numberOfSeasons: 1,
+          containsSeason: {
+            '@type': 'TVSeason',
+            name: title,
+            numberOfEpisodes: episodesCount,
+            episode:
+              anime.episodes && anime.episodes.length > 0
+                ? anime.episodes.slice(0, 50).map((ep) => ({
+                    '@type': 'TVEpisode',
+                    episodeNumber: ep.episodeNumber,
+                    name: ep.title || `${title} — Серия ${ep.episodeNumber}`,
+                    url: `${siteUrl}/watch/${anime.id}/${ep.episodeNumber}`,
+                  }))
+                : Array.from({ length: Math.min(episodesCount, 24) }, (_, i) => ({
+                    '@type': 'TVEpisode',
+                    episodeNumber: i + 1,
+                    name: `${title} — Серия ${i + 1}`,
+                    url: `${siteUrl}/watch/${anime.id}/${i + 1}`,
+                  })),
+          },
+        }
+      : {}),
+    potentialAction: {
+      '@type': 'WatchAction',
+      target: `${siteUrl}/watch/${anime.id}/1`,
+    },
+  };
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [breadcrumbJsonLd, mainEntityJsonLd],
+  };
+
   return (
     <div className="space-y-10 pb-12">
+      {/* Schema.org JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* 0. Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
         <Link href="/catalog" className="flex items-center gap-1.5 hover:text-white transition-colors">

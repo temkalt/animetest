@@ -1,3 +1,5 @@
+import { LRUCache } from '@/lib/utils/lru-cache';
+
 export interface DDBBTranslation {
   id: number | string | null;
   name: string;
@@ -23,7 +25,10 @@ function cleanFranchiseTitle(title: string): string {
     .trim();
 }
 
-const ddbbMemoryCache = new Map<string, { data: DDBBProvider[]; expiresAt: number }>();
+const ddbbMemoryCache = new LRUCache<string, DDBBProvider[]>({
+  maxSize: 500,
+  ttlMs: 30 * 60 * 1000,
+});
 
 /**
  * Fetch live balancer streams from DDBB (ReYohoho core aggregator)
@@ -35,8 +40,8 @@ export async function fetchDDBBPlayers(params: {
 }): Promise<DDBBProvider[]> {
   const cacheKey = `${params.kinopoiskId || ''}-${params.shikimoriId || ''}-${params.title || ''}`;
   const cached = ddbbMemoryCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.data;
+  if (cached) {
+    return cached;
   }
 
   try {
@@ -86,10 +91,7 @@ export async function fetchDDBBPlayers(params: {
             };
           }).filter((p) => !!p.iframeUrl);
 
-          ddbbMemoryCache.set(cacheKey, {
-            data: result,
-            expiresAt: Date.now() + 30 * 60 * 1000,
-          });
+          ddbbMemoryCache.set(cacheKey, result, 30 * 60 * 1000);
 
           return result;
         }

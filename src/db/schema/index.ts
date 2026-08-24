@@ -184,17 +184,21 @@ export const watchHistory = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    animeId: integer('anime_id')
-      .notNull()
-      .references(() => animeCatalog.id, { onDelete: 'cascade' }),
+    animeId: integer('anime_id').notNull(),
     episodeNumber: real('episode_number').notNull(),
     currentTimeSeconds: real('current_time_seconds').notNull(),
     durationSeconds: real('duration_seconds').notNull(),
+    progressPercentage: real('progress_percentage').default(0),
     isCompleted: boolean('is_completed').default(false).notNull(),
+    teamName: varchar('team_name', { length: 100 }),
+    animeTitle: text('anime_title'),
+    animeCover: text('anime_cover'),
+    animeTotalEpisodes: integer('anime_total_episodes'),
+    animeFormat: varchar('anime_format', { length: 50 }),
     updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex('user_anime_history_idx').on(table.userId, table.animeId),
+    index('user_history_user_idx').on(table.userId),
     index('user_history_updated_idx').on(table.userId, table.updatedAt),
   ]
 );
@@ -205,13 +209,16 @@ export const bookmarks = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    animeId: integer('anime_id')
-      .notNull()
-      .references(() => animeCatalog.id, { onDelete: 'cascade' }),
+    animeId: integer('anime_id').notNull(),
     status: varchar('status', { length: 30 }).notNull(),
     score: integer('score'),
     isFavorite: boolean('is_favorite').default(false).notNull(),
     customFolder: varchar('custom_folder', { length: 100 }),
+    animeTitle: text('anime_title'),
+    animeCover: text('anime_cover'),
+    animeFormat: varchar('anime_format', { length: 50 }),
+    animeScore: real('anime_score'),
+    animeTotalEpisodes: integer('anime_total_episodes'),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
   },

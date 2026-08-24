@@ -1,13 +1,6 @@
 import { SingleBalancerProbeResult, BalancerTranslation } from '@/types/balancer';
 
 const KODIK_API_BASE = 'https://kodik-api.com';
-const DEFAULT_KODIK_TOKENS = [
-  process.env.KODIK_TOKEN || '',
-  process.env.NEXT_PUBLIC_KODIK_TOKEN || '',
-  'd4eec67656cc60cedd091081519079a4',
-  'q8df784b2c129e924b1dfc2826a79854',
-  '18029671cd24d868ad93dcfef5638c4b',
-].filter(Boolean);
 
 export class KodikProber {
   static async probe(params: {
@@ -29,11 +22,14 @@ export class KodikProber {
     };
 
     const shikiId = params.shikimoriId || params.malId;
+    const tokens = [process.env.KODIK_TOKEN, process.env.NEXT_PUBLIC_KODIK_TOKEN].filter(
+      (t): t is string => Boolean(t && t.trim().length > 0)
+    );
 
     try {
       let foundItems: any[] = [];
 
-      for (const token of DEFAULT_KODIK_TOKENS) {
+      for (const token of tokens) {
         try {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 2500);

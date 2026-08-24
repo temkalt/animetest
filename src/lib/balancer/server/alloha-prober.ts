@@ -1,6 +1,6 @@
 import { SingleBalancerProbeResult, BalancerTranslation } from '@/types/balancer';
 
-const ALLOHA_TOKEN = process.env.ALLOHA_TOKEN || '5009a7a2d05cb714cc53c8408471e3';
+const ALLOHA_TOKEN = process.env.ALLOHA_TOKEN || process.env.NEXT_PUBLIC_ALLOHA_TOKEN || '';
 
 export class AllohaProber {
   static async probe(params: {

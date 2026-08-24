@@ -1,3 +1,5 @@
+import { LRUCache } from '@/lib/utils/lru-cache';
+
 const ANILIBRIA_BASE = 'https://anilibria.top/api/v1';
 
 export interface AniLibriaReleaseItem {
@@ -22,7 +24,10 @@ export interface AniLibriaReleaseItem {
   }>;
 }
 
-const memoryAniLibriaCache = new Map<string, { russianTitle?: string; description?: string } | null>();
+const memoryAniLibriaCache = new LRUCache<string, { russianTitle?: string; description?: string } | null>({
+  maxSize: 500,
+  ttlMs: 24 * 60 * 60 * 1000,
+});
 
 export async function searchAniLibriaReleases(query: string): Promise<AniLibriaReleaseItem[]> {
   try {

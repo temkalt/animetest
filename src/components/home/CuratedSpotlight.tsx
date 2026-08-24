@@ -103,6 +103,14 @@ export const CuratedSpotlight: React.FC<CuratedSpotlightProps> = ({
             Кураторский Выбор
           </h2>
         </div>
+
+        <Link
+          href="/collections"
+          className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-zinc-100 transition-colors group self-start sm:self-auto px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-zinc-800/50"
+        >
+          <span>Все коллекции</span>
+          <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+        </Link>
       </div>
 
       <div className="flex items-center gap-4 border-b border-zinc-800 overflow-x-auto scrollbar-none">

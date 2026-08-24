@@ -8,14 +8,14 @@ import {
   X,
   Compass,
   Plus,
+  Loader2,
 } from 'lucide-react';
-import { EditorialCollection, COLLECTIONS_DATA } from '@/data/collections';
+import type { EditorialCollection } from '@/data/collections';
 import { FeaturedCollection } from './FeaturedCollection';
 import { CollectionCard } from './CollectionCard';
 import { CollectionModal } from './CollectionModal';
 import { CreateCollectionModal } from './CreateCollectionModal';
 import { UserCollectionModal } from './UserCollectionModal';
-import { SPRINGS } from '@/lib/motion-presets';
 import { authStore } from '@/lib/auth/user-store';
 import { UserCollection } from '@/types';
 
@@ -31,7 +31,19 @@ const FILTER_TABS: { id: FilterCategory; label: string }[] = [
   { id: 'cyberpunk', label: 'Киберпанк' },
 ];
 
-export const CollectionsContainer: React.FC = () => {
+export interface CollectionsContainerProps {
+  initialCollections?: EditorialCollection[];
+}
+
+export const CollectionsContainer: React.FC<CollectionsContainerProps> = ({
+  initialCollections,
+}) => {
+  const [curatedList, setCuratedList] = useState<EditorialCollection[]>(
+    initialCollections || []
+  );
+  const [isLoading, setIsLoading] = useState<boolean>(
+    !initialCollections || initialCollections.length === 0
+  );
   const [activeTab, setActiveTab] = useState<FilterCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('popularity');
@@ -42,6 +54,37 @@ export const CollectionsContainer: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isAuthenticated = authStore.isAuthenticated();
 
+  // Client-side fetch fallback if initialCollections not provided
+  useEffect(() => {
+    if (initialCollections && initialCollections.length > 0) {
+      setCuratedList(initialCollections);
+      setIsLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoading(true);
+    fetch('/api/collections/curated')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted) {
+          if (Array.isArray(data.collections)) {
+            setCuratedList(data.collections);
+          }
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('[CollectionsContainer] Failed to load curated collections:', err);
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialCollections]);
+
+  // Subscribe to user collections
   useEffect(() => {
     const unsubscribe = authStore.subscribeCollections((collections) => {
       const user = authStore.getUser();
@@ -62,30 +105,32 @@ export const CollectionsContainer: React.FC = () => {
 
   // Find the featured collection
   const featured = useMemo(() => {
-    return COLLECTIONS_DATA.find((c) => c.featured) || COLLECTIONS_DATA[0];
-  }, []);
+    if (curatedList.length === 0) return null;
+    return curatedList.find((c) => c.featured) || curatedList[0];
+  }, [curatedList]);
 
   // Compute category counts for tab pills
   const categoryCounts = useMemo(() => {
     const counts: Record<FilterCategory, number> = {
-      all: COLLECTIONS_DATA.length,
+      all: curatedList.length,
       sakuga: 0,
       cyberpunk: 0,
       fantasy: 0,
       seinen: 0,
       romance: 0,
     };
-    COLLECTIONS_DATA.forEach((c) => {
-      if (counts[c.category] !== undefined) {
-        counts[c.category] += 1;
+    curatedList.forEach((c) => {
+      const cat = c.category as FilterCategory;
+      if (counts[cat] !== undefined) {
+        counts[cat] += 1;
       }
     });
     return counts;
-  }, []);
+  }, [curatedList]);
 
   // Filter and sort collections
   const filteredCollections = useMemo(() => {
-    return COLLECTIONS_DATA.filter((c) => {
+    return curatedList.filter((c) => {
       const matchesTab = activeTab === 'all' || c.category === activeTab;
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
@@ -106,7 +151,7 @@ export const CollectionsContainer: React.FC = () => {
       if (sortBy === 'issue') return a.issueNumber.localeCompare(b.issueNumber);
       return a.issueNumber.localeCompare(b.issueNumber);
     });
-  }, [activeTab, searchQuery, sortBy]);
+  }, [curatedList, activeTab, searchQuery, sortBy]);
 
   return (
     <div className="space-y-10 sm:space-y-12 pb-16">
@@ -126,7 +171,7 @@ export const CollectionsContainer: React.FC = () => {
           <div className="flex items-center gap-3 shrink-0">
             <div className="px-4 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-center">
               <span className="text-base sm:text-lg font-extrabold font-display text-zinc-100 block leading-tight">
-                {COLLECTIONS_DATA.length}
+                {curatedList.length > 0 ? curatedList.length : '...'}
               </span>
               <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
                 Антологий
@@ -313,8 +358,20 @@ export const CollectionsContainer: React.FC = () => {
         )}
       </div>
 
-      {/* Grid of Curated Collections */}
-      {filteredCollections.length === 0 ? (
+      {/* Loading Skeleton */}
+      {isLoading && curatedList.length === 0 ? (
+        <div className="space-y-6">
+          <div className="flex items-center justify-center p-12 bg-zinc-900/50 rounded-xl border border-zinc-800 text-zinc-400 text-sm gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-zinc-300" />
+            <span>Загрузка кураторских антологий...</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-80 rounded-xl bg-zinc-900/60 border border-zinc-800 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      ) : filteredCollections.length === 0 ? (
         <div className="p-16 rounded-lg bg-zinc-900 border border-zinc-800 text-center space-y-4">
           <Compass className="w-10 h-10 text-zinc-600 mx-auto" />
           <h3 className="text-lg font-bold font-display text-zinc-100">Коллекции не найдены</h3>

@@ -139,13 +139,15 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
     if (effectiveEngine === 'alloha') {
       const allohaTr = probeData?.results?.alloha?.translations?.[0];
       if (allohaTr?.iframeUrl) return allohaTr.iframeUrl;
+      const allohaToken = process.env.NEXT_PUBLIC_ALLOHA_TOKEN || '';
+      const tokenParam = allohaToken ? `&token=${allohaToken}` : '';
       if (kinopoiskId) {
-        return `https://theatre.stravers.live/?kp=${kinopoiskId}&token=5009a7a2d05cb714cc53c8408471e3&episode=${episodeNumber}&season=1`;
+        return `https://theatre.stravers.live/?kp=${kinopoiskId}${tokenParam}&episode=${episodeNumber}&season=1`;
       }
       const searchTitle = (russianTitle || title || romajiTitle || englishTitle || '')
         .replace(/(\[.+?\]|\(.+?\)|:\s*.+?$|\bсезон\s*\d+\b|\b\d+\s*сезон\b|\bseason\s*\d+\b|\bтв-\d+\b|\bфильм\b|—\s*Серия\s*\d+)/gi, '')
         .trim();
-      return `https://theatre.stravers.live/?name=${encodeURIComponent(searchTitle)}&token=5009a7a2d05cb714cc53c8408471e3&episode=${episodeNumber}&season=1`;
+      return `https://theatre.stravers.live/?name=${encodeURIComponent(searchTitle)}${tokenParam}&episode=${episodeNumber}&season=1`;
     }
 
     // 4. Collaps Engine fallback

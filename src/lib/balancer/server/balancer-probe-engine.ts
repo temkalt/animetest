@@ -9,17 +9,21 @@ import { AllohaProber } from './alloha-prober';
 import { CollapsProber } from './collaps-prober';
 import { AniLibriaProber } from './anilibria-prober';
 import { SibnetProber, LumexProber } from './sibnet-prober';
+import { LRUCache } from '@/lib/utils/lru-cache';
 
 // In-Memory Server Cache with 30-min TTL
-const serverCache = new Map<string, { data: AnimeProbeResponse; expiresAt: number }>();
+const serverCache = new LRUCache<string, AnimeProbeResponse>({
+  maxSize: 500,
+  ttlMs: 30 * 60 * 1000,
+});
 
 export class BalancerProbeEngine {
   static async probeAll(req: AnimeProbeRequest): Promise<AnimeProbeResponse> {
     const cacheKey = `${req.animeId}-${req.episodeNumber}`;
     const cached = serverCache.get(cacheKey);
 
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
+    if (cached) {
+      return cached;
     }
 
     const mainTitle = req.titles.russian || req.titles.romaji || req.titles.english || '';
@@ -105,10 +109,7 @@ export class BalancerProbeEngine {
       ttlMs: 30 * 60 * 1000,
     };
 
-    serverCache.set(cacheKey, {
-      data: response,
-      expiresAt: Date.now() + response.ttlMs,
-    });
+    serverCache.set(cacheKey, response, response.ttlMs);
 
     return response;
   }

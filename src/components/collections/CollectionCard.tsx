@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowRight, Eye, Layers, Heart } from 'lucide-react';
-import { EditorialCollection } from '@/data/collections';
+import type { EditorialCollection } from '@/data/collections';
 import { SPRINGS } from '@/lib/motion-presets';
 
 interface CollectionCardProps {

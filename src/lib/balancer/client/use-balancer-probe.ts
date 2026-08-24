@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   AnimeProbeRequest,
   AnimeProbeResponse,
@@ -38,6 +38,10 @@ export function useBalancerProbe(params: {
   const [activeBalancer, setActiveBalancer] = useState<BalancerId | null>(null);
   const [activeTranslation, setActiveTranslation] = useState<BalancerTranslation | null>(null);
 
+  const titlesKey = useMemo(() => {
+    return `${params.titles.russian || ''}|${params.titles.english || ''}|${params.titles.romaji || ''}`;
+  }, [params.titles.russian, params.titles.english, params.titles.romaji]);
+
   const fetchProbe = useCallback(
     async (forceRefresh = false) => {
       setLoading(true);
@@ -64,6 +68,8 @@ export function useBalancerProbe(params: {
             setActiveTranslation(translations[0]);
           }
         }
+      } catch (err) {
+        console.warn('[useBalancerProbe] Error probing balancers:', err);
       } finally {
         setLoading(false);
       }
@@ -74,14 +80,22 @@ export function useBalancerProbe(params: {
       params.shikimoriId,
       params.malId,
       params.kinopoiskId,
-      params.titles.russian,
-      params.titles.english,
-      params.titles.romaji,
+      titlesKey,
+      params.titles,
     ]
   );
 
   useEffect(() => {
-    fetchProbe(false);
+    let isMounted = true;
+    const run = async () => {
+      if (isMounted) {
+        await fetchProbe(false);
+      }
+    };
+    run();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchProbe]);
 
   const handleSelectBalancer = useCallback(

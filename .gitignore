@@ -41,6 +41,13 @@ yarn-error.log*
 .data/
 
 # typescript
+# typescript
 *.tsbuildinfo
-next-env.d.ts
 
+# workflows (if token lacks workflow scope)
+.github/
+
+# scratch
+scratch/
+test-results/
+playwright-report/
