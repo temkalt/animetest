@@ -86,10 +86,6 @@ export const Navbar: React.FC = () => {
   }, [isSearchOpen]);
 
   const handleOpenSearch = () => {
-    if (!currentUser) {
-      setIsAuthModalOpen(true);
-      return;
-    }
     setIsSearchOpen(true);
   };
 
@@ -98,11 +94,7 @@ export const Navbar: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        if (!authStore.isAuthenticated()) {
-          setIsAuthModalOpen(true);
-        } else {
-          setIsSearchOpen((prev) => !prev);
-        }
+        setIsSearchOpen((prev) => !prev);
       }
       if (e.key === 'Escape') {
         setIsSearchOpen(false);
@@ -120,14 +112,14 @@ export const Navbar: React.FC = () => {
   }, [isSearchOpen]);
 
   useEffect(() => {
-    if (!currentUser || searchQuery.trim().length < 2) {
+    if (searchQuery.trim().length < 2) {
       return;
     }
 
     const timer = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/anime/search?q=${encodeURIComponent(searchQuery)}`);
+        const res = await fetch(`/api/anime/search?q=${encodeURIComponent(searchQuery.trim())}`);
         const data = await res.json();
         setSearchResults(data.results || []);
       } catch {
@@ -138,7 +130,7 @@ export const Navbar: React.FC = () => {
     }, 180);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, currentUser]);
+  }, [searchQuery]);
 
   const handleSelectResult = (animeId: number) => {
     setIsSearchOpen(false);
@@ -194,16 +186,16 @@ export const Navbar: React.FC = () => {
 
           {/* Right Actions: Search Bar & Profile */}
           <div className="flex items-center gap-3">
-            {/* Quick Search Trigger Button (Protected) */}
+            {/* Quick Search Trigger Button */}
             <button
               type="button"
               onClick={handleOpenSearch}
               className="flex items-center gap-3 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800/50 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-100 transition-all text-xs cursor-pointer group"
-              title={!currentUser ? 'Войдите для доступа к поиску' : 'Поиск аниме (Ctrl+K)'}
+              title="Поиск аниме (Ctrl+K)"
             >
-              <Search className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+              <Search className="w-3.5 h-3.5 group-hover:scale-110 transition-transform text-zinc-300" />
               <span className="hidden sm:inline font-sans">
-                {currentUser ? 'Поиск аниме...' : 'Поиск (требуется вход)'}
+                Поиск аниме...
               </span>
               <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-mono text-zinc-400 border border-zinc-700">
                 <Command className="w-2.5 h-2.5" /> K

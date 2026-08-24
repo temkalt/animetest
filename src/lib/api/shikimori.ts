@@ -83,7 +83,7 @@ async function fetchShikimoriWithFallback(query: string, variables: Record<strin
   for (const endpoint of SHIKIMORI_ENDPOINTS) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -213,8 +213,8 @@ export async function fetchBatchShikimoriMetadata(malIds: number[]): Promise<Map
     })
   );
 
-  // 800ms max race timer so pages render instantly without hanging
-  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 800));
+  // 2500ms race timer so batches complete and provide full Russian titles
+  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2500));
   await Promise.race([fetchPromise, timeoutPromise]);
 
   return result;

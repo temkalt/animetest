@@ -134,7 +134,9 @@ export class AnimeResolver {
 
       const list = data?.Page?.media || [];
       if (list.length > 0) {
-        const result = list.map((item: any) => this.mapAniListToUnified(item));
+        const malIds = list.map((item: any) => item.idMal).filter(Boolean);
+        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
+        const result = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
         trendingMemoryCache.set(cacheKey, result, 30 * 60 * 1000);
         return result;
       }
@@ -165,7 +167,9 @@ export class AnimeResolver {
 
       const list = data?.Page?.media || [];
       if (list.length > 0) {
-        const result = list.map((item: any) => this.mapAniListToUnified(item));
+        const malIds = list.map((item: any) => item.idMal).filter(Boolean);
+        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
+        const result = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
         popularMemoryCache.set(cacheKey, result, 30 * 60 * 1000);
         return result;
       }
@@ -194,7 +198,9 @@ export class AnimeResolver {
 
       const list = data?.Page?.media || [];
       if (list.length > 0) {
-        const result = list.map((item: any) => this.mapAniListToUnified(item));
+        const malIds = list.map((item: any) => item.idMal).filter(Boolean);
+        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
+        const result = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
         topRatedMemoryCache.set(cacheKey, result, 30 * 60 * 1000);
         return result;
       }
@@ -244,7 +250,9 @@ export class AnimeResolver {
           hasNextPage: false,
         };
 
-        const items = list.map((item: any) => this.mapAniListToUnified(item));
+        const malIds = list.map((item: any) => item.idMal).filter(Boolean);
+        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
+        const items = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
         const res = { items, pageInfo };
 
         catalogMemoryCache.set(cacheKey, res, 20 * 60 * 1000);
@@ -430,7 +438,11 @@ export class AnimeResolver {
       let unified: UnifiedAnime;
 
       if (media) {
-        unified = this.mapAniListToUnified(media);
+        let ruMetaMap: Map<number, ShikimoriBatchResult> | undefined;
+        if (media.idMal) {
+          ruMetaMap = await fetchBatchShikimoriMetadata([media.idMal]);
+        }
+        unified = this.mapAniListToUnified(media, ruMetaMap);
 
         // Check known episode count overrides (for 100+ series like One Piece, Naruto, Bleach)
         const knownCount = getKnownEpisodeCount(unified.id) || (unified.malId ? getKnownEpisodeCount(unified.malId) : null);
