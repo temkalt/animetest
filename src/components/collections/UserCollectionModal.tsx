@@ -22,6 +22,7 @@ import {
 import { authStore, UserCollection } from '@/lib/auth/user-store';
 import { modalVariants } from '@/lib/motion-presets';
 import { BatchAnimeItem } from '@/app/api/anime/batch/route';
+import { getRussianGenre } from '@/components/catalog/catalog-data';
 
 interface UserCollectionModalProps {
   collection: UserCollection | null;
@@ -425,7 +426,7 @@ export const UserCollectionModal: React.FC<UserCollectionModalProps> = ({
                                   key={g}
                                   className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-zinc-800/80 text-zinc-400"
                                 >
-                                  {g}
+                                  {getRussianGenre(g)}
                                 </span>
                               ))}
                             </div>

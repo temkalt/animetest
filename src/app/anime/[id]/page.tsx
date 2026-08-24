@@ -9,6 +9,7 @@ import { EpisodeGrid } from '@/components/anime/EpisodeGrid';
 import { TimecodeComments } from '@/components/player/TimecodeComments';
 import { AnimeHeroActions } from '@/components/anime/AnimeHeroActions';
 import { SynopsisClamp } from '@/components/anime/SynopsisClamp';
+import { getRussianGenre } from '@/components/catalog/catalog-data';
 import {
   Star,
   Calendar,
@@ -308,7 +309,7 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
                       href={`/catalog?genre=${encodeURIComponent(g)}`}
                       className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-indigo-500/20 text-zinc-300 hover:text-white border-zinc-800 hover:border-indigo-500/40 text-xs font-sans transition-all duration-200 shadow-sm"
                     >
-                      {g}
+                      {getRussianGenre(g)}
                     </Link>
                   ))}
                 </div>

@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { X, Play, Info, Star, ArrowRight } from 'lucide-react';
 import { EditorialCollection } from '@/data/collections';
+import { getRussianGenre } from '@/components/catalog/catalog-data';
 
 interface CollectionModalProps {
   collection: EditorialCollection | null;
@@ -182,7 +183,7 @@ export const CollectionModal: React.FC<CollectionModalProps> = ({
                               key={g}
                               className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-zinc-800 text-zinc-400"
                             >
-                              {g}
+                              {getRussianGenre(g)}
                             </span>
                           ))}
                         </div>

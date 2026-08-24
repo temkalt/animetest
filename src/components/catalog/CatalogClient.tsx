@@ -44,6 +44,7 @@ import {
   YEAR_ITEMS,
   SORT_ITEMS,
   CatalogPreset,
+  getRussianGenre,
 } from './catalog-data';
 import { SPRINGS } from '@/lib/motion-presets';
 
@@ -1138,17 +1139,17 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                       {anime.genres.slice(0, 4).map((genre) => (
                         <span
                           key={genre}
-                          className="px-2 py-0.5 rounded bg-zinc-800/80 text-[10px] font-mono text-zinc-400 border border-zinc-800"
+                          className="px-2 py-0.5 rounded bg-zinc-800/80 text-[10px] font-mono text-zinc-300 border border-zinc-700/60"
                         >
-                          {genre}
+                          {getRussianGenre(genre)}
                         </span>
                       ))}
                     </div>
                   )}
 
-                  {anime.synopsisEn && (
+                  {(anime.synopsisRu || anime.synopsisEn) && (
                     <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
-                      {anime.synopsisEn.replace(/<[^>]*>?/gm, '')}
+                      {(anime.synopsisRu || anime.synopsisEn || '').replace(/<[^>]*>?/gm, '')}
                     </p>
                   )}
                 </div>

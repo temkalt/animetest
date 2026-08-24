@@ -9,10 +9,11 @@ import {
   Flame, 
   Star, 
   TrendingUp, 
-  ArrowRight, 
-  Play
+  ArrowRight,
+  Play,
 } from 'lucide-react';
 import { UnifiedAnime } from '@/types';
+import { getRussianGenre } from '@/components/catalog/catalog-data';
 
 interface RankedTopListProps {
   trendingItems: UnifiedAnime[];
@@ -160,7 +161,7 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
                         <span>•</span>
                         <span>{item.seasonYear || '2026'}</span>
                         <span className="hidden sm:inline">•</span>
-                        <span className="hidden sm:inline truncate">{item.genres?.[0] || 'Аниме'}</span>
+                        <span className="hidden sm:inline truncate">{getRussianGenre(item.genres?.[0]) || 'Аниме'}</span>
                       </div>
                     </div>
 

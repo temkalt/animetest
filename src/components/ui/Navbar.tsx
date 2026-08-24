@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { authStore, UserProfile } from '@/lib/auth/user-store';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { modalVariants } from '@/lib/motion-presets';
+import { getRussianGenre } from '@/components/catalog/catalog-data';
 
 const NAV_LINKS = [
   { href: '/catalog', label: 'Каталог', icon: Film, accent: 'group-hover:text-zinc-100' },
@@ -418,7 +419,7 @@ export const Navbar: React.FC = () => {
                             {item.seasonYear && <span>• {item.seasonYear} г.</span>}
                             {item.genres && item.genres.length > 0 && (
                               <span className="truncate text-zinc-500 hidden sm:inline">
-                                • {item.genres.slice(0, 2).join(', ')}
+                                • {item.genres.slice(0, 2).map((g: string) => getRussianGenre(g)).join(', ')}
                               </span>
                             )}
                           </div>

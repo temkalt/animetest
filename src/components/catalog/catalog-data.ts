@@ -137,3 +137,47 @@ export const SORT_ITEMS = [
   { value: 'START_DATE_DESC', label: 'Новинки релиза', description: 'Недавние премьеры и серии' },
   { value: 'FAVOURITES_DESC', label: 'В избранном', description: 'Топ пользовательских закладок' },
 ];
+
+export const GENRE_TRANSLATIONS: Record<string, string> = {
+  Action: 'Экшен',
+  Adventure: 'Приключения',
+  Comedy: 'Комедия',
+  Drama: 'Драма',
+  Fantasy: 'Фэнтези',
+  Horror: 'Ужасы',
+  Mecha: 'Меха',
+  Mystery: 'Детектив',
+  Psychological: 'Психология',
+  Romance: 'Романтика',
+  'Sci-Fi': 'Фантастика',
+  'Slice of Life': 'Повседневность',
+  Sports: 'Спорт',
+  Supernatural: 'Мистика',
+  Thriller: 'Триллер',
+  Ecchi: 'Этти',
+  'Mahou Shoujo': 'Махо-сёдзё',
+  Music: 'Музыка',
+  Shounen: 'Сёнэн',
+  Shonen: 'Сёнэн',
+  Seinen: 'Сэйнэн',
+  Shojo: 'Сёдзё',
+  Shoujo: 'Сёдзё',
+  Isekai: 'Исекай',
+  Harem: 'Гарем',
+  Military: 'Военное',
+  Historical: 'Исторический',
+  School: 'Школа',
+  Demons: 'Демоны',
+  Magic: 'Магия',
+  'Martial Arts': 'Боевые искусства',
+  'Super Power': 'Суперсила',
+  Vampire: 'Вампиры',
+  Cyberpunk: 'Киберпанк',
+  Space: 'Космос',
+};
+
+export function getRussianGenre(genre: string): string {
+  if (!genre) return '';
+  return GENRE_TRANSLATIONS[genre] || genre;
+}
+
