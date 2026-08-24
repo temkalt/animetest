@@ -62,9 +62,14 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
   if (!items || items.length === 0) return null;
 
   const current = topItems[currentIndex] || items[0];
-  const title = current.title.russian || current.title.romaji || current.title.english || 'Без названия';
+  const title = current.title.russian || current.title.romaji || current.title.english || 'Аниме';
   const backdropUrl = current.bannerImage || current.coverImage.original || current.coverImage.medium || '';
-  const synopsis = current.synopsisRu || current.synopsisEn || 'Описание отсутствует.';
+  const isCyrillic = (t?: string | null) => (t ? /[а-яё]/i.test(t) : false);
+  const synopsis = isCyrillic(current.synopsisRu)
+    ? current.synopsisRu
+    : isCyrillic(current.synopsisEn)
+    ? current.synopsisEn
+    : 'Смотрите все серии онлайн в высоком качестве Full HD с русской озвучкой и субтитрами.';
 
   const slideVariants: Variants = {
     enter: (direction: number) => ({ x: direction > 0 ? 40 : -40, opacity: 0 }),

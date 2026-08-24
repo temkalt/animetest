@@ -1148,11 +1148,13 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                     </div>
                   )}
 
-                  {(anime.synopsisRu || anime.synopsisEn) && (
-                    <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
-                      {(anime.synopsisRu || anime.synopsisEn || '').replace(/<[^>]*>?/gm, '')}
-                    </p>
-                  )}
+                  <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
+                    {anime.synopsisRu && /[а-яё]/i.test(anime.synopsisRu)
+                      ? anime.synopsisRu.replace(/<[^>]*>?/gm, '')
+                      : anime.synopsisEn && /[а-яё]/i.test(anime.synopsisEn)
+                      ? anime.synopsisEn.replace(/<[^>]*>?/gm, '')
+                      : `Смотрите все серии аниме «${title}» онлайн в высоком качестве Full HD с русской озвучкой.`}
+                  </p>
                 </div>
 
                 {/* Action CTA */}

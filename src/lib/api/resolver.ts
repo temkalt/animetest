@@ -1,5 +1,6 @@
 import { fetchAniListGraphQL, ANIME_DETAILS_QUERY, ANIME_DETAILS_BY_MAL_QUERY, POPULAR_ANIME_QUERY, AIRING_SCHEDULE_QUERY } from './anilist';
 import { fetchShikimoriMetadata, fetchBatchShikimoriMetadata, fetchKinopoiskId, cleanSynopsis, ShikimoriBatchResult } from './shikimori';
+import { fetchAniLibriaRussianMeta } from './anilibria';
 import {
   getKnownRussianTitle,
   getKnownRussianSynopsis,
@@ -389,10 +390,23 @@ export class AnimeResolver {
           const shikiData = await fetchShikimoriMetadata(media.idMal);
           if (shikiData) {
             unified.shikimoriId = Number(shikiData.id);
-            unified.title.russian = shikiData.russian || unified.title.russian;
-            unified.synopsisRu = cleanSynopsis(shikiData.description) || unified.synopsisRu;
+            if (shikiData.russian) unified.title.russian = shikiData.russian;
+            if (shikiData.description) unified.synopsisRu = cleanSynopsis(shikiData.description);
             if (shikiData.episodes) {
               unified.episodesTotal = Math.max(unified.episodesTotal || 0, shikiData.episodes);
+            }
+          }
+        }
+
+        // Additional AniLibria check if still missing authentic Russian title or synopsis
+        if (!unified.synopsisRu || !/[а-яё]/i.test(unified.title.russian || '')) {
+          const anilibriaMeta = await fetchAniLibriaRussianMeta(unified.title.romaji || unified.title.english || unified.slug);
+          if (anilibriaMeta) {
+            if (anilibriaMeta.russianTitle && !/[а-яё]/i.test(unified.title.russian || '')) {
+              unified.title.russian = anilibriaMeta.russianTitle;
+            }
+            if (anilibriaMeta.description && !unified.synopsisRu) {
+              unified.synopsisRu = anilibriaMeta.description;
             }
           }
         }

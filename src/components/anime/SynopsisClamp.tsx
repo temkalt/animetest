@@ -29,14 +29,19 @@ export const SynopsisClamp: React.FC<SynopsisClampProps> = ({ synopsisRu, synops
       .trim();
   };
 
-  const hasRu = !!synopsisRu && synopsisRu.trim().length > 0;
-  const rawDescription = hasRu ? synopsisRu : synopsisEn;
+  const isCyrillic = (text?: string | null) => (text ? /[а-яё]/i.test(text) : false);
+  const rawDescription = (synopsisRu && isCyrillic(synopsisRu))
+    ? synopsisRu
+    : isCyrillic(synopsisEn)
+    ? synopsisEn
+    : (synopsisRu || '');
+
   const cleanedDescription = cleanText(rawDescription);
 
-  if (!cleanedDescription) {
+  if (!cleanedDescription || (!isCyrillic(cleanedDescription) && cleanedDescription.length > 0)) {
     return (
       <div className="text-xs sm:text-sm text-zinc-400 font-sans italic">
-        Описание для данного тайтла временно подготавливается. Смотрите все серии онлайн в высоком качестве с выбором озвучки.
+        Описание для данного тайтла обновляется. Доступен просмотр всех вышедших серий онлайн в высоком качестве с русской озвучкой и субтитрами.
       </div>
     );
   }
