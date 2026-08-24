@@ -196,7 +196,11 @@ class DatabaseRepository {
     if (isPostgresConfigured && db) {
       await ensurePostgresTables();
       try {
-        const rows = await db.select().from(schema.users).where(eq(schema.users.email, clean)).limit(1);
+        const rows = await db
+          .select()
+          .from(schema.users)
+          .where(sql`lower(${schema.users.email}) = ${clean}`)
+          .limit(1);
         if (rows.length > 0) {
           const u = rows[0];
           return {
@@ -232,7 +236,10 @@ class DatabaseRepository {
         const rows = await db
           .select()
           .from(schema.users)
-          .where(or(eq(schema.users.username, clean), eq(schema.users.name, clean)))
+          .where(or(
+            sql`lower(${schema.users.username}) = ${clean}`,
+            sql`lower(${schema.users.name}) = ${clean}`
+          ))
           .limit(1);
 
         if (rows.length > 0) {

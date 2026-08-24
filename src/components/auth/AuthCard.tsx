@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authStore, DEFAULT_AVATARS } from '@/lib/auth/user-store';
@@ -68,9 +68,39 @@ export const AuthCard: React.FC<AuthCardProps> = ({
 
   const passwordStrength = getPasswordStrength(password);
 
+  const [usernameStatus, setUsernameStatus] = useState<{
+    isChecking: boolean;
+    available?: boolean;
+    reason?: string;
+  }>({ isChecking: false });
+
   const cleanUsername = authStore.normalizeUsername(username);
-  const isUsernameAvailable = mode === 'register' && cleanUsername.length >= 2 && !authStore.isUsernameTaken(cleanUsername);
-  const isUsernameTakenNow = mode === 'register' && cleanUsername.length >= 2 && authStore.isUsernameTaken(cleanUsername);
+
+  // Live debounced server-side check for username availability
+  useEffect(() => {
+    if (mode !== 'register') {
+      setUsernameStatus({ isChecking: false });
+      return;
+    }
+
+    if (!cleanUsername || cleanUsername.length < 2) {
+      setUsernameStatus({ isChecking: false, available: undefined });
+      return;
+    }
+
+    setUsernameStatus({ isChecking: true });
+
+    const timer = setTimeout(async () => {
+      const result = await authStore.checkUsernameAvailability(cleanUsername);
+      setUsernameStatus({
+        isChecking: false,
+        available: result.available,
+        reason: result.reason,
+      });
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [cleanUsername, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,31 +109,37 @@ export const AuthCard: React.FC<AuthCardProps> = ({
     if (mode === 'register') {
       const cleanUser = authStore.normalizeUsername(username);
       if (!cleanUser || cleanUser.length < 2) {
-        setError('Укажите никнейм (минимум 2 символа)');
+        setError('Укажите никнейм (минимум 2 символа: латиница, цифры)');
         return;
       }
 
-      if (authStore.isUsernameTaken(cleanUser)) {
-        setError(`Никнейм @${cleanUser} уже занят. Пожалуйста, выберите другой.`);
-        return;
-      }
-
-      if (!email || !email.includes('@')) {
-        setError('Введите корректный email адрес');
-        return;
-      }
-
-      if (authStore.isEmailTaken(email.trim())) {
-        setError('Пользователь с таким email уже существует');
-        return;
-      }
-
-      if (!password || password.length < 4) {
-        setError('Пароль должен содержать минимум 4 символа');
+      if (usernameStatus.available === false) {
+        setError(usernameStatus.reason || `Никнейм @${cleanUser} уже занят. Выберите другой.`);
         return;
       }
 
       setIsLoading(true);
+
+      // Perform a fresh live server check before creating
+      const check = await authStore.checkUsernameAvailability(cleanUser);
+      if (!check.available) {
+        setIsLoading(false);
+        setError(check.reason || `Никнейм @${cleanUser} уже зарегистрирован. Пожалуйста, укажите другой никнейм.`);
+        return;
+      }
+
+      if (!email || !email.includes('@')) {
+        setIsLoading(false);
+        setError('Введите корректный email адрес');
+        return;
+      }
+
+      if (!password || password.length < 4) {
+        setIsLoading(false);
+        setError('Пароль должен содержать минимум 4 символа');
+        return;
+      }
+
       try {
         await authStore.register({
           username: cleanUser,
@@ -121,7 +157,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({
         }, 600);
       } catch (err: any) {
         setIsLoading(false);
-        setError(err?.message || 'Ошибка при создании аккаунта');
+        setError(err?.message || 'Пользователь с таким никнеймом или email уже зарегистрирован');
       }
     } else {
       const loginId = username.trim() || email.trim();
@@ -282,21 +318,24 @@ export const AuthCard: React.FC<AuthCardProps> = ({
                   {/* Real-time username validation helper */}
                   {username.trim().length > 0 && (
                     <div className="px-1 text-[11px] font-mono flex items-center justify-between">
-                      {isUsernameTakenNow && (
-                        <span className="text-rose-400 flex items-center gap-1">
-                          <X className="w-3 h-3" />
-                          Никнейм @{cleanUsername} уже занят
+                      {usernameStatus.isChecking ? (
+                        <span className="text-zinc-400 flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 border border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                          Проверка...
                         </span>
-                      )}
-                      {isUsernameAvailable && (
-                        <span className="text-emerald-400 flex items-center gap-1">
-                          <Check className="w-3 h-3" />
+                      ) : usernameStatus.available === false ? (
+                        <span className="text-rose-400 font-semibold flex items-center gap-1">
+                          <X className="w-3.5 h-3.5" />
+                          {usernameStatus.reason || `Никнейм @${cleanUsername} уже занят`}
+                        </span>
+                      ) : usernameStatus.available === true ? (
+                        <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" />
                           Никнейм @{cleanUsername} свободен
                         </span>
-                      )}
-                      {cleanUsername.length < 2 && (
+                      ) : cleanUsername.length < 2 ? (
                         <span className="text-zinc-500">Минимум 2 символа</span>
-                      )}
+                      ) : null}
                     </div>
                   )}
                 </div>
@@ -379,8 +418,8 @@ export const AuthCard: React.FC<AuthCardProps> = ({
 
           <button
             type="submit"
-            disabled={isLoading || (mode === 'register' && isUsernameTakenNow)}
-            className="w-full py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 font-medium text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-4"
+            disabled={isLoading || (mode === 'register' && (usernameStatus.available === false || usernameStatus.isChecking))}
+            className="w-full py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-900 font-medium text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-4"
           >
             <span>{isLoading ? 'Обработка...' : mode === 'register' ? 'Зарегистрироваться' : 'Войти'}</span>
             <ArrowRight className="w-4 h-4" />

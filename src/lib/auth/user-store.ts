@@ -138,11 +138,42 @@ class AuthStore {
       .slice(0, 24);
   }
 
-  isUsernameTaken(username: string, _excludeUserId?: string): boolean {
+  private knownTakenUsernames = new Set<string>(['admin', 'administrator', 'system', 'root', 'support', 'bot', 'moderator']);
+  private knownAvailableUsernames = new Set<string>();
+
+  isUsernameTaken(username: string): boolean {
     const clean = this.normalizeUsername(username);
     if (!clean || clean.length < 2) return true;
-    const reserved = ['admin', 'administrator', 'system', 'root', 'support', 'bot', 'moderator'];
-    return reserved.includes(clean);
+    return this.knownTakenUsernames.has(clean);
+  }
+
+  async checkUsernameAvailability(username: string): Promise<{ available: boolean; reason?: string }> {
+    const clean = this.normalizeUsername(username);
+    if (!clean || clean.length < 2) {
+      return { available: false, reason: 'Минимум 2 символа' };
+    }
+
+    if (this.knownTakenUsernames.has(clean)) {
+      return { available: false, reason: `Никнейм @${clean} уже занят` };
+    }
+
+    try {
+      const res = await fetch(`/api/auth/check-username?username=${encodeURIComponent(clean)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.available === false) {
+          this.knownTakenUsernames.add(clean);
+          return { available: false, reason: data.reason || `Никнейм @${clean} уже занят` };
+        } else {
+          this.knownAvailableUsernames.add(clean);
+          return { available: true };
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return { available: true };
   }
 
   isEmailTaken(_email: string): boolean {
