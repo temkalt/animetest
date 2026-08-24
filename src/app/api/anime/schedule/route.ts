@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAniLibriaSchedule } from '@/lib/api/anilibria';
 
-export const runtime = 'edge';
-
 export async function GET() {
   try {
     const rawSchedule = await getAniLibriaSchedule();

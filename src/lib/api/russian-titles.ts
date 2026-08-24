@@ -598,12 +598,12 @@ export function transliterateToRussian(input: string): string {
 }
 
 /**
- * Ensures a truthful, high-fidelity Russian title for any anime object.
+ * Ensures an authentic, high-fidelity Russian title for any anime object.
  * Priority:
- * 1. Existing russian title (if contains cyrillic)
+ * 1. Existing official Russian title (contains Cyrillic from Shikimori or metadata)
  * 2. Dictionary lookup by ID or MAL ID
  * 3. Dictionary lookup by Slug / English / Romaji / UserPreferred title
- * 4. Transliteration to natural Russian Cyrillic (never leaves raw English)
+ * 4. Clean recognized original title (Romaji / English) — never mangles words with machine transliteration.
  */
 export function ensureRussianTitle(item: {
   russian?: string | null;
@@ -615,12 +615,12 @@ export function ensureRussianTitle(item: {
   idMal?: number | string | null;
   slug?: string | null;
 }): string {
-  // If an authentic Russian title already exists (contains cyrillic)
+  // 1. If an authentic Russian title already exists from Shikimori / source (contains Cyrillic)
   if (item.russian && /[а-яё]/i.test(item.russian)) {
     return item.russian.trim();
   }
 
-  // Check ID & MAL ID
+  // 2. Check ID & MAL ID in dictionary
   if (item.id) {
     const byId = getKnownRussianTitle(item.id);
     if (byId) return byId;
@@ -631,36 +631,37 @@ export function ensureRussianTitle(item: {
     if (byMal) return byMal;
   }
 
-  // Check Slug
+  // 3. Check Slug in dictionary
   if (item.slug) {
     const bySlug = getKnownRussianTitle(item.slug);
     if (bySlug) return bySlug;
   }
 
-  // Check English title
+  // 4. Check English title in dictionary
   if (item.english) {
     const byEn = getKnownRussianTitle(item.english);
     if (byEn) return byEn;
   }
 
-  // Check Romaji title
+  // 5. Check Romaji title in dictionary
   if (item.romaji) {
     const byRomaji = getKnownRussianTitle(item.romaji);
     if (byRomaji) return byRomaji;
   }
 
-  // Check UserPreferred
+  // 6. Check UserPreferred in dictionary
   if (item.userPreferred) {
     const byPref = getKnownRussianTitle(item.userPreferred);
     if (byPref) return byPref;
   }
 
-  // Fallback: Transliterate Romaji / English to Russian
+  // 7. Clean official title fallback (clean and readable)
   const baseTitle = item.romaji || item.english || item.userPreferred || item.russian || '';
-  if (baseTitle) {
-    return transliterateToRussian(baseTitle);
+  if (baseTitle && baseTitle.trim()) {
+    return baseTitle.trim();
   }
 
   return 'Аниме';
 }
+
 

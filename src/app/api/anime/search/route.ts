@@ -4,7 +4,25 @@ import { fetchBatchShikimoriTitles } from '@/lib/api/shikimori';
 import { ensureRussianTitle } from '@/lib/api/russian-titles';
 import { getSearchQueryVariations } from '@/lib/api/fuzzy-search';
 
-export const runtime = 'edge';
+const SHIKIMORI_SEARCH_HOSTS = ['https://shikimori.me', 'https://shikimori.one', 'https://shikimori.org'];
+
+async function searchShikimoriList(query: string): Promise<any[]> {
+  for (const host of SHIKIMORI_SEARCH_HOSTS) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(`${host}/api/animes?search=${encodeURIComponent(query)}&limit=10`, {
+        headers: { 'User-Agent': 'KuroNami/2.0 (AnimePortal)' },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {}
+  }
+  return [];
+}
 
 const ANILIST_SEARCH_QUERY = `
 query SearchAnime($search: String) {
@@ -79,22 +97,9 @@ export async function GET(req: NextRequest) {
       // 1. Search Shikimori API if query variant contains Russian letters
       if (isCyrillic) {
         try {
-          const shikiRes = await fetch(
-            `https://shikimori.one/api/animes?search=${encodeURIComponent(queryVariant)}&limit=10`,
-            { headers: { 'User-Agent': 'KuroNami/2.0 (AnimePortal)' } }
-          );
+          const shikiList = await searchShikimoriList(queryVariant);
 
-          if (shikiRes.ok) {
-            const shikiList: Array<{
-              id: number;
-              russian: string;
-              name: string;
-              kind?: string;
-              score?: string;
-              image?: { original?: string; preview?: string };
-            }> = await shikiRes.json();
-
-            if (shikiList.length > 0) {
+          if (shikiList && shikiList.length > 0) {
               const malIds = shikiList.map((s) => s.id);
               const anilistData: any = await fetchAniListGraphQL(ANILIST_BY_MAL_QUERY, { ids: malIds }).catch(() => null);
               const anilistMedia = anilistData?.Page?.media || [];
@@ -154,7 +159,6 @@ export async function GET(req: NextRequest) {
                 });
               }
             }
-          }
         } catch {
           // Continue to next variant
         }

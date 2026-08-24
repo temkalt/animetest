@@ -3,8 +3,6 @@ import { fetchAniListGraphQL } from '@/lib/api/anilist';
 import { fetchBatchShikimoriTitles } from '@/lib/api/shikimori';
 import { getKnownRussianTitle, ensureRussianTitle } from '@/lib/api/russian-titles';
 
-export const runtime = 'edge';
-
 const BATCH_ANIME_QUERY = `
 query GetBatchAnime($ids: [Int]) {
   Page(page: 1, perPage: 50) {
