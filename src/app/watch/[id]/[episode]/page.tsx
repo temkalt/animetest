@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AnimeResolver } from '@/lib/api/resolver';
+import { ensureRussianTitle } from '@/lib/api/russian-titles';
 import { VideoPlayerView } from '@/components/player/VideoPlayerView';
 import { EpisodeGrid } from '@/components/anime/EpisodeGrid';
 import { TimecodeComments } from '@/components/player/TimecodeComments';
@@ -46,7 +47,9 @@ export default async function WatchPage({ params }: WatchProps) {
     notFound();
   }
 
-  const title = anime.title.russian || anime.title.english || anime.title.romaji;
+  const title = (anime.title.russian && /[а-яё]/i.test(anime.title.russian))
+    ? anime.title.russian
+    : ensureRussianTitle(anime);
   const subTitle = anime.title.english && anime.title.english !== title ? anime.title.english : anime.title.romaji;
   const totalEpisodes = anime.episodes?.length || anime.episodesTotal || 12;
 

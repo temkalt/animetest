@@ -10,6 +10,7 @@ import { TimecodeComments } from '@/components/player/TimecodeComments';
 import { AnimeHeroActions } from '@/components/anime/AnimeHeroActions';
 import { SynopsisClamp } from '@/components/anime/SynopsisClamp';
 import { getRussianGenre } from '@/components/catalog/catalog-data';
+import { ensureRussianTitle } from '@/lib/api/russian-titles';
 import {
   Star,
   Calendar,
@@ -40,7 +41,9 @@ export async function generateMetadata({ params }: AnimeDetailsProps): Promise<M
   const anime = await AnimeResolver.getDetails(animeId);
   if (!anime) return { title: 'Аниме не найдено — KuroNami' };
 
-  const title = anime.title.russian || anime.title.english || anime.title.romaji;
+  const title = (anime.title.russian && /[а-яё]/i.test(anime.title.russian))
+    ? anime.title.russian
+    : ensureRussianTitle(anime);
   const rawDescription = anime.synopsisRu || anime.synopsisEn || 'Смотрите аниме онлайн в отличном качестве 1080p на KuroNami.';
   const description = rawDescription.replace(/<[^>]+>/g, '').slice(0, 160) + '...';
   const ogImage = anime.bannerImage || anime.coverImage.original;
@@ -69,7 +72,9 @@ export default async function AnimeDetailsPage({ params }: AnimeDetailsProps) {
     notFound();
   }
 
-  const title = anime.title.russian || anime.title.english || anime.title.romaji;
+  const title = (anime.title.russian && /[а-яё]/i.test(anime.title.russian))
+    ? anime.title.russian
+    : ensureRussianTitle(anime);
   const subTitle = anime.title.english && anime.title.english !== title ? anime.title.english : anime.title.romaji;
   const nativeTitle = anime.title.native;
   const episodesCount = anime.episodes?.length || anime.episodesTotal || (anime.episodesAired ? Math.max(anime.episodesAired, 12) : 12);

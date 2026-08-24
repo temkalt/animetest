@@ -7,6 +7,7 @@ import { Users, Eye, Star, ArrowRight, Play, Sparkles, Tv } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { userActivity, AnimeViewStat } from '@/lib/auth/user-activity';
 import { realtimeHub } from '@/lib/utils/realtime';
+import { ensureRussianTitle } from '@/lib/api/russian-titles';
 
 export const CommunityChoice: React.FC = () => {
   const [mostWatched, setMostWatched] = useState<AnimeViewStat[]>([]);
@@ -153,7 +154,13 @@ export const CommunityChoice: React.FC = () => {
                       ) : null}
                     </div>
                     <h3 className="text-xs sm:text-sm font-semibold text-zinc-100 line-clamp-1 group-hover:text-white transition-colors">
-                      {anime.title}
+                      {(anime.title && /[а-яё]/i.test(anime.title))
+                        ? anime.title
+                        : ensureRussianTitle({
+                            russian: anime.title,
+                            romaji: anime.title,
+                            id: anime.id,
+                          })}
                     </h3>
                   </div>
                 </div>

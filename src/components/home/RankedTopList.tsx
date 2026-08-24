@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { UnifiedAnime } from '@/types';
 import { getRussianGenre } from '@/components/catalog/catalog-data';
+import { ensureRussianTitle } from '@/lib/api/russian-titles';
 
 interface RankedTopListProps {
   trendingItems: UnifiedAnime[];
@@ -121,7 +122,16 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
         >
             {list.map((item, idx) => {
               const rank = idx + 1;
-              const title = item.title.russian || item.title.english || item.title.romaji;
+              const title = (item.title.russian && /[а-яё]/i.test(item.title.russian))
+                ? item.title.russian
+                : ensureRussianTitle({
+                    russian: item.title.russian,
+                    english: item.title.english,
+                    romaji: item.title.romaji,
+                    id: item.id,
+                    malId: item.malId,
+                    slug: item.slug,
+                  });
               const cover = item.coverImage.medium || item.coverImage.original || '';
               const isTop3 = rank <= 3;
 

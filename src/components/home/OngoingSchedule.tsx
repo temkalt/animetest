@@ -9,6 +9,7 @@ import {
   Clock, 
   Film
 } from 'lucide-react';
+import { ensureRussianTitle } from '@/lib/api/russian-titles';
 
 export interface DayTabInfo {
   id: number;
@@ -242,7 +243,13 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
                 <div className="flex-1 min-w-0 py-1 flex flex-col justify-between">
                   <div>
                     <h4 className="text-sm font-medium text-zinc-100 group-hover:text-white transition-colors line-clamp-2 leading-snug">
-                      {item.title}
+                      {(item.title && /[а-яё]/i.test(item.title))
+                        ? item.title
+                        : ensureRussianTitle({
+                            russian: item.title,
+                            romaji: item.title,
+                            id: item.id,
+                          })}
                     </h4>
                     <div className="text-xs text-zinc-500 mt-1 truncate">
                       {item.studio || 'Онгоинг сезона'}

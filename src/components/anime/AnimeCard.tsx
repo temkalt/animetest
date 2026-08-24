@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Star } from 'lucide-react';
 import { UnifiedAnime } from '@/types';
 import { motion } from 'framer-motion';
+import { ensureRussianTitle } from '@/lib/api/russian-titles';
 
 interface AnimeCardProps {
   anime: UnifiedAnime;
@@ -14,10 +15,18 @@ interface AnimeCardProps {
 }
 
 export const AnimeCard: React.FC<AnimeCardProps> = ({ anime, priority = false, className = '' }) => {
-  const primaryTitle = anime.title.russian || anime.title.english || anime.title.romaji;
-  const secondaryTitle = anime.title.russian
-    ? (anime.title.english || anime.title.romaji)
-    : (anime.title.romaji !== primaryTitle ? anime.title.romaji : null);
+  const primaryTitle = (anime.title.russian && /[а-яё]/i.test(anime.title.russian))
+    ? anime.title.russian
+    : ensureRussianTitle({
+        russian: anime.title.russian,
+        english: anime.title.english,
+        romaji: anime.title.romaji,
+        id: anime.id,
+        malId: anime.malId,
+        slug: anime.slug,
+      });
+
+  const secondaryTitle = anime.title.romaji !== primaryTitle ? anime.title.romaji : (anime.title.english !== primaryTitle ? anime.title.english : null);
 
   const formatLabel = anime.format === 'TV' ? 'TV'
     : anime.format === 'MOVIE' ? 'Фильм'

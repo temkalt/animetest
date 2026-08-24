@@ -47,6 +47,7 @@ import {
   getRussianGenre,
 } from './catalog-data';
 import { SPRINGS } from '@/lib/motion-presets';
+import { ensureRussianTitle } from '@/lib/api/russian-titles';
 
 interface CatalogClientProps {
   initialAnimeList: UnifiedAnime[];
@@ -1089,7 +1090,16 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
         /* List View */
         <div className="space-y-3">
           {initialAnimeList.map((anime) => {
-            const title = anime.title.russian || anime.title.english || anime.title.romaji;
+            const title = (anime.title.russian && /[а-яё]/i.test(anime.title.russian))
+              ? anime.title.russian
+              : ensureRussianTitle({
+                  russian: anime.title.russian,
+                  english: anime.title.english,
+                  romaji: anime.title.romaji,
+                  id: anime.id,
+                  malId: anime.malId,
+                  slug: anime.slug,
+                });
             return (
               <Link
                 key={anime.id}

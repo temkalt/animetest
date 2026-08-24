@@ -668,6 +668,179 @@ export function getKnownEpisodeCount(idOrSlug: string | number): number | null {
 }
 
 /**
+ * High-fidelity Japanese Hepburn/Polivanov & English-to-Cyrillic transliteration and keyword translation engine.
+ * Guarantees that no anime title is ever displayed in raw Latin or Romaji.
+ */
+export function transliterateToRussian(input: string): string {
+  if (!input || !input.trim()) return 'Аниме';
+  if (/[а-яё]/i.test(input) && !/[a-z]{3,}/i.test(input)) return input.trim();
+
+  let text = input.trim();
+
+  // 1. Common English & Japanese structural markers
+  text = text
+    .replace(/\bSeason\s*(\d+)\b/gi, '$1 сезон')
+    .replace(/\b(\d+)(?:st|nd|rd|th)\s*Season\b/gi, '$1 сезон')
+    .replace(/\bPart\s*(\d+)\b/gi, 'Часть $1')
+    .replace(/\bFinal\s*Season\b/gi, 'Финальный сезон')
+    .replace(/\bCour\s*(\d+)\b/gi, 'Кур $1')
+    .replace(/\bMovie\b/gi, 'Фильм')
+    .replace(/\bSpecial\b/gi, 'Спецвыпуск')
+    .replace(/\bThe\s+Animation\b/gi, '')
+    .replace(/\bTV\b/gi, '')
+    .replace(/\bEpisode\b/gi, 'Серия')
+    .replace(/\bThe\s+Movie\b/gi, 'Фильм');
+
+  // 2. Comprehensive Multi-word Franchise Translation Map
+  const PHRASE_MAP: [RegExp, string][] = [
+    [/\bSword\s+Art\s+Online\b/gi, 'Мастера Меча Онлайн'],
+    [/\bAttack\s+on\s+Titan\b/gi, 'Атака титанов'],
+    [/\bDemon\s+Slayer\b/gi, 'Клинок, рассекающий демонов'],
+    [/\bJujutsu\s+Kaisen\b/gi, 'Магическая битва'],
+    [/\bSolo\s+Leveling\b/gi, 'Поднятие уровня в одиночку'],
+    [/\bMy\s+Hero\s+Academia\b/gi, 'Моя геройская академия'],
+    [/\bChainsaw\s+Man\b/gi, 'Человек-бензопила'],
+    [/\bTokyo\s+Ghoul\b/gi, 'Токийский гуль'],
+    [/\bDeath\s+Note\b/gi, 'Тетрадь смерти'],
+    [/\bOne\s+Punch\s+Man\b/gi, 'Ванпанчмен'],
+    [/\bSpy\s+x\s+Family\b/gi, 'Семья шпиона'],
+    [/\bFullmetal\s+Alchemist\b/gi, 'Стальной алхимик'],
+    [/\bBrotherhood\b/gi, 'Братство'],
+    [/\bHunter\s+x\s+Hunter\b/gi, 'Хантер х Хантер'],
+    [/\bBleach\b/gi, 'Блич'],
+    [/\bNaruto\b/gi, 'Наруто'],
+    [/\bOne\s+Piece\b/gi, 'Ван-Пис'],
+    [/\bBlack\s+Clover\b/gi, 'Чёрный клевер'],
+    [/\bDr\.\s*Stone\b/gi, 'Доктор Стоун'],
+    [/\bVinland\s+Saga\b/gi, 'Сага о Винланде'],
+    [/\bCyberpunk:\s*Edgerunners\b/gi, 'Киберпанк: Бегущие по краю'],
+    [/\bClassroom\s+of\s+the\s+Elite\b/gi, 'Добро пожаловать в класс превосходства'],
+    [/\bNo\s+Game\s+No\s+Life\b/gi, 'Нет игры — нет жизни'],
+    [/\bBlue\s+Lock\b/gi, 'Синяя тюрьма: Блю Лок'],
+    [/\bFrieren:\s*Beyond\s*Journey's\s*End\b/gi, 'Провожающая в последний путь Фрирен'],
+    [/\bDelicious\s+in\s+Dungeon\b/gi, 'Подземелье вкусностей'],
+    [/\bThe\s+Apothecary\s+Diaries\b/gi, 'Монолог фармацевта'],
+    [/\bThe\s+Eminence\s+in\s+Shadow\b/gi, 'Восхождение в тени'],
+    [/\bMushoku\s+Tensei\b/gi, 'Реинкарнация безработного'],
+    [/\bThat\s+Time\s+I\s+Got\s+Reincarnated\s+as\s+a\s+Slime\b/gi, 'О моём перерождении в слизь'],
+    [/\bThe\s+Rising\s+of\s+the\s+Shield\s+Hero\b/gi, 'Восхождение Героя Щита'],
+    [/\bTokyo\s+Revengers\b/gi, 'Токийские мстители'],
+    [/\bHell's\s+Paradise\b/gi, 'Адский рай'],
+    [/\bWind\s+Breaker\b/gi, 'Ветролом'],
+    [/\bMade\s+in\s+Abyss\b/gi, 'Созданный в Бездне'],
+    [/\bMob\s+Psycho\s+100\b/gi, 'Моб Психо 100'],
+    [/\bSteins;Gate\b/gi, 'Врата Штейна'],
+    [/\bCode\s+Geass\b/gi, 'Код Гиас'],
+    [/\bCowboy\s+Bebop\b/gi, 'Ковбой Бибоп'],
+    [/\bNeon\s+Genesis\s+Evangelion\b/gi, 'Евангелион'],
+    [/\bViolet\s+Evergarden\b/gi, 'Вайолет Эвергарден'],
+    [/\bYour\s+Name\b/gi, 'Твоё имя'],
+    [/\bWeathering\s+with\s+You\b/gi, 'Дитя погоды'],
+    [/\bA\s+Silent\s+Voice\b/gi, 'Форма голоса'],
+    [/\bSpirited\s+Away\b/gi, 'Унесённые призраками'],
+    [/\bPrincess\s+Mononoke\b/gi, 'Принцесса Мононоке'],
+    [/\bHowl's\s+Moving\s+Castle\b/gi, 'Ходячий замок'],
+    [/\bMy\s+Neighbor\s+Totoro\b/gi, 'Мой сосед Тоторо'],
+    [/\bShangri-La\s+Frontier\b/gi, 'Рубеж Шангри-Ла'],
+    [/\bTower\s+of\s+God\b/gi, 'Башня Бога'],
+    [/\bGod\s+of\s+High\s+School\b/gi, 'Бог старшей школы'],
+    [/\bKaiju\s+No\.\s*8\b/gi, 'Кайдзю номер восемь'],
+    [/\bKaijuu\s+8-gou\b/gi, 'Кайдзю номер восемь'],
+    [/\bDandadan\b/gi, 'Дандадан'],
+    [/\bOverlord\b/gi, 'Повелитель'],
+    [/\bRe:Zero\b/gi, 'Re:Zero. Жизнь с нуля в другом мире'],
+    [/\bKonoSuba\b/gi, 'Этот замечательный мир!'],
+    [/\bHaikyuu!!\b/gi, 'Волейбол!!'],
+    [/\bBungou\s+Stray\s+Dogs\b/gi, 'Великий из бродячих псов'],
+    [/\bNoragami\b/gi, 'Бездомный бог'],
+    [/\bDororo\b/gi, 'Дороро'],
+    [/\bErased\b/gi, 'Город, в котором меня нет'],
+    [/\bYour\s+Lie\s+in\s+April\b/gi, 'Твоя апрельская ложь'],
+    [/\bHorimiya\b/gi, 'Хоримия'],
+    [/\bKaguya-sama:\s*Love\s+is\s+War\b/gi, 'Госпожа Кагуя: В любви как на войне'],
+    [/\bOshi\s+no\s+Ko\b/gi, 'Звёздное дитя'],
+    [/\bSummer\s+Time\s+Rendering\b/gi, 'Летнее время'],
+    [/\bLycoris\s+Recoil\b/gi, 'Ликорис Рикоил'],
+    [/\bBocchi\s+the\s+Rock!\b/gi, 'Одинокий рокер!'],
+    [/\bThe\s+Elusive\s+Samurai\b/gi, 'Юный лорд — мастер побега'],
+    [/\bWistoria:\s*Wand\s+and\s+Sword\b/gi, 'Вистория: Меч и жезл'],
+    [/\bMakeine:\s*Too\s+Many\s+Losing\s+Heroines!\b/gi, 'Слишком много проигравших героинь!'],
+    [/\bAlya\s+Sometimes\s+Hides\s+Her\s+Feelings\s+in\s+Russian\b/gi, 'Аля иногда кокетничает со мной по-русски'],
+    [/\b2\.5\s+Dimensional\s+Seduction\b/gi, 'Соблазн 2.5-мерного измерения'],
+  ];
+
+  for (const [pattern, replacement] of PHRASE_MAP) {
+    if (pattern.test(text)) {
+      text = text.replace(pattern, replacement);
+    }
+  }
+
+  // If already Cyrillic after phrase mapping
+  if (/[а-яё]/i.test(text) && !/[a-z]{3,}/i.test(text)) {
+    return text.replace(/\s+/g, ' ').trim();
+  }
+
+  // 3. Syllable-by-syllable Japanese Hepburn & English Phonetic Converter
+  const SYLLABLES: [RegExp, string][] = [
+    [/kya/gi, 'кя'], [/kyu/gi, 'кю'], [/kyo/gi, 'кё'],
+    [/gya/gi, 'гя'], [/gyu/gi, 'гю'], [/gyo/gi, 'гё'],
+    [/sha/gi, 'ся'], [/shu/gi, 'сю'], [/sho/gi, 'сё'], [/shi/gi, 'си'],
+    [/cha/gi, 'тя'], [/chu/gi, 'тю'], [/cho/gi, 'тё'], [/chi/gi, 'ти'],
+    [/nya/gi, 'ня'], [/nyu/gi, 'ню'], [/nyo/gi, 'нё'],
+    [/hya/gi, 'хя'], [/hyu/gi, 'хю'], [/hyo/gi, 'хё'],
+    [/mya/gi, 'мя'], [/myu/gi, 'мю'], [/myo/gi, 'мё'],
+    [/rya/gi, 'ря'], [/ryu/gi, 'рю'], [/ryo/gi, 'рё'],
+    [/bya/gi, 'бя'], [/byu/gi, 'бю'], [/byo/gi, 'бё'],
+    [/pya/gi, 'пя'], [/pyu/gi, 'пю'], [/pyo/gi, 'пё'],
+    [/dya/gi, 'дя'], [/dyu/gi, 'дю'], [/dyo/gi, 'дё'],
+    [/tsu/gi, 'цу'], [/dzu/gi, 'дзу'],
+    [/tsa/gi, 'ца'], [/tse/gi, 'це'], [/tso/gi, 'цо'],
+    [/ja/gi, 'дзя'], [/ju/gi, 'дзю'], [/jo/gi, 'дзё'], [/ji/gi, 'дзи'],
+    [/wa/gi, 'ва'], [/wo/gi, 'во'], [/we/gi, 'вэ'], [/wi/gi, 'ви'],
+    [/fu/gi, 'фу'], [/fa/gi, 'фа'], [/fe/gi, 'фе'], [/fo/gi, 'фо'], [/fi/gi, 'фи'],
+    [/ka/gi, 'ка'], [/ki/gi, 'ки'], [/ku/gi, 'ку'], [/ke/gi, 'ке'], [/ko/gi, 'ко'],
+    [/ga/gi, 'га'], [/gi/gi, 'ги'], [/gu/gi, 'гу'], [/ge/gi, 'ге'], [/go/gi, 'го'],
+    [/sa/gi, 'са'], [/su/gi, 'су'], [/se/gi, 'се'], [/so/gi, 'со'],
+    [/za/gi, 'дза'], [/zu/gi, 'дзу'], [/ze/gi, 'дзе'], [/zo/gi, 'дзо'],
+    [/ta/gi, 'та'], [/te/gi, 'те'], [/to/gi, 'то'],
+    [/da/gi, 'да'], [/de/gi, 'дэ'], [/do/gi, 'до'], [/di/gi, 'ди'], [/du/gi, 'ду'],
+    [/na/gi, 'на'], [/ni/gi, 'ни'], [/nu/gi, 'ну'], [/ne/gi, 'не'], [/no/gi, 'но'],
+    [/ha/gi, 'ха'], [/hi/gi, 'хи'], [/he/gi, 'хе'], [/ho/gi, 'хо'],
+    [/ba/gi, 'ба'], [/bi/gi, 'би'], [/bu/gi, 'бу'], [/be/gi, 'бе'], [/bo/gi, 'бо'],
+    [/pa/gi, 'па'], [/pi/gi, 'пи'], [/pu/gi, 'пу'], [/pe/gi, 'пе'], [/po/gi, 'по'],
+    [/ma/gi, 'ма'], [/mi/gi, 'ми'], [/mu/gi, 'му'], [/me/gi, 'ме'], [/mo/gi, 'мо'],
+    [/ya/gi, 'я'], [/yu/gi, 'ю'], [/yo/gi, 'ё'],
+    [/ra/gi, 'ра'], [/ri/gi, 'ри'], [/ru/gi, 'ру'], [/re/gi, 'ре'], [/ro/gi, 'ро'],
+    [/va/gi, 'ва'], [/vi/gi, 'ви'], [/vu/gi, 'ву'], [/ve/gi, 'ве'], [/vo/gi, 'во'],
+    [/oo/gi, 'о'], [/ou/gi, 'о'], [/uu/gi, 'у'], [/aa/gi, 'а'], [/ee/gi, 'э'], [/ii/gi, 'и'],
+    [/a/gi, 'а'], [/b/gi, 'б'], [/c/gi, 'к'], [/d/gi, 'д'], [/e/gi, 'э'],
+    [/f/gi, 'ф'], [/g/gi, 'г'], [/h/gi, 'х'], [/i/gi, 'и'], [/j/gi, 'дж'],
+    [/k/gi, 'к'], [/l/gi, 'л'], [/m/gi, 'м'], [/n/gi, 'н'], [/o/gi, 'о'],
+    [/p/gi, 'п'], [/q/gi, 'к'], [/r/gi, 'р'], [/s/gi, 'с'], [/t/gi, 'т'],
+    [/u/gi, 'у'], [/v/gi, 'в'], [/w/gi, 'в'], [/x/gi, 'кс'], [/y/gi, 'й'], [/z/gi, 'з'],
+  ];
+
+  const words = text.split(/\s+/);
+  const convertedWords = words.map((word) => {
+    if (/^[0-9\Wа-яёА-ЯЁ]+$/.test(word)) return word;
+
+    let w = word;
+    for (const [syllableRegex, cyrillic] of SYLLABLES) {
+      w = w.replace(syllableRegex, cyrillic);
+    }
+
+    if (/^[A-Z]/.test(word) && w.length > 0) {
+      w = w.charAt(0).toUpperCase() + w.slice(1);
+    }
+    return w;
+  });
+
+  let result = convertedWords.join(' ');
+  result = result.replace(/(^|[.!?:\-]\s*)([а-я])/g, (_, p1, p2) => p1 + p2.toUpperCase());
+  return result.trim();
+}
+
+/**
  * Intelligent Russian title formatter.
  * Ensures an authentic, high-fidelity Russian title for any anime object.
  * Priority:
@@ -694,51 +867,42 @@ export function ensureRussianTitle(item: {
   // 2. Check ID & MAL ID in dictionary
   if (item.id) {
     const byId = getKnownRussianTitle(item.id);
-    if (byId) return byId;
+    if (byId && /[а-яё]/i.test(byId)) return byId;
   }
   const mal = item.malId || item.idMal;
   if (mal) {
     const byMal = getKnownRussianTitle(mal);
-    if (byMal) return byMal;
+    if (byMal && /[а-яё]/i.test(byMal)) return byMal;
   }
 
   // 3. Check Slug in dictionary
   if (item.slug) {
     const bySlug = getKnownRussianTitle(item.slug);
-    if (bySlug) return bySlug;
+    if (bySlug && /[а-яё]/i.test(bySlug)) return bySlug;
   }
 
   // 4. Check English title in dictionary
   if (item.english) {
     const byEn = getKnownRussianTitle(item.english);
-    if (byEn) return byEn;
+    if (byEn && /[а-яё]/i.test(byEn)) return byEn;
   }
 
   // 5. Check Romaji title in dictionary
   if (item.romaji) {
     const byRomaji = getKnownRussianTitle(item.romaji);
-    if (byRomaji) return byRomaji;
+    if (byRomaji && /[а-яё]/i.test(byRomaji)) return byRomaji;
   }
 
   // 6. Check UserPreferred in dictionary
   if (item.userPreferred) {
     const byPref = getKnownRussianTitle(item.userPreferred);
-    if (byPref) return byPref;
+    if (byPref && /[а-яё]/i.test(byPref)) return byPref;
   }
 
-  // 7. Clean recognizable title fallback
+  // 7. Dynamic Cyrillic Transliteration & Translation fallback
   const baseTitle = item.romaji || item.english || item.userPreferred || item.russian || '';
   if (baseTitle && baseTitle.trim()) {
-    // If it contains season markers like Season 2 / 2nd Season / Part 2 / Movie
-    let clean = baseTitle.trim()
-      .replace(/\s*\(TV\)/i, '')
-      .replace(/\s*Season\s*(\d+)/i, ' $1 сезон')
-      .replace(/\s*(\d+)(?:st|nd|rd|th)\s*Season/i, ' $1 сезон')
-      .replace(/\s*Part\s*(\d+)/i, ' Часть $1')
-      .replace(/\s*Movie/i, ' (Фильм)')
-      .replace(/\s*Special/i, ' (Спецвыпуск)');
-    
-    return clean;
+    return transliterateToRussian(baseTitle.trim());
   }
 
   return 'Аниме';

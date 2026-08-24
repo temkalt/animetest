@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { Play, Info, Star, ChevronRight, ChevronLeft } from 'lucide-react';
 import { UnifiedAnime } from '@/types';
+import { ensureRussianTitle } from '@/lib/api/russian-titles';
 
 interface HeroShowcaseProps {
   items: UnifiedAnime[];
@@ -62,7 +63,16 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
   if (!items || items.length === 0) return null;
 
   const current = topItems[currentIndex] || items[0];
-  const title = current.title.russian || current.title.romaji || current.title.english || 'Аниме';
+  const title = (current.title.russian && /[а-яё]/i.test(current.title.russian))
+    ? current.title.russian
+    : ensureRussianTitle({
+        russian: current.title.russian,
+        english: current.title.english,
+        romaji: current.title.romaji,
+        id: current.id,
+        malId: current.malId,
+        slug: current.slug,
+      });
   const backdropUrl = current.bannerImage || current.coverImage.original || current.coverImage.medium || '';
   const isCyrillic = (t?: string | null) => (t ? /[а-яё]/i.test(t) : false);
   const synopsis = isCyrillic(current.synopsisRu)
