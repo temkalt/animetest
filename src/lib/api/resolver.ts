@@ -133,13 +133,11 @@ export class AnimeResolver {
 
       const list = data?.Page?.media || [];
       if (list.length > 0) {
-        const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
-        const result = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+        const result = list.map((item: any) => this.mapAniListToUnified(item));
 
         trendingMemoryCache.set(cacheKey, {
           data: result,
-          expiresAt: Date.now() + 20 * 60 * 1000,
+          expiresAt: Date.now() + 30 * 60 * 1000,
         });
 
         return result;
@@ -151,7 +149,7 @@ export class AnimeResolver {
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['TRENDING_DESC'] });
     trendingMemoryCache.set(cacheKey, {
       data: fallback.items,
-      expiresAt: Date.now() + 10 * 60 * 1000,
+      expiresAt: Date.now() + 15 * 60 * 1000,
     });
     return fallback.items;
   }
@@ -174,13 +172,11 @@ export class AnimeResolver {
 
       const list = data?.Page?.media || [];
       if (list.length > 0) {
-        const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
-        const result = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+        const result = list.map((item: any) => this.mapAniListToUnified(item));
 
         popularMemoryCache.set(cacheKey, {
           data: result,
-          expiresAt: Date.now() + 20 * 60 * 1000,
+          expiresAt: Date.now() + 30 * 60 * 1000,
         });
 
         return result;
@@ -192,7 +188,7 @@ export class AnimeResolver {
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['POPULARITY_DESC'] });
     popularMemoryCache.set(cacheKey, {
       data: fallback.items,
-      expiresAt: Date.now() + 10 * 60 * 1000,
+      expiresAt: Date.now() + 15 * 60 * 1000,
     });
     return fallback.items;
   }
@@ -213,13 +209,11 @@ export class AnimeResolver {
 
       const list = data?.Page?.media || [];
       if (list.length > 0) {
-        const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
-        const result = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+        const result = list.map((item: any) => this.mapAniListToUnified(item));
 
         topRatedMemoryCache.set(cacheKey, {
           data: result,
-          expiresAt: Date.now() + 20 * 60 * 1000,
+          expiresAt: Date.now() + 30 * 60 * 1000,
         });
 
         return result;
@@ -231,7 +225,7 @@ export class AnimeResolver {
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['SCORE_DESC'] });
     topRatedMemoryCache.set(cacheKey, {
       data: fallback.items,
-      expiresAt: Date.now() + 10 * 60 * 1000,
+      expiresAt: Date.now() + 15 * 60 * 1000,
     });
     return fallback.items;
   }
@@ -249,7 +243,7 @@ export class AnimeResolver {
       const res = await this.fetchShikimoriCatalogFallback(params);
       catalogMemoryCache.set(cacheKey, {
         data: res,
-        expiresAt: Date.now() + 15 * 60 * 1000,
+        expiresAt: Date.now() + 20 * 60 * 1000,
       });
       return res;
     }
@@ -276,15 +270,12 @@ export class AnimeResolver {
           hasNextPage: false,
         };
 
-        const malIds = list.map((m: any) => m.idMal).filter(Boolean);
-        const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
-
-        const items = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+        const items = list.map((item: any) => this.mapAniListToUnified(item));
         const res = { items, pageInfo };
 
         catalogMemoryCache.set(cacheKey, {
           data: res,
-          expiresAt: Date.now() + 15 * 60 * 1000,
+          expiresAt: Date.now() + 20 * 60 * 1000,
         });
 
         return res;
@@ -296,7 +287,7 @@ export class AnimeResolver {
     const fallbackRes = await this.fetchShikimoriCatalogFallback(params);
     catalogMemoryCache.set(cacheKey, {
       data: fallbackRes,
-      expiresAt: Date.now() + 10 * 60 * 1000,
+      expiresAt: Date.now() + 15 * 60 * 1000,
     });
     return fallbackRes;
   }
@@ -472,111 +463,35 @@ export class AnimeResolver {
       let unified: UnifiedAnime;
 
       if (media) {
-        const relMalIds = (media.relations?.edges || [])
-          .map((e: any) => e.node?.idMal)
-          .filter(Boolean);
-        const allMalIds = media.idMal ? [media.idMal, ...relMalIds] : relMalIds;
-        const ruMetaMap = allMalIds.length > 0 ? await fetchBatchShikimoriMetadata(allMalIds) : undefined;
+        unified = this.mapAniListToUnified(media);
 
-        unified = this.mapAniListToUnified(media, ruMetaMap);
-
-        // Ingest Russian metadata & synopses from Shikimori
-        if (media.idMal) {
-          const shikiData = await fetchShikimoriMetadata(media.idMal);
-          if (shikiData) {
-            unified.shikimoriId = Number(shikiData.id);
-            if (shikiData.russian) unified.title.russian = shikiData.russian;
-            if (shikiData.description) unified.synopsisRu = cleanSynopsis(shikiData.description);
-            if (shikiData.episodes) {
-              unified.episodesTotal = Math.max(unified.episodesTotal || 0, shikiData.episodes);
-            }
-          }
+        // Check known episode count overrides (for 100+ series like One Piece, Naruto, Bleach)
+        const knownCount = getKnownEpisodeCount(unified.id) || (unified.malId ? getKnownEpisodeCount(unified.malId) : null);
+        if (knownCount) {
+          unified.episodesTotal = knownCount;
         }
 
-        // Additional AniLibria check if still missing authentic Russian title or synopsis
-        if (!unified.synopsisRu || !/[а-яё]/i.test(unified.title.russian || '')) {
-          const anilibriaMeta = await fetchAniLibriaRussianMeta(unified.title.romaji || unified.title.english || unified.slug);
-          if (anilibriaMeta) {
-            if (anilibriaMeta.russianTitle && !/[а-яё]/i.test(unified.title.russian || '')) {
-              unified.title.russian = anilibriaMeta.russianTitle;
-            }
-            if (anilibriaMeta.description && !unified.synopsisRu) {
-              unified.synopsisRu = anilibriaMeta.description;
-            }
-          }
-        }
+        const streamRes = await StreamAggregator.resolveStreams({
+          animeId: unified.id,
+          malId: unified.malId,
+          shikimoriId: unified.shikimoriId,
+          titles: {
+            russian: unified.title.russian,
+            romaji: unified.title.romaji,
+            english: unified.title.english,
+            synonyms: unified.synonyms,
+          },
+          totalEpisodes: unified.episodesTotal || unified.episodesAired || 12,
+        });
+
+        unified.episodes = streamRes.episodes;
       } else {
-        // Fallback 2: Direct Shikimori Fetch
-        const shikiData = await fetchShikimoriMetadata(anilistId);
-        if (!shikiData) return null;
-
-        unified = {
-          id: anilistId,
-          malId: anilistId,
-          shikimoriId: anilistId,
-          slug: (shikiData.name || `anime-${anilistId}`).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          title: {
-            romaji: shikiData.name,
-            english: null,
-            native: null,
-            russian: shikiData.russian || getKnownRussianTitle(anilistId) || getKnownRussianTitle(shikiData.name) || shikiData.name,
-          },
-          synonyms: [],
-          format: (shikiData.kind || 'TV').toUpperCase(),
-          status: shikiData.status === 'anons' ? 'NOT_YET_RELEASED' : shikiData.status === 'ongoing' ? 'RELEASING' : 'FINISHED',
-          season: null,
-          seasonYear: shikiData.aired_on ? parseInt(shikiData.aired_on.slice(0, 4), 10) : null,
-          episodesTotal: shikiData.episodes || 12,
-          episodesAired: shikiData.episodes_aired || shikiData.episodes || 12,
-          durationMinutes: shikiData.duration || 24,
-          coverImage: {
-            original: shikiData.image?.original ? `https://shikimori.one${shikiData.image.original}` : '',
-            medium: shikiData.image?.preview ? `https://shikimori.one${shikiData.image.preview}` : '',
-            color: '#8B5CF6',
-          },
-          bannerImage: null,
-          synopsisRu: cleanSynopsis(shikiData.description) || generateRussianGenreSynopsis(shikiData.russian || shikiData.name, [], (shikiData.kind || 'TV').toUpperCase()),
-          synopsisEn: '',
-          score: shikiData.score ? parseFloat(shikiData.score) : 0,
-          popularity: 100,
-          genres: [],
-          studios: [],
-          tags: [],
-          relations: [],
-          nextAiringEpisode: null,
-        };
+        return null;
       }
-
-      // Fetch Kinopoisk ID for balancers (Alloha, Collaps, VideoCDN, Turbo)
-      const targetShikiId = unified.shikimoriId || unified.malId;
-      if (targetShikiId) {
-        unified.kinopoiskId = await fetchKinopoiskId(targetShikiId);
-      }
-
-      // Check known episode count overrides (for 100+ series like One Piece, Naruto, Bleach)
-      const knownCount = getKnownEpisodeCount(unified.id) || (unified.malId ? getKnownEpisodeCount(unified.malId) : null);
-      if (knownCount) {
-        unified.episodesTotal = knownCount;
-      }
-
-      const streamRes = await StreamAggregator.resolveStreams({
-        animeId: unified.id,
-        malId: unified.malId,
-        shikimoriId: unified.shikimoriId,
-        titles: {
-          russian: unified.title.russian,
-          romaji: unified.title.romaji,
-          english: unified.title.english,
-          synonyms: unified.synonyms,
-        },
-        totalEpisodes: unified.episodesTotal || unified.episodesAired || 12,
-      });
-
-      unified.episodes = streamRes.episodes;
 
       detailsMemoryCache.set(anilistId, {
         data: unified,
-        expiresAt: Date.now() + 15 * 60 * 1000, // 15 min TTL
+        expiresAt: Date.now() + 30 * 60 * 1000, // 30 min TTL
       });
 
       return unified;

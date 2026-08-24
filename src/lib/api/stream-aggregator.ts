@@ -38,12 +38,21 @@ export class StreamAggregator {
 
     // Parallel resolution of AniLibria and DDBB players with fast timeouts
     const searchTitle = titles.russian || titles.romaji || titles.english || '';
-    const [anilibriaRelease, ddbbProviders] = await Promise.all([
+    const resolutionPromise = Promise.all([
       this.findAniLibriaMatch(titles).catch(() => null),
       fetchDDBBPlayers({
         title: searchTitle,
         shikimoriId: shikimoriId || undefined,
       }).catch(() => []),
+    ]);
+
+    const timeoutPromise = new Promise<[null, any[]]>((resolve) =>
+      setTimeout(() => resolve([null, []]), 600)
+    );
+
+    const [anilibriaRelease, ddbbProviders] = await Promise.race([
+      resolutionPromise,
+      timeoutPromise,
     ]);
 
     const hasAniLibria = !!(anilibriaRelease && anilibriaRelease.episodes && anilibriaRelease.episodes.length > 0);

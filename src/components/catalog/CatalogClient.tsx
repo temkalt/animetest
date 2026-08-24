@@ -1108,11 +1108,12 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               >
                 {/* Poster Thumbnail */}
                 <div className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden shrink-0 bg-zinc-950 border border-zinc-800">
-                  {anime.coverImage.original && (
+                  {(anime.coverImage.medium || anime.coverImage.original) && (
                     <Image
-                      src={anime.coverImage.original}
+                      src={anime.coverImage.medium || anime.coverImage.original}
                       alt={title}
                       fill
+                      unoptimized={true}
                       sizes="96px"
                       className="object-cover group-hover:scale-105 transition-transform duration-200"
                     />

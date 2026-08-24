@@ -155,6 +155,7 @@ export const RankedTopList: React.FC<RankedTopListProps> = ({
                           src={cover}
                           alt={title}
                           fill
+                          unoptimized={true}
                           sizes="48px"
                           className="object-cover"
                         />

@@ -113,6 +113,7 @@ export const CommunityChoice: React.FC = () => {
                       src={anime.coverImage}
                       alt={anime.title}
                       fill
+                      unoptimized={true}
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
                     />

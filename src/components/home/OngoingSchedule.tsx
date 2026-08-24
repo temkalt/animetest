@@ -229,6 +229,7 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
                       src={item.coverImage}
                       alt={item.title}
                       fill
+                      unoptimized={true}
                       sizes="64px"
                       className="object-cover"
                     />

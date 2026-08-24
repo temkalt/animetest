@@ -51,6 +51,7 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({ anime, priority = false, c
             src={coverUrl}
             alt={primaryTitle}
             fill
+            unoptimized={true}
             sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw'
             priority={priority}
             loading={priority ? undefined : 'lazy'}
