@@ -22,6 +22,11 @@ const ANIME_FORMATS = new Set(['TV', 'TV_SHORT', 'MOVIE', 'SPECIAL', 'OVA', 'ONA
 const EXCLUDED_RELATIONS = new Set(['CHARACTER', 'OTHER', 'ADAPTATION', 'SOURCE']);
 
 const detailsMemoryCache = new Map<number, { data: UnifiedAnime; expiresAt: number }>();
+const trendingMemoryCache = new Map<string, { data: UnifiedAnime[]; expiresAt: number }>();
+const popularMemoryCache = new Map<string, { data: UnifiedAnime[]; expiresAt: number }>();
+const topRatedMemoryCache = new Map<string, { data: UnifiedAnime[]; expiresAt: number }>();
+const catalogMemoryCache = new Map<string, { data: CatalogSearchResult; expiresAt: number }>();
+let scheduleMemoryCache: { data: WeeklySchedule | null; expiresAt: number } = { data: null, expiresAt: 0 };
 
 export class AnimeResolver {
   private static async fetchShikimoriCatalogFallback(
@@ -111,6 +116,12 @@ export class AnimeResolver {
   }
 
   static async getTrending(page = 1, perPage = 20, season?: string, seasonYear?: number): Promise<UnifiedAnime[]> {
+    const cacheKey = `${page}-${perPage}-${season || ''}-${seasonYear || ''}`;
+    const cached = trendingMemoryCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
     try {
       const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
         page,
@@ -124,17 +135,34 @@ export class AnimeResolver {
       if (list.length > 0) {
         const malIds = list.map((m: any) => m.idMal).filter(Boolean);
         const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
-        return list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+        const result = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+
+        trendingMemoryCache.set(cacheKey, {
+          data: result,
+          expiresAt: Date.now() + 20 * 60 * 1000,
+        });
+
+        return result;
       }
     } catch (err) {
       console.warn('[AnimeResolver] getTrending AniList failed, using Shikimori fallback:', err);
     }
 
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['TRENDING_DESC'] });
+    trendingMemoryCache.set(cacheKey, {
+      data: fallback.items,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
     return fallback.items;
   }
 
   static async getPopular(page = 1, perPage = 20, season?: string, seasonYear?: number): Promise<UnifiedAnime[]> {
+    const cacheKey = `${page}-${perPage}-${season || ''}-${seasonYear || ''}`;
+    const cached = popularMemoryCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
     try {
       const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
         page,
@@ -148,17 +176,34 @@ export class AnimeResolver {
       if (list.length > 0) {
         const malIds = list.map((m: any) => m.idMal).filter(Boolean);
         const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
-        return list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+        const result = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+
+        popularMemoryCache.set(cacheKey, {
+          data: result,
+          expiresAt: Date.now() + 20 * 60 * 1000,
+        });
+
+        return result;
       }
     } catch (err) {
       console.warn('[AnimeResolver] getPopular AniList failed, using Shikimori fallback:', err);
     }
 
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['POPULARITY_DESC'] });
+    popularMemoryCache.set(cacheKey, {
+      data: fallback.items,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
     return fallback.items;
   }
 
   static async getTopRated(page = 1, perPage = 20): Promise<UnifiedAnime[]> {
+    const cacheKey = `${page}-${perPage}`;
+    const cached = topRatedMemoryCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
     try {
       const data: any = await fetchAniListGraphQL(POPULAR_ANIME_QUERY, {
         page,
@@ -170,21 +215,43 @@ export class AnimeResolver {
       if (list.length > 0) {
         const malIds = list.map((m: any) => m.idMal).filter(Boolean);
         const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
-        return list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+        const result = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
+
+        topRatedMemoryCache.set(cacheKey, {
+          data: result,
+          expiresAt: Date.now() + 20 * 60 * 1000,
+        });
+
+        return result;
       }
     } catch (err) {
       console.warn('[AnimeResolver] getTopRated AniList failed, using Shikimori fallback:', err);
     }
 
     const fallback = await this.fetchShikimoriCatalogFallback({ page, perPage, sort: ['SCORE_DESC'] });
+    topRatedMemoryCache.set(cacheKey, {
+      data: fallback.items,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
     return fallback.items;
   }
 
   static async searchCatalog(params: CatalogFilterParams): Promise<CatalogSearchResult> {
+    const cacheKey = JSON.stringify(params);
+    const cached = catalogMemoryCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
     const isCyrillic = params.search ? /[а-яё]/i.test(params.search) : false;
 
     if (isCyrillic && params.search) {
-      return this.fetchShikimoriCatalogFallback(params);
+      const res = await this.fetchShikimoriCatalogFallback(params);
+      catalogMemoryCache.set(cacheKey, {
+        data: res,
+        expiresAt: Date.now() + 15 * 60 * 1000,
+      });
+      return res;
     }
 
     try {
@@ -213,16 +280,32 @@ export class AnimeResolver {
         const ruMetaMap = await fetchBatchShikimoriMetadata(malIds);
 
         const items = list.map((item: any) => this.mapAniListToUnified(item, ruMetaMap));
-        return { items, pageInfo };
+        const res = { items, pageInfo };
+
+        catalogMemoryCache.set(cacheKey, {
+          data: res,
+          expiresAt: Date.now() + 15 * 60 * 1000,
+        });
+
+        return res;
       }
     } catch (err) {
       console.warn('[AnimeResolver] searchCatalog AniList failed, using Shikimori fallback:', err);
     }
 
-    return this.fetchShikimoriCatalogFallback(params);
+    const fallbackRes = await this.fetchShikimoriCatalogFallback(params);
+    catalogMemoryCache.set(cacheKey, {
+      data: fallbackRes,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+    return fallbackRes;
   }
 
   static async getAiringSchedule(): Promise<WeeklySchedule> {
+    if (scheduleMemoryCache.data && scheduleMemoryCache.expiresAt > Date.now()) {
+      return scheduleMemoryCache.data;
+    }
+
     try {
       const now = new Date();
       const dayOfWeek = now.getDay(); // 0 = Sun, 1 = Mon...
@@ -302,6 +385,11 @@ export class AnimeResolver {
           studio: media.studios?.nodes?.[0]?.name || 'Студия',
         });
       }
+
+      scheduleMemoryCache = {
+        data: schedule,
+        expiresAt: Date.now() + 30 * 60 * 1000,
+      };
 
       return schedule;
     } catch (err) {

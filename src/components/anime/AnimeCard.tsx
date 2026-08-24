@@ -35,6 +35,8 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({ anime, priority = false, c
     : anime.format === 'SPECIAL' ? 'Спешл'
     : anime.format || 'TV';
 
+  const coverUrl = anime.coverImage?.medium || anime.coverImage?.original || '';
+
   return (
     <Link href={`/anime/${anime.id}`} prefetch={true} className={`group block ${className}`}>
       <motion.div 
@@ -44,13 +46,14 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({ anime, priority = false, c
         className='relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors duration-200'
       >
         {/* Poster */}
-        {anime.coverImage?.original ? (
+        {coverUrl ? (
           <Image
-            src={anime.coverImage.original}
+            src={coverUrl}
             alt={primaryTitle}
             fill
             sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw'
             priority={priority}
+            loading={priority ? undefined : 'lazy'}
             className='object-cover group-hover:scale-105 transition-transform duration-500 ease-out'
           />
         ) : (

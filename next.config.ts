@@ -17,10 +17,16 @@ const ContentSecurityPolicy = `
 
 const nextConfig: NextConfig = {
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400,
     remotePatterns: [
       { protocol: 'https', hostname: 's4.anilist.co' },
       { protocol: 'https', hostname: 'shikimori.one' },
+      { protocol: 'https', hostname: 'shikimori.me' },
+      { protocol: 'https', hostname: 'shikimori.org' },
       { protocol: 'https', hostname: 'shikimori.io' },
+      { protocol: 'https', hostname: 'desu.shikimori.one' },
+      { protocol: 'https', hostname: 'desu.shikimori.me' },
       { protocol: 'https', hostname: 'anilibria.top' },
       { protocol: 'https', hostname: 'cache.libria.fun' },
       { protocol: 'https', hostname: 'cdn.myanimelist.net' },

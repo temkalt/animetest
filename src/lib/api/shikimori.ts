@@ -182,7 +182,7 @@ export async function fetchBatchShikimoriMetadata(malIds: number[]): Promise<Map
     chunks.push(toFetch.slice(i, i + 50));
   }
 
-  await Promise.all(
+  const fetchPromise = Promise.all(
     chunks.map(async (chunk) => {
       try {
         const data = await fetchShikimoriWithFallback(SHIKIMORI_METADATA_QUERY, { ids: chunk.join(',') });
@@ -210,6 +210,10 @@ export async function fetchBatchShikimoriMetadata(malIds: number[]): Promise<Map
       }
     })
   );
+
+  // 800ms max race timer so pages render instantly without hanging
+  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 800));
+  await Promise.race([fetchPromise, timeoutPromise]);
 
   return result;
 }
