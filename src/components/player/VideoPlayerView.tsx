@@ -459,6 +459,28 @@ export const VideoPlayerView: React.FC<VideoPlayerProps> = ({
         <div className={`relative w-full aspect-video min-h-[380px] sm:min-h-[480px] md:min-h-[540px] rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800  transition-all ${isTheaterMode ? 'flex-1 max-h-[85vh]' : ''}`}>
           {isDirectHls ? (
             <div ref={containerRef} className="w-full h-full" />
+          ) : effectiveEngine === 'alloha' && !probeData?.results?.alloha?.translations?.[0]?.iframeUrl && !loading ? (
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-zinc-950 text-zinc-300 gap-4 z-20 relative">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <Sparkles className="w-7 h-7 text-amber-400" />
+              </div>
+              <div className="space-y-1.5 max-w-md">
+                <h4 className="text-sm font-bold text-zinc-100">
+                  Плеер Alloha для данного тайтла временно недоступен
+                </h4>
+                <p className="text-xs text-zinc-400 leading-relaxed font-mono">
+                  Используйте мульти-плеер Kodik с выбором русской озвучки от всех популярных студий.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleEngineSelect('kodik')}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all cursor-pointer shadow-md shadow-indigo-600/30"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>Включить плеер Kodik</span>
+              </button>
+            </div>
           ) : (
             <iframe
               ref={playerIframeRef}
