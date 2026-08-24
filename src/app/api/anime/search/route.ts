@@ -1,34 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchAniListGraphQL } from '@/lib/api/anilist';
-import { fetchBatchShikimoriTitles } from '@/lib/api/shikimori';
 import { ensureRussianTitle } from '@/lib/api/russian-titles';
-import { getSearchQueryVariations } from '@/lib/api/fuzzy-search';
+import { getAniListSearchTerms } from '@/lib/api/fuzzy-search';
 
 export const dynamic = 'force-dynamic';
 
-const SHIKIMORI_SEARCH_HOSTS = ['https://shikimori.me', 'https://shikimori.one', 'https://shikimori.org'];
-
-async function searchShikimoriList(query: string): Promise<any[]> {
-  for (const host of SHIKIMORI_SEARCH_HOSTS) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
-      const res = await fetch(`${host}/api/animes?search=${encodeURIComponent(query)}&limit=12`, {
-        headers: { 'User-Agent': 'KuroNami/2.0 (AnimePortal)' },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch {}
-  }
-  return [];
-}
-
 const ANILIST_SEARCH_QUERY = `
 query SearchAnime($search: String) {
-  Page(page: 1, perPage: 15) {
+  Page(page: 1, perPage: 12) {
     media(type: ANIME, search: $search, sort: POPULARITY_DESC, isAdult: false) {
       id
       idMal
@@ -53,10 +32,10 @@ query SearchAnime($search: String) {
 }
 `;
 
-const ANILIST_BY_MAL_QUERY = `
-query GetByMalIds($ids: [Int]) {
-  Page(page: 1, perPage: 25) {
-    media(type: ANIME, idMal_in: $ids, isAdult: false) {
+const ANILIST_BY_IDS_QUERY = `
+query GetByIds($ids: [Int]) {
+  Page(page: 1, perPage: 15) {
+    media(type: ANIME, id_in: $ids, isAdult: false) {
       id
       idMal
       title {
@@ -80,6 +59,29 @@ query GetByMalIds($ids: [Int]) {
 }
 `;
 
+/**
+ * Fast non-blocking Shikimori search with 1.2s strict timeout.
+ */
+async function fastShikimoriSearch(query: string): Promise<any[]> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
+
+    const res = await fetch(`https://shikimori.one/api/animes?search=${encodeURIComponent(query)}&limit=8`, {
+      headers: { 'User-Agent': 'KuroNami/2.0 (AnimePortal)' },
+      signal: controller.signal,
+      next: { revalidate: 3600 },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {}
+  return [];
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q');
@@ -88,98 +90,48 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  const variations = getSearchQueryVariations(q.trim());
+  const queryTrimmed = q.trim();
+  const { terms, animeIds } = getAniListSearchTerms(queryTrimmed);
   const seenIds = new Set<number>();
-  const combinedResults: any[] = [];
+  const results: any[] = [];
 
   try {
-    for (const queryVariant of variations) {
-      const isCyrillic = /[а-яё]/i.test(queryVariant);
+    // 1. Fire parallel queries to AniList with maximum speed
+    const searchPromises: Promise<any>[] = [];
 
-      // 1. Search Shikimori API if query contains Cyrillic or popular alias
-      if (isCyrillic || queryVariant !== q.trim()) {
-        try {
-          const shikiList = await searchShikimoriList(queryVariant);
+    // Query by exact dictionary IDs if matched
+    if (animeIds.length > 0) {
+      searchPromises.push(
+        fetchAniListGraphQL(ANILIST_BY_IDS_QUERY, { ids: animeIds }).catch(() => null)
+      );
+    }
 
-          if (shikiList && shikiList.length > 0) {
-            const malIds = shikiList.map((s) => s.id).filter(Boolean);
-            const anilistData: any = await fetchAniListGraphQL(ANILIST_BY_MAL_QUERY, { ids: malIds }).catch(() => null);
-            const anilistMedia: any[] = anilistData?.Page?.media || [];
+    // Query by resolved search terms
+    for (const term of terms) {
+      searchPromises.push(
+        fetchAniListGraphQL(ANILIST_SEARCH_QUERY, { search: term }).catch(() => null)
+      );
+    }
 
-            for (const s of shikiList) {
-              const matchedAniList = anilistMedia.find((m: any) => m.idMal === s.id);
-              const unifiedId = matchedAniList?.id || s.id;
-              if (seenIds.has(unifiedId)) continue;
-              seenIds.add(unifiedId);
+    // Optional fast Shikimori lookup for Cyrillic
+    const isCyrillic = /[а-яё]/i.test(queryTrimmed);
+    let shikiPromise: Promise<any[]> | null = null;
+    if (isCyrillic) {
+      shikiPromise = fastShikimoriSearch(queryTrimmed);
+    }
 
-              const shikiImg = s.image?.original
-                ? (s.image.original.startsWith('http') ? s.image.original : `https://shikimori.one${s.image.original}`)
-                : s.image?.preview
-                ? (s.image.preview.startsWith('http') ? s.image.preview : `https://shikimori.one${s.image.preview}`)
-                : '';
+    // Wait for parallel AniList responses (typically ~150-250ms)
+    const responses = await Promise.allSettled(searchPromises);
 
-              const posterUrl =
-                matchedAniList?.coverImage?.extraLarge ||
-                matchedAniList?.coverImage?.large ||
-                matchedAniList?.coverImage?.medium ||
-                shikiImg;
-
-              const score = matchedAniList?.averageScore
-                ? matchedAniList.averageScore / 10
-                : s.score
-                ? parseFloat(s.score)
-                : 0;
-
-              const ruTitle = ensureRussianTitle({
-                russian: s.russian,
-                english: matchedAniList?.title?.english,
-                romaji: matchedAniList?.title?.romaji || s.name,
-                userPreferred: matchedAniList?.title?.userPreferred,
-                id: matchedAniList?.id,
-                malId: s.id,
-              });
-
-              combinedResults.push({
-                id: unifiedId,
-                idMal: s.id,
-                title: {
-                  romaji: matchedAniList?.title?.romaji || s.name,
-                  english: matchedAniList?.title?.english || null,
-                  russian: ruTitle,
-                },
-                format: matchedAniList?.format || s.kind?.toUpperCase() || 'TV',
-                seasonYear: matchedAniList?.seasonYear || (s.aired_on ? parseInt(s.aired_on.slice(0, 4), 10) : null),
-                score,
-                averageScore: matchedAniList?.averageScore || (s.score ? parseFloat(s.score) * 10 : 80),
-                coverImage: {
-                  original: posterUrl,
-                  large: matchedAniList?.coverImage?.large || posterUrl,
-                  medium: matchedAniList?.coverImage?.medium || posterUrl,
-                  color: matchedAniList?.coverImage?.color || '#8B5CF6',
-                },
-                genres: matchedAniList?.genres || [],
-              });
-            }
-          }
-        } catch {
-          // Continue to next variant
-        }
-      }
-
-      // 2. Search AniList API
-      try {
-        const data: any = await fetchAniListGraphQL(ANILIST_SEARCH_QUERY, { search: queryVariant });
-        const mediaList = data?.Page?.media || [];
-        const malIds = mediaList.map((m: any) => m.idMal).filter(Boolean);
-        const ruMap = await fetchBatchShikimoriTitles(malIds);
-
+    for (const r of responses) {
+      if (r.status === 'fulfilled' && r.value?.Page?.media) {
+        const mediaList: any[] = r.value.Page.media;
         for (const m of mediaList) {
-          if (seenIds.has(m.id)) continue;
+          if (!m || seenIds.has(m.id)) continue;
           seenIds.add(m.id);
 
-          const ruFromShiki = m.idMal ? ruMap.get(m.idMal) : null;
           const ruTitle = ensureRussianTitle({
-            russian: ruFromShiki,
+            russian: undefined,
             english: m.title?.english,
             romaji: m.title?.romaji,
             userPreferred: m.title?.userPreferred,
@@ -195,35 +147,84 @@ export async function GET(req: NextRequest) {
 
           const score = m.averageScore ? m.averageScore / 10 : 0;
 
-          combinedResults.push({
-            ...m,
+          results.push({
+            id: m.id,
+            idMal: m.idMal,
             title: {
-              ...m.title,
+              romaji: m.title?.romaji || 'Anime',
+              english: m.title?.english || null,
               russian: ruTitle,
             },
+            format: m.format || 'TV',
+            seasonYear: m.seasonYear || null,
             score,
+            averageScore: m.averageScore || 0,
             coverImage: {
               original: posterUrl,
               large: m.coverImage?.large || posterUrl,
               medium: m.coverImage?.medium || posterUrl,
               color: m.coverImage?.color || '#8B5CF6',
             },
+            genres: m.genres || [],
           });
         }
-      } catch {
-        // Continue
       }
-
-      if (combinedResults.length >= 15) break;
     }
 
-    return NextResponse.json({
-      results: combinedResults.slice(0, 15),
-    }, {
-      headers: {
-        'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+    // If AniList gave few results and Shikimori responded, integrate Shikimori results
+    if (results.length < 5 && shikiPromise) {
+      const shikiList = await shikiPromise.catch(() => []);
+      if (Array.isArray(shikiList) && shikiList.length > 0) {
+        for (const s of shikiList) {
+          if (seenIds.has(s.id)) continue;
+          seenIds.add(s.id);
+
+          const shikiImg = s.image?.original
+            ? (s.image.original.startsWith('http') ? s.image.original : `https://shikimori.one${s.image.original}`)
+            : s.image?.preview
+            ? (s.image.preview.startsWith('http') ? s.image.preview : `https://shikimori.one${s.image.preview}`)
+            : '';
+
+          const ruTitle = ensureRussianTitle({
+            russian: s.russian,
+            romaji: s.name,
+            malId: s.id,
+          });
+
+          results.push({
+            id: s.id,
+            idMal: s.id,
+            title: {
+              romaji: s.name,
+              english: s.name,
+              russian: ruTitle,
+            },
+            format: s.kind?.toUpperCase() || 'TV',
+            seasonYear: s.aired_on ? parseInt(s.aired_on.slice(0, 4), 10) : null,
+            score: s.score ? parseFloat(s.score) : 0,
+            averageScore: s.score ? parseFloat(s.score) * 10 : 75,
+            coverImage: {
+              original: shikiImg,
+              large: shikiImg,
+              medium: shikiImg,
+              color: '#8B5CF6',
+            },
+            genres: [],
+          });
+        }
+      }
+    }
+
+    return NextResponse.json(
+      {
+        results: results.slice(0, 15),
       },
-    });
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (err: any) {
     console.error('[Search API Error]:', err);
     return NextResponse.json({ error: err.message, results: [] }, { status: 500 });

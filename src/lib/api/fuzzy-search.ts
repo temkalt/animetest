@@ -25,186 +25,242 @@ export function switchKeyboardLayout(text: string): string {
     .join('');
 }
 
-// Common Anime Synonyms, Abbreviations & Slang
-const SYNONYMS_MAP: Record<string, string[]> = {
-  'клинок': ['Клинок, рассекающий демонов', 'Kimetsu no Yaiba', 'Demon Slayer'],
-  'клинок демонов': ['Клинок, рассекающий демонов', 'Kimetsu no Yaiba', 'Demon Slayer'],
-  'демон слеер': ['Клинок, рассекающий демонов', 'Demon Slayer', 'Kimetsu no Yaiba'],
-  'магическая битва': ['Магическая битва', 'Jujutsu Kaisen'],
-  'магичка': ['Магическая битва', 'Jujutsu Kaisen'],
-  'дзюдзюцу': ['Магическая битва', 'Jujutsu Kaisen'],
-  'джуджутсу': ['Магическая битва', 'Jujutsu Kaisen'],
-  'соло': ['Поднятие уровня в одиночку', 'Solo Leveling', 'Ore dake Level Up na Ken'],
-  'соло левелинг': ['Поднятие уровня в одиночку', 'Solo Leveling'],
-  'поднятие уровня': ['Поднятие уровня в одиночку', 'Solo Leveling'],
-  'фрирен': ['Провожающая в последний путь Фрирен', 'Sousou no Frieren', 'Frieren'],
-  'провожающая': ['Провожающая в последний путь Фрирен', 'Sousou no Frieren'],
-  'проважающая': ['Провожающая в последний путь Фрирен', 'Sousou no Frieren'],
-  'атака титанов': ['Атака титанов', 'Shingeki no Kyojin', 'Attack on Titan'],
-  'титаны': ['Атака титанов', 'Shingeki no Kyojin', 'Attack on Titan'],
-  'атака': ['Атака титанов', 'Shingeki no Kyojin'],
-  'человек бензопила': ['Человек-бензопила', 'Chainsaw Man'],
-  'бензопила': ['Человек-бензопила', 'Chainsaw Man'],
-  'пила': ['Человек-бензопила', 'Chainsaw Man'],
-  'ванпанчмен': ['Ванпанчмен', 'One Punch Man'],
-  'ван панч мен': ['Ванпанчмен', 'One Punch Man'],
-  'сайтама': ['Ванпанчмен', 'One Punch Man'],
-  'моя геройская академия': ['Моя геройская академия', 'Boku no Hero Academia', 'My Hero Academia'],
-  'мга': ['Моя геройская академия', 'Boku no Hero Academia'],
-  'геройка': ['Моя геройская академия', 'Boku no Hero Academia'],
-  'семья шпиона': ['Семья шпиона', 'Spy x Family'],
-  'шпион': ['Семья шпиона', 'Spy x Family'],
-  'дандадан': ['Дандадан', 'Dandadan'],
-  'дан да дан': ['Дандадан', 'Dandadan'],
-  'кайдзю 8': ['Кайдзю номер восемь', 'Kaiju No. 8'],
-  'кайдзю': ['Кайдзю номер восемь', 'Kaiju No. 8'],
-  'реинкарнация безработного': ['Реинкарнация безработного', 'Mushoku Tensei'],
-  'мушоку тенсей': ['Реинкарнация безработного', 'Mushoku Tensei'],
-  'безработный': ['Реинкарнация безработного', 'Mushoku Tensei'],
-  'берсерк': ['Берсерк', 'Berserk'],
-  'гатс': ['Берсерк', 'Berserk'],
-  'блич': ['Блич', 'Bleach'],
-  'блидч': ['Блич', 'Bleach'],
-  'тетрадь смерти': ['Тетрадь смерти', 'Death Note'],
-  'дез нот': ['Тетрадь смерти', 'Death Note'],
-  'тетрадка': ['Тетрадь смерти', 'Death Note'],
-  'стальной алхимик': ['Стальной алхимик: Братство', 'Fullmetal Alchemist'],
-  'алхимик': ['Стальной алхимик: Братство', 'Fullmetal Alchemist'],
-  'восхождение в тени': ['Восхождение в тени!', 'Kage no Jitsuryokusha ni Naritakute'],
-  'эминенс': ['Восхождение в тени!', 'The Eminence in Shadow'],
-  'звездное дитя': ['Звёздное дитя', 'Oshi no Ko'],
-  'звёздное дитя': ['Звёздное дитя', 'Oshi no Ko'],
-  'оши но ко': ['Звёздное дитя', 'Oshi no Ko'],
-  'монолог фармацевта': ['Монолог фармацевта', 'Kusuriya no Hitorigoto', 'The Apothecary Diaries'],
-  'аптекарь': ['Монолог фармацевта', 'Kusuriya no Hitorigoto'],
-  'башня бога': ['Башня Бога', 'Tower of God', 'Kami no Tou'],
-  'одинокий рокер': ['Одинокий рокер!', 'Bocchi the Rock'],
-  'бокки': ['Одинокий рокер!', 'Bocchi the Rock'],
-  'хвост феи': ['Хвост Феи', 'Fairy Tail'],
-  'фейри тейл': ['Хвост Феи', 'Fairy Tail'],
-  'код гиас': ['Код Гиас: Восставший Лелуш', 'Code Geass'],
-  'лелуш': ['Код Гиас: Восставший Лелуш', 'Code Geass'],
-  'врата штейна': ['Врата Штейна', 'Steins;Gate'],
-  'курису': ['Врата Штейна', 'Steins;Gate'],
-  'гуль': ['Токийский гуль', 'Tokyo Ghoul'],
-  'токийский гуль': ['Токийский гуль', 'Tokyo Ghoul'],
-  'канеки': ['Токийский гуль', 'Tokyo Ghoul'],
-  'мастера меча': ['Мастера Меча Онлайн', 'Sword Art Online', 'SAO'],
-  'сао': ['Мастера Меча Онлайн', 'Sword Art Online'],
-  'кирито': ['Мастера Меча Онлайн', 'Sword Art Online'],
-  'джоджо': ['Невероятные приключения ДжоДжо', 'JoJo no Kimyou na Bouken'],
-  'джо джо': ['Невероятные приключения ДжоДжо', 'JoJo no Kimyou na Bouken'],
-  'волейбол': ['Волейбол!!', 'Haikyuu'],
-  'хайкью': ['Волейбол!!', 'Haikyuu'],
-  'блю лок': ['Синяя тюрьма: Блю Лок', 'Blue Lock'],
-  'синяя тюрьма': ['Синяя тюрьма: Блю Лок', 'Blue Lock'],
-  'ветролом': ['Ветролом', 'Wind Breaker'],
+// Cyrillic to Latin transliteration for anime search queries
+const CYRILLIC_TO_LATIN_MAP: Record<string, string> = {
+  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+  'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+  'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts',
+  'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
 };
 
-/**
- * Levenshtein Distance for Typo Tolerance
- */
-export function getLevenshteinDistance(a: string, b: string): number {
-  const an = a ? a.length : 0;
-  const bn = b ? b.length : 0;
-  if (an === 0) return bn;
-  if (bn === 0) return an;
+export function transliterateCyrillic(text: string): string {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .split('')
+    .map((ch) => CYRILLIC_TO_LATIN_MAP[ch] !== undefined ? CYRILLIC_TO_LATIN_MAP[ch] : ch)
+    .join('')
+    .trim();
+}
 
-  const matrix: number[][] = [];
-  for (let i = 0; i <= bn; ++i) {
-    const row = [i];
-    matrix.push(row);
-  }
-  for (let j = 0; j <= an; ++j) {
-    matrix[0][j] = j;
-  }
+// Common Anime Synonyms, Abbreviations & Slang
+export const SYNONYMS_MAP: Record<string, string[]> = {
+  'клинок': ['Demon Slayer', 'Kimetsu no Yaiba'],
+  'клинок демонов': ['Demon Slayer', 'Kimetsu no Yaiba'],
+  'демон слеер': ['Demon Slayer', 'Kimetsu no Yaiba'],
+  'магическая битва': ['Jujutsu Kaisen'],
+  'магичка': ['Jujutsu Kaisen'],
+  'дзюдзюцу': ['Jujutsu Kaisen'],
+  'джуджутсу': ['Jujutsu Kaisen'],
+  'соло': ['Solo Leveling', 'Ore dake Level Up na Ken'],
+  'соло левелинг': ['Solo Leveling'],
+  'поднятие уровня': ['Solo Leveling'],
+  'поднятие уровня в одиночку': ['Solo Leveling'],
+  'фрирен': ['Frieren', 'Sousou no Frieren'],
+  'провожающая': ['Sousou no Frieren', 'Frieren'],
+  'проважающая': ['Sousou no Frieren', 'Frieren'],
+  'атака титанов': ['Attack on Titan', 'Shingeki no Kyojin'],
+  'титаны': ['Attack on Titan', 'Shingeki no Kyojin'],
+  'человек бензопила': ['Chainsaw Man'],
+  'бензопила': ['Chainsaw Man'],
+  'пила': ['Chainsaw Man'],
+  'ванпанчмен': ['One Punch Man'],
+  'ван панч мен': ['One Punch Man'],
+  'сайтама': ['One Punch Man'],
+  'моя геройская академия': ['Boku no Hero Academia', 'My Hero Academia'],
+  'мга': ['Boku no Hero Academia', 'My Hero Academia'],
+  'геройка': ['Boku no Hero Academia'],
+  'семья шпиона': ['Spy x Family'],
+  'шпион': ['Spy x Family'],
+  'дандадан': ['Dandadan'],
+  'дан да дан': ['Dandadan'],
+  'кайдзю 8': ['Kaiju No. 8'],
+  'кайдзю': ['Kaiju No. 8'],
+  'реинкарнация безработного': ['Mushoku Tensei'],
+  'мушоку тенсей': ['Mushoku Tensei'],
+  'безработный': ['Mushoku Tensei'],
+  'берсерк': ['Berserk'],
+  'гатс': ['Berserk'],
+  'блич': ['Bleach'],
+  'тетрадь смерти': ['Death Note'],
+  'дез нот': ['Death Note'],
+  'тетрадка': ['Death Note'],
+  'стальной алхимик': ['Fullmetal Alchemist'],
+  'алхимик': ['Fullmetal Alchemist'],
+  'восхождение в тени': ['The Eminence in Shadow', 'Kage no Jitsuryokusha ni Naritakute'],
+  'эминенс': ['The Eminence in Shadow'],
+  'звездное дитя': ['Oshi no Ko'],
+  'звёздное дитя': ['Oshi no Ko'],
+  'оши но ко': ['Oshi no Ko'],
+  'монолог фармацевта': ['The Apothecary Diaries', 'Kusuriya no Hitorigoto'],
+  'аптекарь': ['Kusuriya no Hitorigoto'],
+  'башня бога': ['Tower of God', 'Kami no Tou'],
+  'одинокий рокер': ['Bocchi the Rock'],
+  'бокки': ['Bocchi the Rock'],
+  'хвост феи': ['Fairy Tail'],
+  'фейри тейл': ['Fairy Tail'],
+  'код гиас': ['Code Geass'],
+  'лелуш': ['Code Geass'],
+  'врата штейна': ['Steins;Gate'],
+  'курису': ['Steins;Gate'],
+  'гуль': ['Tokyo Ghoul'],
+  'токийский гуль': ['Tokyo Ghoul'],
+  'канеки': ['Tokyo Ghoul'],
+  'мастера меча': ['Sword Art Online', 'SAO'],
+  'сао': ['Sword Art Online'],
+  'кирито': ['Sword Art Online'],
+  'джоджо': ['JoJo no Kimyou na Bouken', 'JoJo'],
+  'джо джо': ['JoJo no Kimyou na Bouken', 'JoJo'],
+  'волейбол': ['Haikyuu'],
+  'хайкью': ['Haikyuu'],
+  'блю лок': ['Blue Lock'],
+  'синяя тюрьма': ['Blue Lock'],
+  'ветролом': ['Wind Breaker'],
+  'наруто': ['Naruto'],
+  'боруто': ['Boruto'],
+  'ван пис': ['One Piece'],
+  'ванпис': ['One Piece'],
+  'луффи': ['One Piece'],
+  'хантер': ['Hunter x Hunter'],
+  'хантер х хантер': ['Hunter x Hunter'],
+  'евангелион': ['Neon Genesis Evangelion', 'Evangelion'],
+  'евангелеон': ['Neon Genesis Evangelion'],
+  'ева': ['Neon Genesis Evangelion'],
+  'папаши дружбаны': ['Buddy Daddies'],
+  'хоримия': ['Horimiya'],
+  'клинок ведьм': ['Witchblade'],
+  'дороро': ['Dororo'],
+  'паразит': ['Kiseijuu', 'Parasyte'],
+  'доктор стоун': ['Dr. Stone'],
+  'доктор стоун 2': ['Dr. Stone'],
+  'доктор стоун 3': ['Dr. Stone'],
+  'стоун': ['Dr. Stone'],
+  'человек паук': ['Spider-Man'],
+  'твое имя': ['Kimi no Na wa', 'Your Name'],
+  'твоё имя': ['Kimi no Na wa', 'Your Name'],
+  'дитя погоды': ['Tenki no Ko', 'Weathering With You'],
+  'форма голоса': ['Koe no Katachi', 'A Silent Voice'],
+  'унесенные призраками': ['Sen to Chihiro no Kamikakushi', 'Spirited Away'],
+  'унесённые призраками': ['Sen to Chihiro no Kamikakushi', 'Spirited Away'],
+  'ходячий замок': ['Howl no Ugoku Shiro', 'Howls Moving Castle'],
+  'могила светлячков': ['Hotaru no Haka', 'Grave of the Fireflies'],
+  'принцесса мононоке': ['Mononoke Hime', 'Princess Mononoke'],
+};
 
-  for (let i = 1; i <= bn; ++i) {
-    for (let j = 1; j <= an; ++j) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          Math.min(
-            matrix[i][j - 1] + 1, // insertion
-            matrix[i - 1][j] + 1  // deletion
-          )
-        );
-      }
+// Build reverse dictionary index from Russian title words to English title slug / AniList IDs
+interface SearchIndexEntry {
+  searchTerm: string;
+  animeId?: number;
+}
+
+const REVERSE_SEARCH_INDEX = new Map<string, SearchIndexEntry[]>();
+
+for (const [key, ruTitle] of Object.entries(KNOWN_RUSSIAN_TITLES)) {
+  const normRu = ruTitle.toLowerCase().trim();
+  const isNumericId = /^\d+$/.test(key);
+
+  const entry: SearchIndexEntry = {
+    searchTerm: isNumericId ? normRu : key.replace(/-/g, ' '),
+    animeId: isNumericId ? parseInt(key, 10) : undefined,
+  };
+
+  // Index full Russian title
+  if (!REVERSE_SEARCH_INDEX.has(normRu)) {
+    REVERSE_SEARCH_INDEX.set(normRu, []);
+  }
+  REVERSE_SEARCH_INDEX.get(normRu)!.push(entry);
+
+  // Index key words (min 3 chars)
+  const words = normRu.split(/[\s,.:!?-]+/).filter((w) => w.length >= 3);
+  for (const w of words) {
+    if (!REVERSE_SEARCH_INDEX.has(w)) {
+      REVERSE_SEARCH_INDEX.set(w, []);
+    }
+    const list = REVERSE_SEARCH_INDEX.get(w)!;
+    if (list.length < 5) {
+      list.push(entry);
     }
   }
-
-  return matrix[bn][an];
 }
 
 /**
- * Generates an ordered list of search query variations:
- * 1. Original trimmed query
- * 2. Synonyms / franchise aliases
- * 3. Keyboard layout switched version (e.g. yfhenj -> наруто)
- * 4. Fuzzy matched dictionary titles for typo tolerance
+ * Fast search terms generator for AniList GraphQL.
+ * Resolves Russian queries to native Romaji/English anime keywords instantly in 0ms.
  */
-export function getSearchQueryVariations(query: string): string[] {
-  if (!query || !query.trim()) return [];
+export function getAniListSearchTerms(query: string): { terms: string[]; animeIds: number[] } {
+  if (!query || !query.trim()) return { terms: [], animeIds: [] };
 
   const raw = query.trim().toLowerCase();
-  const variations: Set<string> = new Set();
+  const termsSet = new Set<string>();
+  const idsSet = new Set<number>();
 
-  // 1. Original query
-  variations.add(query.trim());
-
-  // 2. Direct synonym expansion
-  if (SYNONYMS_MAP[raw]) {
-    SYNONYMS_MAP[raw].forEach((s) => variations.add(s));
+  // 1. If English/Romaji, add original query directly
+  if (!/[а-яё]/i.test(raw)) {
+    termsSet.add(query.trim());
   }
 
-  // Check sub-phrases for synonyms
+  // 2. Direct Synonyms check
+  if (SYNONYMS_MAP[raw]) {
+    SYNONYMS_MAP[raw].forEach((s) => termsSet.add(s));
+  }
+
   for (const [synKey, targets] of Object.entries(SYNONYMS_MAP)) {
     if (raw.includes(synKey) || synKey.includes(raw)) {
-      targets.forEach((t) => variations.add(t));
+      targets.forEach((t) => termsSet.add(t));
     }
   }
 
-  // 3. Keyboard layout switched version
+  // 3. Reverse Dictionary Lookup (0ms in-memory)
+  if (REVERSE_SEARCH_INDEX.has(raw)) {
+    REVERSE_SEARCH_INDEX.get(raw)!.forEach((entry) => {
+      if (entry.searchTerm && !/[а-яё]/i.test(entry.searchTerm)) {
+        termsSet.add(entry.searchTerm);
+      }
+      if (entry.animeId) idsSet.add(entry.animeId);
+    });
+  }
+
+  // Check sub-words
+  const words = raw.split(/[\s,.:!?-]+/).filter((w) => w.length >= 3);
+  for (const w of words) {
+    if (REVERSE_SEARCH_INDEX.has(w)) {
+      REVERSE_SEARCH_INDEX.get(w)!.forEach((entry) => {
+        if (entry.searchTerm && !/[а-яё]/i.test(entry.searchTerm)) {
+          termsSet.add(entry.searchTerm);
+        }
+        if (entry.animeId) idsSet.add(entry.animeId);
+      });
+    }
+  }
+
+  // 4. Keyboard Layout Switch
   const switched = switchKeyboardLayout(query.trim());
   if (switched && switched.toLowerCase() !== raw) {
-    variations.add(switched);
+    if (!/[а-яё]/i.test(switched)) {
+      termsSet.add(switched);
+    }
     const switchedRaw = switched.toLowerCase();
     if (SYNONYMS_MAP[switchedRaw]) {
-      SYNONYMS_MAP[switchedRaw].forEach((s) => variations.add(s));
+      SYNONYMS_MAP[switchedRaw].forEach((s) => termsSet.add(s));
     }
   }
 
-  // 4. Fuzzy match against KNOWN_RUSSIAN_TITLES (typo tolerance)
-  const normRaw = raw.replace(/[\W_]+/g, '');
-  if (normRaw.length >= 3) {
-    let closestTitle: string | null = null;
-    let minDistance = Infinity;
-
-    for (const [key, title] of Object.entries(KNOWN_RUSSIAN_TITLES)) {
-      const normKey = key.toLowerCase().replace(/[\W_]+/g, '');
-      const normTitle = title.toLowerCase().replace(/[\W_]+/g, '');
-
-      // Check distance against dictionary key and Russian title
-      const distKey = Math.abs(normKey.length - normRaw.length) <= 3
-        ? getLevenshteinDistance(normRaw, normKey)
-        : Infinity;
-      const distTitle = Math.abs(normTitle.length - normRaw.length) <= 3
-        ? getLevenshteinDistance(normRaw, normTitle)
-        : Infinity;
-
-      const dist = Math.min(distKey, distTitle);
-      if (dist < minDistance && dist <= 2) {
-        minDistance = dist;
-        closestTitle = title;
-      }
-    }
-
-    if (closestTitle) {
-      variations.add(closestTitle);
-    }
+  // 5. Transliteration fallback
+  const translit = transliterateCyrillic(raw);
+  if (translit && translit !== raw && translit.length >= 3) {
+    termsSet.add(translit);
   }
 
-  return Array.from(variations);
+  // Also include original query as fallback
+  termsSet.add(query.trim());
+
+  return {
+    terms: Array.from(termsSet).slice(0, 3),
+    animeIds: Array.from(idsSet).slice(0, 10),
+  };
+}
+
+export function getSearchQueryVariations(query: string): string[] {
+  const { terms } = getAniListSearchTerms(query);
+  return terms;
 }
