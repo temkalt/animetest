@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -46,6 +47,7 @@ const POPULAR_SEARCH_TAGS = [
 export const Navbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -56,8 +58,31 @@ export const Navbar: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     return authStore.subscribe((u) => setCurrentUser(u));
   }, []);
+
+  // Lock background scroll when search modal is open
+  useEffect(() => {
+    if (isSearchOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+      document.body.style.overflow = 'hidden';
+      if (scrollBarWidth > 0) {
+        document.body.style.paddingRight = `${scrollBarWidth}px`;
+      }
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [isSearchOpen]);
 
   const handleOpenSearch = () => {
     if (!currentUser) {
@@ -290,20 +315,26 @@ export const Navbar: React.FC = () => {
 
       {/* Global Interactive Search Modal (Cmd+K) */}
       <AnimatePresence>
-        {isSearchOpen && (
+        {mounted && isSearchOpen && createPortal(
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-zinc-950/80 backdrop-blur-sm flex items-start justify-center p-4 pt-12 sm:pt-20"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsSearchOpen(false);
+              }
+            }}
+            className="fixed inset-0 z-[9999] bg-zinc-950/80 backdrop-blur-sm flex items-start justify-center p-4 pt-12 sm:pt-20 overscroll-contain"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: -12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: -12 }}
               transition={{ type: 'spring', stiffness: 450, damping: 30 }}
-              className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden flex flex-col max-h-[82vh] shadow-sm"
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden flex flex-col max-h-[82vh] shadow-2xl"
             >
               {/* Search Bar Input */}
               <div className="flex items-center gap-3.5 px-5 py-4 border-b border-zinc-800 bg-zinc-950">
@@ -353,7 +384,10 @@ export const Navbar: React.FC = () => {
               )}
 
               {/* Search Results List */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin bg-zinc-950">
+              <div 
+                className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin bg-zinc-950 overscroll-contain"
+                onWheel={(e) => e.stopPropagation()}
+              >
                 {isLoading ? (
                   <div className="py-16 text-center text-xs text-zinc-400 font-mono">
                     <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
@@ -440,7 +474,8 @@ export const Navbar: React.FC = () => {
                 )}
               </div>
             </motion.div>
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
 

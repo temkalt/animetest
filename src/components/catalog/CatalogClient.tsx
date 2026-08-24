@@ -617,7 +617,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                     )}
                   </div>
 
-                  <div className="max-h-60 overflow-y-auto space-y-0.5 pr-0.5">
+                  <div className="max-h-60 overflow-y-auto overscroll-contain space-y-0.5 pr-0.5" onWheel={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       onClick={() => {
@@ -882,7 +882,8 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.98 }}
                   transition={SPRINGS.snappy}
-                  className="absolute right-0 top-full mt-1.5 w-48 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 max-h-60 overflow-y-auto space-y-0.5"
+                  className="absolute right-0 top-full mt-1.5 w-48 p-1.5 rounded-lg bg-zinc-900 border border-zinc-700 shadow-2xl z-50 max-h-60 overflow-y-auto overscroll-contain space-y-0.5"
+                  onWheel={(e) => e.stopPropagation()}
                 >
                   {YEAR_ITEMS.map((y) => {
                     const isSelected = (activeParams.year || '') === y.value;
@@ -1362,7 +1363,8 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="relative w-full max-h-[85vh] bg-zinc-900 border-t border-zinc-800 rounded-t-2xl p-4 pb-8 space-y-4 overflow-y-auto z-10"
+              className="relative w-full max-h-[85vh] bg-zinc-900 border-t border-zinc-800 rounded-t-2xl p-4 pb-8 space-y-4 overflow-y-auto overscroll-contain z-10"
+              onWheel={(e) => e.stopPropagation()}
             >
               {/* Sheet Header */}
               <div className="flex items-center justify-between pb-3 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-20">
@@ -1449,7 +1451,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
               {/* Genres Section */}
               <div className="space-y-2">
                 <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Жанры</div>
-                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto p-1 bg-zinc-950 rounded-lg border border-zinc-800">
+                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto overscroll-contain p-1 bg-zinc-950 rounded-lg border border-zinc-800" onWheel={(e) => e.stopPropagation()}>
                   {GENRE_ITEMS.map((g) => {
                     const isSelected = (!g.value && !activeParams.genre) || activeParams.genre === g.value;
                     return (

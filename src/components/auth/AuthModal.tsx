@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthCard } from '@/components/auth/AuthCard';
 
@@ -15,22 +16,40 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   initialMode = 'register',
 }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Prevent body scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+      if (scrollBarWidth > 0) {
+        document.body.style.paddingRight = `${scrollBarWidth}px`;
+      }
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
     }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
   }, [isOpen]);
+
+  if (!mounted) return null;
 
   return (
     <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      {isOpen && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto overscroll-contain"
+          onWheel={(e) => e.stopPropagation()}
+        >
           {/* Cyberpunk Frosted Glass Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -38,7 +57,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/85 "
+            className="fixed inset-0 bg-black/85 backdrop-blur-sm"
           />
 
           {/* Modal Container with Spring Pop */}
@@ -47,6 +66,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 24 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+            onClick={(e) => e.stopPropagation()}
             className="relative z-10 w-full max-w-md my-auto"
           >
             <AuthCard
@@ -56,7 +76,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               showCloseButton={true}
             />
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
     </AnimatePresence>
   );
