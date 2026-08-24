@@ -54,13 +54,12 @@ export const Navbar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const mounted = React.useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     return authStore.subscribe((u) => setCurrentUser(u));
@@ -262,6 +261,28 @@ export const Navbar: React.FC = () => {
               transition={{ duration: 0.25 }}
               className="md:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-4 space-y-2 overflow-hidden"
             >
+              {/* Search in Mobile Drawer */}
+              <motion.div
+                initial={{ x: -10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsSearchOpen(true);
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-sm text-zinc-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <Search className="w-4 h-4 text-zinc-100" />
+                    <span className="font-semibold">Поиск аниме</span>
+                  </div>
+                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-mono text-zinc-400 border border-zinc-700">
+                    Ctrl+K
+                  </kbd>
+                </button>
+              </motion.div>
               {NAV_LINKS.map((link, i) => {
                 const Icon = link.icon;
                 return (
