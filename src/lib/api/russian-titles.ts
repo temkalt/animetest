@@ -701,7 +701,12 @@ export const KNOWN_EPISODE_COUNTS: Record<string, number> = {
   'chiikawa': 210,
 };
 
+import { lookupRussianAnimeTitle } from './data/russian-db';
+
 export function getKnownRussianTitle(idOrSlug: string | number): string | null {
+  const fromDb = lookupRussianAnimeTitle(idOrSlug);
+  if (fromDb && /[а-яё]/i.test(fromDb)) return fromDb;
+
   const key = String(idOrSlug).toLowerCase().trim();
   if (KNOWN_RUSSIAN_TITLES[key]) {
     return KNOWN_RUSSIAN_TITLES[key];
@@ -1079,53 +1084,61 @@ export function ensureRussianTitle(item: {
   idMal?: number | string | null;
   slug?: string | null;
 }): string {
-  // 1. If an authentic Russian title already exists from Shikimori / source (contains Cyrillic)
+  // 1. If an authentic Russian title already exists from source (contains Cyrillic)
   if (item.russian && /[а-яё]/i.test(item.russian)) {
     return item.russian.trim();
   }
 
-  // 2. Check ID & MAL ID in dictionary
-  if (item.id) {
-    const byId = getKnownRussianTitle(item.id);
-    if (byId && /[а-яё]/i.test(byId)) return byId;
-  }
+  // 2. Check MAL ID & ID in offline database
   const mal = item.malId || item.idMal;
   if (mal) {
     const byMal = getKnownRussianTitle(mal);
     if (byMal && /[а-яё]/i.test(byMal)) return byMal;
   }
+  if (item.id) {
+    const byId = getKnownRussianTitle(item.id);
+    if (byId && /[а-яё]/i.test(byId)) return byId;
+  }
 
-  // 3. Check Slug in dictionary
+  // 3. Check Slug in database
   if (item.slug) {
     const bySlug = getKnownRussianTitle(item.slug);
     if (bySlug && /[а-яё]/i.test(bySlug)) return bySlug;
   }
 
-  // 4. Check English title in dictionary
+  // 4. Check English title in database
   if (item.english) {
     const byEn = getKnownRussianTitle(item.english);
     if (byEn && /[а-яё]/i.test(byEn)) return byEn;
   }
 
-  // 5. Check Romaji title in dictionary
+  // 5. Check Romaji title in database
   if (item.romaji) {
     const byRomaji = getKnownRussianTitle(item.romaji);
     if (byRomaji && /[а-яё]/i.test(byRomaji)) return byRomaji;
   }
 
-  // 6. Check UserPreferred in dictionary
+  // 6. Check UserPreferred in database
   if (item.userPreferred) {
     const byPref = getKnownRussianTitle(item.userPreferred);
     if (byPref && /[а-яё]/i.test(byPref)) return byPref;
   }
 
-  // 7. Dynamic Cyrillic Transliteration & Translation fallback
+  // 7. Dynamic Translation & Keyword fallback
   const baseTitle = item.romaji || item.english || item.userPreferred || item.russian || '';
   if (baseTitle && baseTitle.trim()) {
-    return transliterateToRussian(baseTitle.trim());
+    const transliterated = transliterateToRussian(baseTitle.trim());
+    if (transliterated && /[а-яё]/i.test(transliterated)) {
+      return transliterated;
+    }
   }
 
-  return 'Аниме';
+  // 8. Safe fallback: prefer readable English title if available
+  if (item.english && item.english.trim()) {
+    return item.english.trim();
+  }
+
+  return baseTitle || 'Аниме';
 }
 
 const GENRE_RU_MAP: Record<string, string> = {
