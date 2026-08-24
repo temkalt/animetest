@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/ui/Navbar';
 import { Footer } from '@/components/ui/Footer';
+import { MobileBottomNav } from '@/components/ui/MobileBottomNav';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { PageTransitionProvider } from '@/components/providers/PageTransitionProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
@@ -13,10 +14,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#06070A',
+  themeColor: '#09090b',
   colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -32,10 +35,11 @@ export default function RootLayout({
       <body className="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-zinc-700 selection:text-white">
         <NavigationProgress />
         <Navbar />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 md:pb-8">
           <AuthGuard><PageTransitionProvider>{children}</PageTransitionProvider></AuthGuard>
         </main>
         <Footer />
+        <MobileBottomNav />
       </body>
     </html>
   );

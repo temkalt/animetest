@@ -14,18 +14,31 @@ import {
 import { relations } from 'drizzle-orm';
 import type { AdapterAccountType } from 'next-auth/adapters';
 
-// --- AUTH.JS V5 SCHEMAS ---
+// --- AUTH.JS V5 & USERS SCHEMAS ---
 
-export const users = pgTable('users', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  name: varchar('name', { length: 255 }),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  emailVerified: timestamp('email_verified', { mode: 'date' }),
-  image: text('image'),
-  role: varchar('role', { length: 50 }).default('user').notNull(),
-  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
-});
+export const users = pgTable(
+  'users',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    username: varchar('username', { length: 100 }).unique(),
+    name: varchar('name', { length: 255 }),
+    email: varchar('email', { length: 255 }).notNull().unique(),
+    passwordHash: text('password_hash'),
+    emailVerified: timestamp('email_verified', { mode: 'date' }),
+    image: text('image'),
+    avatar: text('avatar'),
+    bio: text('bio').default('Исследователь вселенной KuroNami.'),
+    banner: text('banner'),
+    role: varchar('role', { length: 50 }).default('user').notNull(),
+    level: integer('level').default(1).notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('user_username_idx').on(table.username),
+    uniqueIndex('user_email_idx').on(table.email),
+  ]
+);
 
 export const accounts = pgTable(
   'accounts',
@@ -213,10 +226,12 @@ export const episodeComments = pgTable(
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
     episodeId: text('episode_id').notNull(),
     animeId: integer('anime_id').notNull(),
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+    animeTitle: text('anime_title'),
+    animeCover: text('anime_cover'),
+    episodeNumber: real('episode_number'),
+    userId: text('user_id').notNull(),
     userName: varchar('user_name', { length: 255 }).notNull(),
+    username: varchar('username', { length: 100 }),
     userAvatar: text('user_avatar'),
     parentId: text('parent_id'),
     timecodeSeconds: integer('timecode_seconds'),
@@ -227,6 +242,63 @@ export const episodeComments = pgTable(
   },
   (table) => [
     index('episode_comments_idx').on(table.episodeId, table.createdAt),
+    index('anime_comments_idx').on(table.animeId, table.createdAt),
+    index('global_comments_created_idx').on(table.createdAt),
+  ]
+);
+
+// --- USER COLLECTIONS ---
+
+export const userCollections = pgTable(
+  'user_collections',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id').notNull(),
+    username: varchar('username', { length: 100 }).notNull(),
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description').default(''),
+    coverImage: text('cover_image'),
+    isPublic: boolean('is_public').default(true).notNull(),
+    likesCount: integer('likes_count').default(0).notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('user_collections_user_idx').on(table.userId),
+    index('user_collections_public_idx').on(table.isPublic, table.createdAt),
+  ]
+);
+
+export const collectionItems = pgTable(
+  'collection_items',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    collectionId: text('collection_id')
+      .notNull()
+      .references(() => userCollections.id, { onDelete: 'cascade' }),
+    animeId: integer('anime_id').notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('collection_anime_unique_idx').on(table.collectionId, table.animeId),
+  ]
+);
+
+// --- AGGREGATED ANIME VIEW STATS (Community Choice / Most Watched) ---
+
+export const animeViewStats = pgTable(
+  'anime_view_stats',
+  {
+    animeId: integer('anime_id').primaryKey(),
+    title: text('title').notNull(),
+    coverImage: text('cover_image').notNull(),
+    score: real('score').default(0),
+    format: varchar('format', { length: 50 }).default('TV'),
+    viewsCount: integer('views_count').default(1).notNull(),
+    lastViewedAt: timestamp('last_viewed_at', { mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('anime_views_count_idx').on(table.viewsCount),
   ]
 );
 
@@ -236,6 +308,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   history: many(watchHistory),
   bookmarks: many(bookmarks),
   comments: many(episodeComments),
+  collections: many(userCollections),
 }));
 
 export const animeCatalogRelations = relations(animeCatalog, ({ many }) => ({
@@ -249,4 +322,19 @@ export const episodesRelations = relations(episodes, ({ one, many }) => ({
     references: [animeCatalog.id],
   }),
   sources: many(voiceoversSources),
+}));
+
+export const userCollectionsRelations = relations(userCollections, ({ one, many }) => ({
+  user: one(users, {
+    fields: [userCollections.userId],
+    references: [users.id],
+  }),
+  items: many(collectionItems),
+}));
+
+export const collectionItemsRelations = relations(collectionItems, ({ one }) => ({
+  collection: one(userCollections, {
+    fields: [collectionItems.collectionId],
+    references: [userCollections.id],
+  }),
 }));

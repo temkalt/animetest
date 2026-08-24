@@ -102,8 +102,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
       setUserCollections(authStore.getUserCollections(currentUser.id));
     } else {
       setIsOwner(false);
-      const pub = authStore.getPublicProfile(rawUser);
-      setProfileView(pub);
+      authStore.getPublicProfile(rawUser).then((pub) => {
+        setProfileView(pub);
+      });
       const cols = authStore.getUserCollections(rawUser);
       setPublicCollections(cols.filter((c) => c.isPublic));
     }

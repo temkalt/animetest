@@ -16,13 +16,13 @@ export const CreateCollectionModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [isPublic, setIsPublic] = useState(true);
   const [error, setError] = useState('');
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!title.trim()) {
       setError('Введите название коллекции');
       return;
     }
     try {
-      authStore.createCollection({
+      await authStore.createCollection({
         title: title.trim(),
         description: description.trim(),
         isPublic,

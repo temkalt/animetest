@@ -58,13 +58,24 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
 
   // Sync across tabs & reloads
   useEffect(() => {
-    const loadComments = () => {
+    const loadComments = async () => {
       try {
         const saved = localStorage.getItem(storageKey) || localStorage.getItem(`kuronami_ep_comments_${episodeId}`);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) {
             setComments(parsed);
+          }
+        }
+      } catch {}
+
+      try {
+        const res = await fetch(`/api/comments?episodeId=${encodeURIComponent(episodeId)}&animeId=${animeId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.comments) && data.comments.length > 0) {
+            setComments(data.comments);
+            localStorage.setItem(storageKey, JSON.stringify(data.comments));
           }
         }
       } catch {}
@@ -78,9 +89,14 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
       }
     };
 
+    const unsubHub = realtimeHub.on('comments_updated', loadComments);
+
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [storageKey, episodeId]);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      unsubHub();
+    };
+  }, [storageKey, episodeId, animeId]);
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -158,6 +174,7 @@ export const TimecodeComments: React.FC<TimecodeCommentsProps> = ({
   };
 
   const toggleLike = (id: string) => {
+    fetch(`/api/comments/${encodeURIComponent(id)}/like`, { method: 'POST' }).catch(() => {});
     setLikedComments((prev) => {
       const current = !!prev[id];
       const updated = comments.map((c) =>

@@ -86,7 +86,7 @@ export const HeroShowcase: React.FC<HeroShowcaseProps> = ({ items }) => {
         if (e.key === 'ArrowLeft') handlePrev();
         if (e.key === 'ArrowRight') handleNext();
       }}
-      className="relative w-full aspect-[16/11] sm:aspect-[21/10] lg:aspect-[2.35/1] min-h-[500px] rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800 shadow-sm group select-none focus:outline-none"
+      className="relative w-full aspect-[16/11] sm:aspect-[21/10] lg:aspect-[2.35/1] min-h-[380px] sm:min-h-[460px] lg:min-h-[500px] rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800 shadow-sm group select-none focus:outline-none"
     >
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div

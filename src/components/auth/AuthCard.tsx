@@ -105,7 +105,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({
 
       setIsLoading(true);
       try {
-        authStore.register({
+        await authStore.register({
           username: cleanUser,
           email: email.trim(),
           password,
@@ -137,7 +137,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({
 
       setIsLoading(true);
       try {
-        authStore.login(loginId);
+        await authStore.login(loginId, password);
         setSuccess('Вход выполнен успешно!');
         setTimeout(() => {
           setSuccess('');

@@ -93,6 +93,7 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
 
   // Advanced filters state
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   // Genre filter search query inside genre popover
   const [genreSearch, setGenreSearch] = useState('');
@@ -473,6 +474,21 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Mobile Filter Button Trigger (sm:hidden) */}
+            <button
+              type="button"
+              onClick={() => setIsMobileFiltersOpen(true)}
+              className="sm:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-200 hover:border-zinc-700 transition-colors"
+            >
+              <Filter className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Фильтры</span>
+              {activeFiltersCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-white text-zinc-950 text-[10px] font-bold flex items-center justify-center">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
 
             {/* View Mode Toggle */}
             <div className="flex items-center bg-zinc-950 p-0.5 rounded-lg border border-zinc-800">
@@ -1325,6 +1341,149 @@ export const CatalogClient: React.FC<CatalogClientProps> = ({
           </form>
         </div>
       )}
+
+      {/* Mobile Filter Drawer (Bottom Sheet) */}
+      <AnimatePresence>
+        {isMobileFiltersOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center sm:hidden">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileFiltersOpen(false)}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            />
+
+            {/* Sheet Panel */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="relative w-full max-h-[85vh] bg-zinc-900 border-t border-zinc-800 rounded-t-2xl p-4 pb-8 space-y-4 overflow-y-auto z-10"
+            >
+              {/* Sheet Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-20">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-zinc-300" />
+                  <h3 className="text-base font-bold text-zinc-100">Фильтры каталога</h3>
+                  {activeFiltersCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-xs font-mono">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {activeFiltersCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleResetAll();
+                        setIsMobileFiltersOpen(false);
+                      }}
+                      className="text-xs text-rose-400 font-medium px-2 py-1 rounded bg-rose-500/10"
+                    >
+                      Сброс
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileFiltersOpen(false)}
+                    className="p-1 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Section */}
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Статус тайтла</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {STATUS_ITEMS.map((st) => {
+                    const isSelected = (!st.value && !activeParams.status) || activeParams.status === st.value;
+                    return (
+                      <button
+                        key={st.label}
+                        type="button"
+                        onClick={() => updateFilters({ status: st.value || undefined, page: 1 })}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                          isSelected
+                            ? 'bg-white text-zinc-950 border-white font-semibold'
+                            : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
+                        }`}
+                      >
+                        {st.icon} {st.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Format Section */}
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Формат</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {FORMAT_ITEMS.map((fmt) => {
+                    const isSelected = (!fmt.value && !activeParams.format) || activeParams.format === fmt.value;
+                    return (
+                      <button
+                        key={fmt.label}
+                        type="button"
+                        onClick={() => updateFilters({ format: fmt.value || undefined, page: 1 })}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                          isSelected
+                            ? 'bg-white text-zinc-950 border-white font-semibold'
+                            : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
+                        }`}
+                      >
+                        {fmt.icon} {fmt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Genres Section */}
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Жанры</div>
+                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto p-1 bg-zinc-950 rounded-lg border border-zinc-800">
+                  {GENRE_ITEMS.map((g) => {
+                    const isSelected = (!g.value && !activeParams.genre) || activeParams.genre === g.value;
+                    return (
+                      <button
+                        key={g.label}
+                        type="button"
+                        onClick={() => updateFilters({ genre: g.value || undefined, page: 1 })}
+                        className={`px-2.5 py-1.5 rounded-md text-xs text-left truncate flex items-center gap-1.5 border transition-colors ${
+                          isSelected
+                            ? 'bg-zinc-800 text-white border-zinc-600 font-semibold'
+                            : 'text-zinc-400 border-transparent hover:text-zinc-200'
+                        }`}
+                      >
+                        <span>{g.icon}</span>
+                        <span className="truncate">{g.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Apply Button */}
+              <div className="pt-2 sticky bottom-0 bg-zinc-900">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFiltersOpen(false)}
+                  className="w-full py-3 rounded-xl bg-white text-zinc-950 font-bold text-sm shadow-lg active:scale-98 transition-transform"
+                >
+                  Применить фильтры
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Auth Modal for search protection */}
       <AuthModal

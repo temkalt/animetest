@@ -4,6 +4,7 @@ import { realtimeHub } from '@/lib/utils/realtime';
 
 export interface AnimeViewStat {
   id: number;
+  animeId?: number;
   title: string;
   coverImage: string;
   score?: number;
@@ -14,17 +15,52 @@ export interface AnimeViewStat {
 
 class UserActivityManager {
   private listeners: Array<(stats: AnimeViewStat[]) => void> = [];
+  private cachedStats: AnimeViewStat[] = [];
 
   constructor() {
     if (typeof window !== 'undefined') {
       realtimeHub.on('views_updated', () => {
-        const data = this.getMostWatched();
-        this.listeners.forEach((l) => l(data));
+        this.fetchMostWatched().then((data) => {
+          this.listeners.forEach((l) => l(data));
+        });
       });
+
+      // Initial load
+      this.fetchMostWatched();
     }
   }
 
+  async fetchMostWatched(limit = 12): Promise<AnimeViewStat[]> {
+    try {
+      const res = await fetch(`/api/views?limit=${limit}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.mostWatched)) {
+          const formatted: AnimeViewStat[] = data.mostWatched.map((item: any) => ({
+            id: item.animeId || item.id,
+            animeId: item.animeId || item.id,
+            title: item.title,
+            coverImage: item.coverImage,
+            score: item.score,
+            format: item.format,
+            viewsCount: item.viewsCount,
+            lastViewedAt: item.lastViewedAt,
+          }));
+
+          this.cachedStats = formatted;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('kuronami_anime_views', JSON.stringify(formatted));
+          }
+          return formatted;
+        }
+      }
+    } catch {}
+
+    return this.getAllViewStats().slice(0, limit);
+  }
+
   getAllViewStats(): AnimeViewStat[] {
+    if (this.cachedStats.length > 0) return this.cachedStats;
     if (typeof window === 'undefined') return [];
     try {
       const data = localStorage.getItem('kuronami_anime_views');
@@ -39,27 +75,27 @@ class UserActivityManager {
     return all.sort((a, b) => b.viewsCount - a.viewsCount).slice(0, limit);
   }
 
-  recordAnimeView(anime: {
+  async recordAnimeView(anime: {
     id: number;
     title: string;
     coverImage: string;
     score?: number;
     format?: string;
   }) {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !anime.id) return;
 
     let cleanCover = anime.coverImage?.trim() || '';
     if (cleanCover && !cleanCover.startsWith('http')) {
       cleanCover = '';
     }
-    // Try to normalize known banner URLs if we still accidentally got one
     if (cleanCover.includes('banner')) {
       cleanCover = cleanCover.replace('banner', 'cover');
     }
 
+    // 1. Optimistic local update
     try {
       const all = this.getAllViewStats();
-      const existing = all.find((item) => item.id === anime.id);
+      const existing = all.find((item) => item.id === anime.id || item.animeId === anime.id);
 
       if (existing) {
         existing.viewsCount += 1;
@@ -71,6 +107,7 @@ class UserActivityManager {
       } else {
         all.push({
           id: anime.id,
+          animeId: anime.id,
           title: anime.title,
           coverImage: cleanCover,
           score: anime.score || 0,
@@ -80,16 +117,31 @@ class UserActivityManager {
         });
       }
 
+      this.cachedStats = all;
       localStorage.setItem('kuronami_anime_views', JSON.stringify(all));
       this.notifyListeners();
-    } catch (err) {
-      console.error('Error recording anime view:', err);
-    }
+    } catch {}
+
+    // 2. Server persistence
+    try {
+      await fetch('/api/views', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          animeId: anime.id,
+          title: anime.title,
+          coverImage: cleanCover,
+          score: anime.score,
+          format: anime.format,
+        }),
+      });
+    } catch {}
   }
 
   subscribe(listener: (stats: AnimeViewStat[]) => void) {
     this.listeners.push(listener);
     listener(this.getMostWatched());
+    this.fetchMostWatched().then((stats) => listener(stats));
     return () => {
       this.listeners = this.listeners.filter((l) => l !== listener);
     };

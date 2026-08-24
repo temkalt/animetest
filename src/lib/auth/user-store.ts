@@ -19,15 +19,14 @@ export const DEFAULT_AVATARS = [
   'https://s4.anilist.co/file/anilistcdn/character/large/b40882-dsj7IP943WFF.jpg',   // Эрен
 ];
 
-// Empty defaults - collections and comments are created strictly by real users
-const INITIAL_COLLECTIONS: UserCollection[] = [];
-const INITIAL_COMMENTS: GlobalComment[] = [];
-
 class AuthStore {
   private currentUser: UserProfile | null = null;
   private userListeners: Array<(user: UserProfile | null) => void> = [];
   private collectionsListeners: Array<(collections: UserCollection[]) => void> = [];
   private commentsListeners: Array<(comments: GlobalComment[]) => void> = [];
+  private cachedComments: GlobalComment[] = [];
+  private cachedCollections: UserCollection[] = [];
+  private isInitialized = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -36,12 +35,6 @@ class AuthStore {
         try {
           const u = JSON.parse(savedUser);
           if (u && typeof u === 'object') {
-            if (!u.username && u.name) {
-              u.username = this.normalizeUsername(u.name) || 'kuronami';
-            }
-            if (!u.name && u.username) {
-              u.name = u.username;
-            }
             this.currentUser = u;
           }
         } catch {
@@ -49,24 +42,47 @@ class AuthStore {
         }
       }
 
-      // Sync across browser tabs and components in real-time
+      // Sync session with server in background
+      this.syncSessionFromServer();
+
+      // Listen for realtime events
       realtimeHub.on('comments_updated', () => {
-        const comms = this.getRecentComments(10);
-        this.commentsListeners.forEach((l) => l(comms));
+        this.fetchRecentComments().then((comms) => {
+          this.commentsListeners.forEach((l) => l(comms));
+        });
       });
 
       realtimeHub.on('collections_updated', () => {
-        const all = this.getAllCollections();
-        this.collectionsListeners.forEach((l) => l(all));
+        this.fetchCollections().then((cols) => {
+          this.collectionsListeners.forEach((l) => l(cols));
+        });
       });
 
       realtimeHub.on('user_updated', () => {
-        try {
-          const saved = localStorage.getItem('kuronami_current_user');
-          this.currentUser = saved ? JSON.parse(saved) : null;
-          this.userListeners.forEach((l) => l(this.currentUser));
-        } catch {}
+        this.syncSessionFromServer();
       });
+
+      // Initial data fetch
+      this.fetchRecentComments();
+      this.fetchCollections();
+    }
+  }
+
+  async syncSessionFromServer() {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          this.currentUser = data.user;
+          localStorage.setItem('kuronami_current_user', JSON.stringify(data.user));
+        } else if (this.currentUser) {
+          // Keep local user if offline or server returned empty
+        }
+        this.notifyUser();
+      }
+    } catch {
+      // Offline fallback: keep localStorage user
     }
   }
 
@@ -77,19 +93,7 @@ class AuthStore {
       const saved = localStorage.getItem('kuronami_current_user');
       if (saved) {
         try {
-          const u = JSON.parse(saved);
-          if (u && typeof u === 'object') {
-            if (!u.username && u.name) {
-              u.username = this.normalizeUsername(u.name) || 'kuronami';
-            }
-            if (!u.name && u.username) {
-              u.name = u.username;
-            }
-            if (!u.avatar) {
-              u.avatar = DEFAULT_AVATARS[0];
-            }
-            this.currentUser = u;
-          }
+          this.currentUser = JSON.parse(saved);
         } catch {
           this.currentUser = null;
         }
@@ -125,7 +129,6 @@ class AuthStore {
     return text.split('').map((char) => map[char.toLowerCase()] || char).join('');
   }
 
-  // Normalize username (lowercase, alphanumeric + underscore, max 24 chars)
   normalizeUsername(raw: string): string {
     if (!raw) return '';
     const transliterated = this.transliterate(raw.trim().toLowerCase());
@@ -135,174 +138,161 @@ class AuthStore {
       .slice(0, 24);
   }
 
-  isUsernameTaken(username: string, excludeUserId?: string): boolean {
+  isUsernameTaken(username: string, _excludeUserId?: string): boolean {
     const clean = this.normalizeUsername(username);
-    if (!clean) return true;
-
-    // Check reserved system handles
+    if (!clean || clean.length < 2) return true;
     const reserved = ['admin', 'administrator', 'system', 'root', 'support', 'bot', 'moderator'];
-    if (reserved.includes(clean)) return true;
-
-    const users = this.getAllRegisteredUsers();
-    return users.some(
-      (u) =>
-        (this.normalizeUsername(u.username) === clean || (u.name && this.normalizeUsername(u.name) === clean)) &&
-        u.id !== excludeUserId
-    );
+    return reserved.includes(clean);
   }
 
-  isEmailTaken(email: string, excludeUserId?: string): boolean {
-    const clean = email.trim().toLowerCase();
-    if (!clean) return true;
-    const users = this.getAllRegisteredUsers();
-    return users.some((u) => u.email?.toLowerCase() === clean && u.id !== excludeUserId);
+  isEmailTaken(_email: string): boolean {
+    return false;
   }
 
-  register(params: {
+  async register(params: {
     username: string;
     name?: string;
     email: string;
     password?: string;
     avatar?: string;
-  }): UserProfile {
-    const cleanUsername = this.normalizeUsername(params.username) || `otaku_${Date.now()}`;
+  }): Promise<UserProfile> {
+    const cleanUsername = this.normalizeUsername(params.username);
     const cleanEmail = params.email.trim().toLowerCase();
 
-    if (this.isUsernameTaken(cleanUsername)) {
-      throw new Error(`Никнейм @${cleanUsername} уже занят. Пожалуйста, выберите другой.`);
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: cleanUsername,
+        name: params.name || cleanUsername,
+        email: cleanEmail,
+        password: params.password,
+        avatar: params.avatar || DEFAULT_AVATARS[0],
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Ошибка при регистрации');
     }
 
-    if (this.isEmailTaken(cleanEmail)) {
-      throw new Error(`Пользователь с email ${cleanEmail} уже зарегистрирован.`);
-    }
-
-    const newUser: UserProfile = {
-      id: `usr_${Date.now()}`,
-      username: cleanUsername,
-      name: params.name?.trim() || cleanUsername,
-      email: cleanEmail,
-      avatar: params.avatar || DEFAULT_AVATARS[0],
-      bio: 'Исследователь вселенной KuroNami.',
-      role: 'Отаку',
-      level: 1,
-      joinedAt: new Date().toISOString().split('T')[0],
-      collectionsCount: 0,
-    };
-
+    const user: UserProfile = data.user;
+    this.currentUser = user;
     if (typeof window !== 'undefined') {
-      const allUsers = this.getAllRegisteredUsers();
-      allUsers.push(newUser);
-      localStorage.setItem('kuronami_users', JSON.stringify(allUsers));
-      localStorage.setItem('kuronami_current_user', JSON.stringify(newUser));
+      localStorage.setItem('kuronami_current_user', JSON.stringify(user));
+      if (data.token) localStorage.setItem('kuronami_auth_token', data.token);
     }
 
-    this.currentUser = newUser;
     this.notifyUser();
-    return newUser;
+    realtimeHub.emit('user_updated');
+    return user;
   }
 
-  login(identifier: string): UserProfile {
-    const clean = identifier.trim().toLowerCase();
-    const allUsers = this.getAllRegisteredUsers();
+  async login(identifier: string, password?: string): Promise<UserProfile> {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifier: identifier.trim(),
+        password: password || '',
+      }),
+    });
 
-    // Match by email or username
-    const existing = allUsers.find(
-      (u) => u.email === clean || u.username.toLowerCase() === clean
-    );
-
-    if (!existing) {
-      throw new Error('Пользователь не найден. Проверьте никнейм или зарегистрируйтесь.');
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Неверный никнейм или пароль');
     }
 
+    const user: UserProfile = data.user;
+    this.currentUser = user;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('kuronami_current_user', JSON.stringify(existing));
+      localStorage.setItem('kuronami_current_user', JSON.stringify(user));
+      if (data.token) localStorage.setItem('kuronami_auth_token', data.token);
     }
 
-    this.currentUser = existing;
     this.notifyUser();
-    return existing;
+    realtimeHub.emit('user_updated');
+    return user;
   }
 
-  logout() {
+  async logout() {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {}
+
     if (typeof window !== 'undefined') {
       localStorage.removeItem('kuronami_current_user');
+      localStorage.removeItem('kuronami_auth_token');
     }
     this.currentUser = null;
     this.notifyUser();
+    realtimeHub.emit('user_updated');
   }
 
-  updateProfile(updates: Partial<UserProfile>): UserProfile | null {
-    if (!this.currentUser) return null;
+  async updateProfile(updates: Partial<UserProfile>): Promise<UserProfile | null> {
+    const user = this.currentUser;
+    if (!user) return null;
 
-    if (updates.username && updates.username !== this.currentUser.username) {
-      const cleanUsername = this.normalizeUsername(updates.username);
-      if (this.isUsernameTaken(cleanUsername, this.currentUser.id)) {
-        throw new Error(`Никнейм @${cleanUsername} уже занят.`);
+    try {
+      const res = await fetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          this.currentUser = data.user;
+          localStorage.setItem('kuronami_current_user', JSON.stringify(this.currentUser));
+          this.notifyUser();
+          realtimeHub.emit('user_updated');
+          return this.currentUser;
+        }
       }
-      updates.username = cleanUsername;
-    }
+    } catch {}
 
-    this.currentUser = { ...this.currentUser, ...updates };
-
+    // Fallback local update
+    this.currentUser = {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+      role: user.role,
+      level: user.level,
+      joinedAt: user.joinedAt,
+      bio: user.bio,
+      banner: user.banner,
+      collectionsCount: user.collectionsCount,
+      ...updates,
+    };
     if (typeof window !== 'undefined') {
       localStorage.setItem('kuronami_current_user', JSON.stringify(this.currentUser));
-      const allUsers = this.getAllRegisteredUsers().map((u) =>
-        u.id === this.currentUser?.id ? this.currentUser! : u
-      );
-      localStorage.setItem('kuronami_users', JSON.stringify(allUsers));
     }
-
     this.notifyUser();
     return this.currentUser;
   }
 
-  getAllRegisteredUsers(): UserProfile[] {
-    if (typeof window === 'undefined') return [];
-    try {
-      const list = localStorage.getItem('kuronami_users');
-      return list ? JSON.parse(list) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  // Public Profile retrieval (Guarantees EMAIL IS NEVER EXPOSED)
-  getPublicProfile(username: string): Omit<UserProfile, 'email'> | null {
+  async getPublicProfile(username: string): Promise<Omit<UserProfile, 'email'> | null> {
     if (!username || username === 'undefined' || username === 'null') {
       const current = this.getUser();
       if (current) {
-        const { email: _email, ...safeProfile } = current;
-        return safeProfile;
+        const { email: _email, ...safe } = current;
+        return safe;
       }
-      return {
-        id: 'usr_kuronami',
-        username: 'kuronami',
-        name: 'KuroNami',
-        avatar: DEFAULT_AVATARS[0],
-        bio: 'Участник аниме-сообщества KuroNami.',
-        role: 'Отаку',
-        level: 1,
-        joinedAt: '2026-08-01',
-        collectionsCount: 0,
-      };
+      return null;
     }
+
+    try {
+      const res = await fetch(`/api/user/${encodeURIComponent(username)}`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.user || null;
+      }
+    } catch {}
 
     const clean = this.normalizeUsername(decodeURIComponent(username));
-    if (!clean) return null;
-
-    if (this.currentUser && (this.currentUser.username === clean || this.normalizeUsername(this.currentUser.name) === clean)) {
-      const { email: _email, ...safeProfile } = this.currentUser;
-      return safeProfile;
-    }
-
-    const allUsers = this.getAllRegisteredUsers();
-    const user = allUsers.find((u) => u.username === clean || this.normalizeUsername(u.name) === clean);
-    if (user) {
-      const { email: _email, ...safeProfile } = user;
-      return safeProfile;
-    }
-
-    // Dynamic public profile for comment author
     return {
       id: `usr_${clean}`,
       username: clean,
@@ -318,35 +308,59 @@ class AuthStore {
 
   // --- COLLECTIONS METHODS ---
 
-  getAllCollections(): UserCollection[] {
-    if (typeof window === 'undefined') return INITIAL_COLLECTIONS;
+  async fetchCollections(): Promise<UserCollection[]> {
     try {
-      const saved = localStorage.getItem('kuronami_collections');
-      return saved ? JSON.parse(saved) : INITIAL_COLLECTIONS;
-    } catch {
-      return INITIAL_COLLECTIONS;
+      const res = await fetch('/api/collections');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.collections)) {
+          this.cachedCollections = data.collections;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('kuronami_collections', JSON.stringify(data.collections));
+          }
+          return data.collections;
+        }
+      }
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('kuronami_collections');
+        if (saved) this.cachedCollections = JSON.parse(saved);
+      } catch {}
     }
+    return this.cachedCollections;
+  }
+
+  getAllCollections(): UserCollection[] {
+    if (this.cachedCollections.length > 0) return this.cachedCollections;
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('kuronami_collections');
+        return saved ? JSON.parse(saved) : [];
+      } catch {}
+    }
+    return [];
   }
 
   getUserCollections(usernameOrUserId: string): UserCollection[] {
     const all = this.getAllCollections();
     const clean = this.normalizeUsername(usernameOrUserId);
-    return all.filter((c) => c.userId === usernameOrUserId || c.username === clean || c.username === usernameOrUserId);
+    return all.filter((c) => c.userId === usernameOrUserId || c.username.toLowerCase() === clean.toLowerCase());
   }
 
   getPublicCollections(): UserCollection[] {
-    const all = this.getAllCollections();
-    return all.filter((c) => c.isPublic);
+    return this.getAllCollections().filter((c) => c.isPublic);
   }
 
   getCollectionById(id: string): UserCollection | null {
-    const all = this.getAllCollections();
-    return all.find((c) => c.id === id) || null;
+    return this.getAllCollections().find((c) => c.id === id) || null;
   }
 
   subscribeCollections(listener: (collections: UserCollection[]) => void) {
     this.collectionsListeners.push(listener);
     listener(this.getAllCollections());
+    this.fetchCollections().then((cols) => listener(cols));
     return () => {
       this.collectionsListeners = this.collectionsListeners.filter((l) => l !== listener);
     };
@@ -355,109 +369,123 @@ class AuthStore {
   private notifyCollections() {
     const cols = this.getAllCollections();
     this.collectionsListeners.forEach((l) => l(cols));
+    realtimeHub.emit('collections_updated');
   }
 
-  createCollection(params: {
+  async createCollection(params: {
     title: string;
     description: string;
     coverImage?: string;
     isPublic?: boolean;
     initialAnimeIds?: number[];
-  }): UserCollection {
+  }): Promise<UserCollection> {
     const user = this.getUser();
     if (!user) throw new Error('Для создания коллекции необходимо войти в аккаунт');
 
-    const newCol: UserCollection = {
-      id: `col_${Date.now()}`,
-      userId: user.id,
-      username: user.username,
-      title: params.title.trim(),
-      description: params.description.trim(),
-      coverImage:
-        params.coverImage ||
-        'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80',
-      isPublic: params.isPublic !== undefined ? params.isPublic : true,
-      animeIds: params.initialAnimeIds || [],
-      likesCount: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
-    };
+    const res = await fetch('/api/collections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
 
-    const all = this.getAllCollections();
-    all.unshift(newCol);
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('kuronami_collections', JSON.stringify(all));
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Ошибка при создании коллекции');
     }
 
+    const newCol: UserCollection = data.collection;
+    this.cachedCollections.unshift(newCol);
     this.notifyCollections();
     return newCol;
   }
 
-  addAnimeToCollection(collectionId: string, animeId: number): boolean {
-    const all = this.getAllCollections();
-    const target = all.find((c) => c.id === collectionId);
-    if (!target) return false;
-
-    if (!target.animeIds.includes(animeId)) {
-      target.animeIds.push(animeId);
-      target.updatedAt = new Date().toISOString().split('T')[0];
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('kuronami_collections', JSON.stringify(all));
+  async addAnimeToCollection(collectionId: string, animeId: number): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/collections/${collectionId}/anime`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ animeId }),
+      });
+      if (res.ok) {
+        await this.fetchCollections();
+        this.notifyCollections();
+        return true;
       }
-      this.notifyCollections();
-      return true;
-    }
+    } catch {}
     return false;
   }
 
-  removeAnimeFromCollection(collectionId: string, animeId: number): boolean {
-    const all = this.getAllCollections();
-    const target = all.find((c) => c.id === collectionId);
-    if (!target) return false;
-
-    target.animeIds = target.animeIds.filter((id) => id !== animeId);
-    target.updatedAt = new Date().toISOString().split('T')[0];
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('kuronami_collections', JSON.stringify(all));
-    }
-    this.notifyCollections();
-    return true;
+  async removeAnimeFromCollection(collectionId: string, animeId: number): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/collections/${collectionId}/anime`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ animeId }),
+      });
+      if (res.ok) {
+        await this.fetchCollections();
+        this.notifyCollections();
+        return true;
+      }
+    } catch {}
+    return false;
   }
 
-  deleteCollection(collectionId: string): boolean {
-    const user = this.getUser();
-    if (!user) return false;
-
-    let all = this.getAllCollections();
-    const target = all.find((c) => c.id === collectionId);
-    if (!target || target.userId !== user.id) return false;
-
-    all = all.filter((c) => c.id !== collectionId);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('kuronami_collections', JSON.stringify(all));
-    }
-    this.notifyCollections();
-    return true;
+  async deleteCollection(collectionId: string): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/collections/${collectionId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        this.cachedCollections = this.cachedCollections.filter((c) => c.id !== collectionId);
+        this.notifyCollections();
+        return true;
+      }
+    } catch {}
+    return false;
   }
 
   // --- GLOBAL RECENT COMMENTS METHODS ---
 
-  getRecentComments(limit = 10): GlobalComment[] {
-    if (typeof window === 'undefined') return INITIAL_COMMENTS.slice(0, limit);
+  async fetchRecentComments(limit = 20): Promise<GlobalComment[]> {
     try {
-      const saved = localStorage.getItem('kuronami_comments');
-      const list: GlobalComment[] = saved ? JSON.parse(saved) : INITIAL_COMMENTS;
-      return list.slice(0, limit);
-    } catch {
-      return INITIAL_COMMENTS.slice(0, limit);
+      const res = await fetch(`/api/comments?global=true&limit=${limit}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.comments)) {
+          this.cachedComments = data.comments;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('kuronami_comments', JSON.stringify(data.comments));
+          }
+          return data.comments;
+        }
+      }
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('kuronami_comments');
+        if (saved) this.cachedComments = JSON.parse(saved);
+      } catch {}
     }
+    return this.cachedComments;
+  }
+
+  getRecentComments(limit = 10): GlobalComment[] {
+    if (this.cachedComments.length > 0) return this.cachedComments.slice(0, limit);
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('kuronami_comments');
+        return saved ? JSON.parse(saved).slice(0, limit) : [];
+      } catch {}
+    }
+    return [];
   }
 
   subscribeComments(listener: (comments: GlobalComment[]) => void) {
     this.commentsListeners.push(listener);
     listener(this.getRecentComments(10));
+    this.fetchRecentComments().then((comms) => listener(comms.slice(0, 10)));
     return () => {
       this.commentsListeners = this.commentsListeners.filter((l) => l !== listener);
     };
@@ -469,7 +497,7 @@ class AuthStore {
     realtimeHub.emit('comments_updated');
   }
 
-  addGlobalComment(params: {
+  async addGlobalComment(params: {
     animeId: number;
     animeTitle: string;
     animeCover: string;
@@ -483,40 +511,20 @@ class AuthStore {
       name?: string;
       avatar?: string;
     };
-  }): GlobalComment {
-    const user = this.getUser();
-    const resolvedUsername =
-      params.author?.username ||
-      user?.username ||
-      (user?.name ? this.normalizeUsername(user.name) : '') ||
-      'kuronami';
-    const resolvedUserId = params.author?.id || user?.id || `usr_${Date.now()}`;
-    const resolvedAvatar = params.author?.avatar || user?.avatar || DEFAULT_AVATARS[0];
+  }): Promise<GlobalComment> {
+    const res = await fetch('/api/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
 
-    const newComment: GlobalComment = {
-      id: `comment_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      animeId: params.animeId,
-      animeTitle: params.animeTitle,
-      animeCover: params.animeCover,
-      episodeNumber: params.episodeNumber,
-      userId: resolvedUserId,
-      username: resolvedUsername,
-      userAvatar: resolvedAvatar,
-      content: params.content.trim(),
-      timecodeSeconds: params.timecodeSeconds,
-      isSpoiler: Boolean(params.isSpoiler),
-      likesCount: 0,
-      createdAt: new Date().toISOString(),
-    };
-
-    let all = this.getRecentComments(100);
-    all.unshift(newComment);
-    if (all.length > 100) all = all.slice(0, 100);
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('kuronami_comments', JSON.stringify(all));
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Ошибка при отправке комментария');
     }
 
+    const newComment: GlobalComment = data.comment;
+    this.cachedComments.unshift(newComment);
     this.notifyComments();
     return newComment;
   }

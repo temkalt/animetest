@@ -86,7 +86,7 @@ export const OngoingSchedule: React.FC<ScheduleProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full pb-1 -mx-2 px-2 sm:mx-0 sm:px-0">
           {DAYS.map((d) => {
             const isToday = d.id === todayDay;
             const isSelected = d.id === selectedDay;

@@ -34,12 +34,18 @@ export const RecentComments: React.FC = () => {
   useEffect(() => {
     const unsubStore = authStore.subscribeComments((c) => setComments(c));
     const unsubHub = realtimeHub.on('comments_updated', () => {
-      setComments(authStore.getRecentComments(10));
+      authStore.fetchRecentComments(15).then((comms) => setComments(comms.slice(0, 10)));
     });
+
+    // Auto-poll comments every 15 seconds from server
+    const pollInterval = setInterval(() => {
+      authStore.fetchRecentComments(15).then((comms) => setComments(comms.slice(0, 10)));
+    }, 15000);
 
     return () => {
       unsubStore();
       unsubHub();
+      clearInterval(pollInterval);
     };
   }, []);
 

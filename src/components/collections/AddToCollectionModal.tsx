@@ -64,12 +64,12 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
     }
   };
 
-  const handleCreateAndAdd = (e: React.FormEvent) => {
+  const handleCreateAndAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
     try {
-      const created = authStore.createCollection({
+      const created = await authStore.createCollection({
         title: newTitle.trim(),
         description: newDesc.trim(),
         isPublic,

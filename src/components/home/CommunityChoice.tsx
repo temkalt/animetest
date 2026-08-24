@@ -16,12 +16,17 @@ export const CommunityChoice: React.FC = () => {
       setMostWatched(stats);
     });
     const unsubHub = realtimeHub.on('views_updated', () => {
-      setMostWatched(userActivity.getMostWatched());
+      userActivity.fetchMostWatched(12).then((stats) => setMostWatched(stats.slice(0, 8)));
     });
+
+    const interval = setInterval(() => {
+      userActivity.fetchMostWatched(12).then((stats) => setMostWatched(stats.slice(0, 8)));
+    }, 20000);
 
     return () => {
       unsubActivity();
       unsubHub();
+      clearInterval(interval);
     };
   }, []);
 
