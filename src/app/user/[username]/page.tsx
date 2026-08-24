@@ -45,6 +45,8 @@ import {
   XCircle,
   ArrowLeft,
   Calendar,
+  Share2,
+  Copy,
 } from 'lucide-react';
 
 const ACHIEVEMENTS = [
@@ -69,6 +71,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const [isOwner, setIsOwner] = useState(false);
   const [profileView, setProfileView] = useState<Omit<UserProfile, 'email'> | null>(null);
   const [publicCollections, setPublicCollections] = useState<UserCollection[]>([]);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -92,21 +96,28 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
 
   const loadData = () => {
-    const rawUser = decodeURIComponent(username || '');
+    const rawUser = decodeURIComponent(username || '').trim();
     const currentUser = authStore.getUser();
-    
-    if (currentUser?.username === rawUser) {
+    setIsLoadingProfile(true);
+
+    if (currentUser && currentUser.username.toLowerCase() === rawUser.toLowerCase()) {
       setIsOwner(true);
+      setProfileView(currentUser);
       syncManager.getRecentHistory(40).then(setHistory);
       syncManager.getAllBookmarks().then(setBookmarks);
       setUserCollections(authStore.getUserCollections(currentUser.id));
+      setIsLoadingProfile(false);
     } else {
       setIsOwner(false);
-      authStore.getPublicProfile(rawUser).then((pub) => {
-        setProfileView(pub);
+      authStore.getPublicProfileFull(rawUser).then((pub) => {
+        if (pub) {
+          setProfileView(pub.user);
+          setPublicCollections(pub.collections);
+          setBookmarks(pub.bookmarks || []);
+          setHistory(pub.history || []);
+        }
+        setIsLoadingProfile(false);
       });
-      const cols = authStore.getUserCollections(rawUser);
-      setPublicCollections(cols.filter((c) => c.isPublic));
     }
   };
 
@@ -115,8 +126,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
 
     const unsubscribeAuth = authStore.subscribe((u) => {
       setUser(u);
-      const rawUser = decodeURIComponent(username || '');
-      if (u && u.username === rawUser) {
+      const rawUser = decodeURIComponent(username || '').trim();
+      if (u && u.username.toLowerCase() === rawUser.toLowerCase()) {
         setIsOwner(true);
         setEditName(u.name);
         setEditBio(u.bio || '');
@@ -129,14 +140,14 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
 
     const unsubscribeCols = authStore.subscribeCollections((cols) => {
       const u = authStore.getUser();
-      const rawUser = decodeURIComponent(username || '');
-      
-      if (u && u.username === rawUser) {
+      const rawUser = decodeURIComponent(username || '').trim();
+
+      if (u && u.username.toLowerCase() === rawUser.toLowerCase()) {
         setUserCollections(cols.filter((c) => c.userId === u.id));
       } else {
-        setPublicCollections(cols.filter((c) => c.isPublic && (c.username === rawUser || c.userId === rawUser)));
+        setPublicCollections(cols.filter((c) => c.isPublic && (c.username.toLowerCase() === rawUser.toLowerCase() || c.userId === rawUser)));
       }
-      
+
       setSelectedUserCollection((prev) => {
         if (!prev) return null;
         return cols.find((c) => c.id === prev.id) || null;
@@ -160,14 +171,16 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     };
   }, [username]);
 
+  const displayCollections = isOwner ? userCollections : publicCollections;
+
   // Collect all unique anime IDs that need metadata resolution
   const allAnimeIds = useMemo(() => {
     const ids = new Set<number>();
     history.forEach((h) => ids.add(h.animeId));
     bookmarks.forEach((b) => ids.add(b.animeId));
-    userCollections.forEach((c) => c.animeIds.forEach((id) => ids.add(id)));
+    displayCollections.forEach((c) => c.animeIds.forEach((id) => ids.add(id)));
     return Array.from(ids);
-  }, [history, bookmarks, userCollections]);
+  }, [history, bookmarks, displayCollections]);
 
   // Fetch metadata in batch for all missing IDs
   useEffect(() => {
@@ -229,11 +242,13 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
       : parseFloat(totalHours) >= 10
       ? 'A-TIER EXPLORER'
       : 'NOVICE OTAKU';
-  const level = Math.max(1, Math.floor(totalSeconds / 1800) + (user?.level || 1) - 1);
+
+  const displayUser = isOwner ? (user || profileView) : profileView;
+  const level = Math.max(1, Math.floor(totalSeconds / 1800) + (displayUser?.level || 1) - 1);
   const xpProgress = Math.round(((totalSeconds % 1800) / 1800) * 100);
 
   const averageScore = useMemo(() => {
-    const scores = Object.values(animeMap).map(m => m.score).filter(Boolean) as number[];
+    const scores = Object.values(animeMap).map((m) => m.score).filter(Boolean) as number[];
     if (!scores.length) return 0;
     return scores.reduce((a, b) => a + b, 0) / scores.length;
   }, [animeMap]);
@@ -241,12 +256,12 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
   const genreStats = useMemo(() => {
     const counts: Record<string, number> = {};
     let total = 0;
-    
+
     // Calculate from history
-    history.forEach(h => {
+    history.forEach((h) => {
       const meta = animeMap[h.animeId];
       if (meta?.genres) {
-        meta.genres.forEach(g => {
+        meta.genres.forEach((g) => {
           counts[g] = (counts[g] || 0) + (h.isCompleted ? 3 : 1);
           total += (h.isCompleted ? 3 : 1);
         });
@@ -254,10 +269,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     });
 
     // Calculate from bookmarks
-    bookmarks.forEach(b => {
+    bookmarks.forEach((b) => {
       const meta = animeMap[b.animeId];
       if (meta?.genres) {
-        meta.genres.forEach(g => {
+        meta.genres.forEach((g) => {
           counts[g] = (counts[g] || 0) + (b.isFavorite ? 2 : 1);
           total += (b.isFavorite ? 2 : 1);
         });
@@ -266,10 +281,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
 
     // Calculate from userActivity
     const viewStats = userActivity.getAllViewStats();
-    viewStats.forEach(v => {
+    viewStats.forEach((v) => {
       const meta = animeMap[v.id];
       if (meta?.genres) {
-        meta.genres.forEach(g => {
+        meta.genres.forEach((g) => {
           counts[g] = (counts[g] || 0) + v.viewsCount;
           total += v.viewsCount;
         });
@@ -282,7 +297,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
       .map(([genre, count]) => ({
         genre,
         count,
-        value: Math.min(100, Math.round((count / total) * 100))
+        value: Math.min(100, Math.round((count / total) * 100)),
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 7);
@@ -310,79 +325,36 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     setBookmarks((prev) => prev.filter((b) => b.animeId !== animeId));
   };
 
-  if (!isOwner) {
-    if (!profileView) {
-      return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-          <p className="text-zinc-400">Пользователь не найден</p>
-          <Link href="/" className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
-            На главную
-          </Link>
-        </div>
-      );
+  const handleCopyLink = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
     }
-    
+  };
+
+  if (isLoadingProfile && !displayUser) {
     return (
-      <div className="max-w-2xl mx-auto space-y-8 pb-16 pt-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Назад
-        </Link>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-2 border-zinc-700 border-t-white rounded-full animate-spin" />
+        <p className="text-xs text-zinc-400 font-mono">Загрузка профиля...</p>
+      </div>
+    );
+  }
 
-        {/* Profile header */}
-        <div className="flex items-start gap-5 p-6 rounded-xl bg-zinc-900 border border-zinc-800 shadow-sm">
-          <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 shrink-0">
-            <Image
-              src={profileView.avatar}
-              alt={profileView.name}
-              fill
-              sizes="80px"
-              className="object-cover w-full h-full"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <h1 className="text-xl font-bold text-zinc-100">{profileView.name}</h1>
-            <p className="text-sm text-zinc-400 font-mono">@{profileView.username}</p>
-            {profileView.bio && <p className="text-sm text-zinc-300 mt-2 font-sans">{profileView.bio}</p>}
-            <div className="flex items-center gap-3 pt-2 text-xs text-zinc-500 font-mono">
-              <span className="px-2 py-0.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-300">
-                {profileView.role}
-              </span>
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {profileView.joinedAt}
-              </span>
-            </div>
-          </div>
+  if (!displayUser) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center px-4">
+        <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
+          <User className="w-6 h-6" />
         </div>
-
-        {/* User collections */}
-        {publicCollections.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-zinc-400" />
-              <h2 className="text-lg font-semibold text-zinc-100">Коллекции пользователя</h2>
-              <span className="text-sm text-zinc-500 font-mono">({publicCollections.length})</span>
-            </div>
-            <div className="space-y-2.5">
-              {publicCollections.map((col) => (
-                <div
-                  key={col.id}
-                  className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1.5 hover:border-zinc-700 transition-colors"
-                >
-                  <h3 className="text-sm font-semibold text-zinc-100">{col.title}</h3>
-                  {col.description && <p className="text-xs text-zinc-400">{col.description}</p>}
-                  <div className="flex items-center gap-3 pt-1 text-xs text-zinc-500 font-mono">
-                    <span>{col.animeIds.length} тайтлов</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="space-y-1">
+          <h2 className="text-lg font-bold text-zinc-200">Пользователь не найден</h2>
+          <p className="text-xs text-zinc-400">Профиль @{username} пока не зарегистрирован на платформе</p>
+        </div>
+        <Link href="/" className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold hover:bg-zinc-700 transition-colors">
+          Вернуться на главную
+        </Link>
       </div>
     );
   }
@@ -395,8 +367,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
           {/* Avatar & User Details */}
           <div className="flex items-center gap-5">
             <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border border-zinc-700 shrink-0 bg-zinc-950">
-              {user ? (
-                <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+              {displayUser.avatar ? (
+                <Image src={displayUser.avatar} alt={displayUser.name || 'Аватар'} fill className="object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center font-display font-black text-2xl text-zinc-300">
                   KN
@@ -407,17 +379,27 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
             <div className="space-y-1.5 min-w-0">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-black text-zinc-100 tracking-tight">
-                  {user ? user.name : 'Гость Отаку'}
+                  {displayUser.name || 'Отаку'}
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700 text-[11px] font-mono font-bold">
                   {rank}
                 </span>
+                {!isOwner && (
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[10px] font-mono font-semibold">
+                    Публичный профиль
+                  </span>
+                )}
               </div>
 
-              <div className="flex items-center gap-2.5 text-xs font-mono text-zinc-400">
-                <span>@{user ? user.username : 'guest'}</span>
+              <div className="flex items-center gap-2.5 text-xs font-mono text-zinc-400 flex-wrap">
+                <span>@{displayUser.username}</span>
                 <span>•</span>
                 <span className="text-zinc-200 font-semibold">Уровень {level}</span>
+                <span>•</span>
+                <span className="text-zinc-500 flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {displayUser.joinedAt || '2026'}
+                </span>
               </div>
 
               {/* XP Progress Bar */}
@@ -434,7 +416,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                 </div>
               </div>
 
-              {user?.bio && <p className="text-xs text-zinc-400 pt-0.5 max-w-md">{user.bio}</p>}
+              {displayUser.bio && <p className="text-xs text-zinc-400 pt-0.5 max-w-md">{displayUser.bio}</p>}
             </div>
           </div>
 
@@ -455,9 +437,28 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               </div>
             </div>
 
-            <div className="shrink-0">
-              {user ? (
-                <div className="flex items-center gap-2">
+            <div className="shrink-0 flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition-colors cursor-pointer"
+                title="Поделиться ссылкой на профиль"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">Скопировано!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Поделиться</span>
+                  </>
+                )}
+              </button>
+
+              {isOwner ? (
+                <>
                   <button
                     type="button"
                     onClick={() => setIsEditing(!isEditing)}
@@ -475,8 +476,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Выйти</span>
                   </button>
-                </div>
-              ) : (
+                </>
+              ) : !user ? (
                 <button
                   type="button"
                   onClick={() => setIsAuthModalOpen(true)}
@@ -485,7 +486,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Войти</span>
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -649,12 +650,12 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                 )}
                 <span className="relative z-10 flex items-center gap-1.5">
                   <Layers className="w-3.5 h-3.5" />
-                  <span>Коллекции ({userCollections.length})</span>
+                  <span>Коллекции ({displayCollections.length})</span>
                 </span>
               </button>
             </div>
 
-            {activeTab === 'collections' && (
+            {isOwner && activeTab === 'collections' && (
               <button
                 type="button"
                 onClick={() => setIsCreateCollectionOpen(true)}
@@ -671,13 +672,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
             groupedHistory.length === 0 ? (
               <div className="py-16 text-center text-xs text-zinc-500 font-mono space-y-3">
                 <Clock className="w-8 h-8 text-zinc-600 mx-auto" />
-                <p>История просмотров пуста</p>
-                <Link
-                  href="/catalog"
-                  className="inline-block px-4 py-2 rounded-lg bg-zinc-100 text-zinc-950 text-xs font-semibold hover:bg-white transition-colors"
-                >
-                  Перейти в каталог →
-                </Link>
+                <p>{isOwner ? 'История просмотров пуста' : 'Пользователь пока не начал просмотр серий'}</p>
+                {isOwner && (
+                  <Link
+                    href="/catalog"
+                    className="inline-block px-4 py-2 rounded-lg bg-zinc-100 text-zinc-950 text-xs font-semibold hover:bg-white transition-colors"
+                  >
+                    Перейти в каталог →
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
@@ -814,13 +817,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
               {filteredBookmarks.length === 0 ? (
                 <div className="py-16 text-center text-xs text-zinc-500 font-mono space-y-3">
                   <Bookmark className="w-8 h-8 text-zinc-600 mx-auto" />
-                  <p>В этом списке закладок пока ничего нет</p>
-                  <Link
-                    href="/catalog"
-                    className="inline-block px-4 py-2 rounded-lg bg-zinc-100 text-zinc-950 text-xs font-semibold hover:bg-white transition-colors"
-                  >
-                    Выбрать в каталоге →
-                  </Link>
+                  <p>{isOwner ? 'В этом списке закладок пока ничего нет' : 'У пользователя нет тайтлов в этом списке'}</p>
+                  {isOwner && (
+                    <Link
+                      href="/catalog"
+                      className="inline-block px-4 py-2 rounded-lg bg-zinc-100 text-zinc-950 text-xs font-semibold hover:bg-white transition-colors"
+                    >
+                      Выбрать в каталоге →
+                    </Link>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto pr-1">
@@ -903,14 +908,16 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                               <span>Смотреть</span>
                             </Link>
 
-                            <button
-                              type="button"
-                              onClick={(e) => handleRemoveBookmark(e, b.animeId)}
-                              className="p-1 rounded-md text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                              title="Удалить из закладок"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {isOwner && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleRemoveBookmark(e, b.animeId)}
+                                className="p-1 rounded-md text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                title="Удалить из закладок"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -923,22 +930,24 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
 
           {/* TAB 3: USER COLLECTIONS (VIEW, OPEN MODAL, ADD/REMOVE ANIME) */}
           {activeTab === 'collections' && (
-            userCollections.length === 0 ? (
+            displayCollections.length === 0 ? (
               <div className="py-16 text-center text-xs text-zinc-500 font-mono space-y-3">
                 <Layers className="w-8 h-8 text-zinc-600 mx-auto" />
-                <p>У вас пока нет созданных коллекций</p>
-                <button
-                  type="button"
-                  onClick={() => setIsCreateCollectionOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-zinc-100 text-zinc-950 text-xs font-semibold hover:bg-white transition-colors cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Создать первую коллекцию</span>
-                </button>
+                <p>{isOwner ? 'У вас пока нет созданных коллекций' : 'У пользователя пока нет публичных коллекций'}</p>
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateCollectionOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-zinc-100 text-zinc-950 text-xs font-semibold hover:bg-white transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Создать первую коллекцию</span>
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-h-[500px] overflow-y-auto pr-1">
-                {userCollections.map((col) => (
+                {displayCollections.map((col) => (
                   <div
                     key={col.id}
                     onClick={() => setSelectedUserCollection(col)}
@@ -964,7 +973,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
                     </div>
 
                     <div className="pt-2 border-t border-zinc-800/60 flex items-center justify-between text-xs text-zinc-400 font-mono">
-                      <span>Управление коллекцией</span>
+                      <span>{isOwner ? 'Управление коллекцией' : 'Просмотреть коллекцию'}</span>
                       <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>

@@ -306,11 +306,26 @@ class AuthStore {
   }
 
   async getPublicProfile(username: string): Promise<Omit<UserProfile, 'email'> | null> {
+    const full = await this.getPublicProfileFull(username);
+    return full?.user || null;
+  }
+
+  async getPublicProfileFull(username: string): Promise<{
+    user: Omit<UserProfile, 'email'>;
+    collections: UserCollection[];
+    bookmarks: any[];
+    history: any[];
+  } | null> {
     if (!username || username === 'undefined' || username === 'null') {
       const current = this.getUser();
       if (current) {
         const { email: _email, ...safe } = current;
-        return safe;
+        return {
+          user: safe,
+          collections: this.getUserCollections(current.id),
+          bookmarks: [],
+          history: [],
+        };
       }
       return null;
     }
@@ -319,21 +334,31 @@ class AuthStore {
       const res = await fetch(`/api/user/${encodeURIComponent(username)}`);
       if (res.ok) {
         const data = await res.json();
-        return data.user || null;
+        return {
+          user: data.user || null,
+          collections: Array.isArray(data.collections) ? data.collections : [],
+          bookmarks: Array.isArray(data.bookmarks) ? data.bookmarks : [],
+          history: Array.isArray(data.history) ? data.history : [],
+        };
       }
     } catch {}
 
     const clean = this.normalizeUsername(decodeURIComponent(username));
     return {
-      id: `usr_${clean}`,
-      username: clean,
-      name: clean.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-      avatar: DEFAULT_AVATARS[0],
-      bio: 'Участник аниме-сообщества KuroNami.',
-      role: 'Отаку',
-      level: 1,
-      joinedAt: '2026-08-01',
-      collectionsCount: 0,
+      user: {
+        id: `usr_${clean}`,
+        username: clean,
+        name: clean.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+        avatar: DEFAULT_AVATARS[0],
+        bio: 'Участник аниме-сообщества KuroNami.',
+        role: 'Отаку',
+        level: 1,
+        joinedAt: '2026-08-01',
+        collectionsCount: 0,
+      },
+      collections: [],
+      bookmarks: [],
+      history: [],
     };
   }
 

@@ -28,6 +28,9 @@ export async function GET(
           joinedAt: '2026-08-01',
           collectionsCount: 0,
         },
+        collections: [],
+        bookmarks: [],
+        history: [],
       });
     }
 
@@ -36,13 +39,44 @@ export async function GET(
 
     const collections = await dbRepo.getUserCollections(user.id);
     const publicCollections = collections.filter((c) => c.isPublic);
+    const bookmarks = await dbRepo.getUserBookmarks(user.id);
+    const history = await dbRepo.getUserHistory(user.id);
 
     return NextResponse.json({
       user: {
         ...publicProfile,
         collectionsCount: publicCollections.length,
+        bookmarksCount: bookmarks.length,
+        historyCount: history.length,
       },
       collections: publicCollections,
+      bookmarks: bookmarks.map((b) => ({
+        animeId: b.animeId,
+        status: b.status,
+        score: b.score,
+        isFavorite: b.isFavorite,
+        animeTitle: b.animeTitle,
+        animeCover: b.animeCover,
+        animeFormat: b.animeFormat,
+        animeScore: b.animeScore,
+        animeTotalEpisodes: b.animeTotalEpisodes,
+        customFolder: b.customFolder,
+        updatedAt: b.updatedAt,
+      })),
+      history: history.map((h) => ({
+        animeId: h.animeId,
+        episodeNumber: h.episodeNumber,
+        currentTimeSeconds: h.currentTimeSeconds,
+        durationSeconds: h.durationSeconds,
+        progressPercentage: h.progressPercentage,
+        isCompleted: h.isCompleted,
+        animeTitle: h.animeTitle,
+        animeCover: h.animeCover,
+        animeTotalEpisodes: h.animeTotalEpisodes,
+        animeFormat: h.animeFormat,
+        teamName: h.teamName,
+        updatedAt: h.updatedAt,
+      })),
     });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message }, { status: 500 });
